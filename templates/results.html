@@ -256,6 +256,16 @@
     <!-- Контейнер результатов -->
     <div class="container">
         <div class="results-container">
+            <!-- Скрытая форма для AJAX -->
+            <form id="searchForm" action="/search" method="POST" style="display:none;">
+                <input type="hidden" name="brand" value="{{ brand.lower() }}">
+                <input type="hidden" name="model" value="{{ model.lower() }}">
+                {% for source in sources_used %}
+                <input type="hidden" name="sources" value="{{ source }}">
+                {% endfor %}
+                <input type="hidden" name="limit" value="10">
+            </form>
+            
             <!-- Заголовок -->
             <div class="result-header">
                 <div class="d-flex justify-content-between align-items-center">
@@ -395,19 +405,66 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Показываем loading overlay при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            
-            // Показываем overlay
-            loadingOverlay.classList.add('active');
-            
-            // Скрываем через 2 секунды или когда страница полностью загружена
-            setTimeout(() => {
-                loadingOverlay.classList.remove('active');
-            }, 2000);
-            
-            // Анимация карточек
+        // Отправка формы через AJAX с показом loading overlay
+        const searchForm = document.getElementById('searchForm');
+        if (searchForm) {
+            searchForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                const loadingSubtext = document.getElementById('loadingSubtext');
+                
+                // Показываем overlay
+                loadingOverlay.classList.add('active');
+                
+                // Динамическое обновление текста загрузки
+                const loadingMessages = [
+                    'Подключаемся к площадкам...',
+                    'Парсим объявления с Drom...',
+                    'Проверяем Avito...',
+                    'Анализируем Auto.ru...',
+                    'Считаем рыночные цены...',
+                    'Оцениваем ликвидность...',
+                    'Формируем результаты...'
+                ];
+                
+                let messageIndex = 0;
+                const messageInterval = setInterval(() => {
+                    if (messageIndex < loadingMessages.length) {
+                        loadingSubtext.textContent = loadingMessages[messageIndex];
+                        messageIndex++;
+                    }
+                }, 1000);
+                
+                // Собираем данные формы
+                const formData = new FormData(this);
+                
+                // Отправляем AJAX запрос
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    clearInterval(messageInterval);
+                    // Заменяем содержимое страницы
+                    document.open();
+                    document.write(html);
+                    document.close();
+                })
+                .catch(error => {
+                    clearInterval(messageInterval);
+                    loadingOverlay.classList.remove('active');
+                    alert('Ошибка при поиске: ' + error);
+                });
+            });
+        }
+        
+        // Анимация карточек после загрузки
+        setTimeout(() => {
             const cards = document.querySelectorAll('.car-card');
             cards.forEach((card, index) => {
                 card.style.opacity = '0';
@@ -416,29 +473,9 @@
                     card.style.transition = 'opacity 0.5s, transform 0.5s';
                     card.style.opacity = '1';
                     card.style.transform = 'translateY(0)';
-                }, index * 100 + 2000);
+                }, index * 100);
             });
-        });
-        
-        // Динамическое обновление текста загрузки
-        const loadingMessages = [
-            'Подключаемся к площадкам...',
-            'Парсим объявления с Drom...',
-            'Проверяем Avito...',
-            'Анализируем Auto.ru...',
-            'Считаем рыночные цены...',
-            'Оцениваем ликвидность...',
-            'Формируем результаты...'
-        ];
-        
-        let messageIndex = 0;
-        setInterval(() => {
-            const subtext = document.getElementById('loadingSubtext');
-            if (subtext && messageIndex < loadingMessages.length) {
-                subtext.textContent = loadingMessages[messageIndex];
-                messageIndex++;
-            }
-        }, 800);
+        }, 100);
     </script>
 </body>
 </html>
