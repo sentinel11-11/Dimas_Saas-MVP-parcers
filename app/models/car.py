@@ -11,11 +11,15 @@ class Car:
     year: Optional[int] = None
     mileage: Optional[int] = None
 
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    
     engine_volume: Optional[float] = None
     horsepower: Optional[int] = None
 
     transmission: Optional[str] = None
     drive: Optional[str] = None
+    body_type: Optional[str] = None
 
     owners: Optional[int] = None
     vin: Optional[str] = None
@@ -30,5 +34,6 @@ class Car:
 
     market_score: Optional[float] = None
     final_score: Optional[float] = None
+    liquidity_score: float = 0.0
 
     data_confidence: float = 0.0

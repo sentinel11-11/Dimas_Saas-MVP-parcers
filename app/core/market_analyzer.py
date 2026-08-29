@@ -235,7 +235,9 @@ class MarketAnalyzer:
             'bmw': 0.14, 'mercedes': 0.14, 'audi': 0.13,
             'nissan': 0.12, 'renault': 0.10,
             'lada': 0.15,  # В России всегда ликвидна
-            'geely': 0.12, 'chery': 0.11, 'haval': 0.12  # Китайские набирают популярность
+            'geely': 0.12, 'chery': 0.11, 'haval': 0.12,  # Китайские набирают популярность
+            'exeed': 0.10, 'tank': 0.10, 'omoda': 0.09, 'jaecoo': 0.09,
+            'lixiang': 0.08, 'zeekr': 0.08, 'voyah': 0.08, 'hongqi': 0.07
         }
         
         if brand in high_liquidity_brands:
