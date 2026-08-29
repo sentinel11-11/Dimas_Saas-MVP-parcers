@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Car Parser 2.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --dark-bg: #1a1a2e;
+            --card-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        body {
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.98) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .hero-section {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 3rem;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .search-card {
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 2.5rem;
+            border: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+
+        .form-control, .form-select {
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            padding: 0.875rem 1rem;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.15);
+        }
+
+        .btn-search {
+            background: var(--primary-gradient);
+            border: none;
+            padding: 1rem 2.5rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .btn-search:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .feature-box {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            height: 100%;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .feature-box:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .feature-icon {
+            font-size: 3.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .brand-badge {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 0.6rem 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            font-weight: 500;
+            display: inline-block;
+            margin: 0.25rem;
+        }
+
+        .brand-badge:hover {
+            background: #667eea;
+            color: white;
+            transform: scale(1.08);
+        }
+
+        .source-checkbox .btn-check:checked + .btn-outline-primary {
+            background: var(--primary-gradient);
+            border-color: #667eea;
+            color: white;
+        }
+
+        footer {
+            background: rgba(26, 26, 46, 0.95);
+            color: rgba(255,255,255,0.8);
+            padding: 2rem 0;
+            margin-top: 4rem;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner-modern {
+            width: 70px;
+            height: 70px;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-top: 1.5rem;
+        }
+
+        .loading-steps {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+        .delay-3 { animation-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="text-center">
+            <div class="spinner-modern"></div>
+            <div class="loading-text">Поиск лучших предложений...</div>
+            <div class="loading-steps" id="loadingSteps">Анализируем площадки</div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="bi bi-car-front-fill me-2" style="color: #667eea;"></i>
+                <span style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Car Parser 2.0</span>
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/"><i class="bi bi-house me-1"></i>Главная</a>
+                <a class="nav-link" href="#features"><i class="bi bi-star me-1"></i>Преимущества</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="container">
+        <div class="hero-section">
+            <div class="text-center mb-5">
+                <h1 class="display-4 fw-bold mb-3" style="background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    {{ title }}
+                </h1>
+                <p class="lead text-muted mb-4">
+                    Интеллектуальный поиск автомобилей с Drom, Avito и Auto.ru<br>
+                    с анализом рыночной стоимости и вероятности выгодной сделки
+                </p>
+            </div>
+
+            <!-- Search Form -->
+            <div class="search-card">
+                <form action="/search" method="POST" id="searchForm">
+                    <h5 class="mb-4 fw-semibold">
+                        <i class="bi bi-sliders me-2"></i>Параметры поиска
+                    </h5>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label for="brand" class="form-label fw-medium">Марка *</label>
+                            <select class="form-select" id="brand" name="brand" required>
+                                <option value="">Выберите марку...</option>
+                                {% for brand in brands %}
+                                <option value="{{ brand }}">{{ brand.title() }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="model" class="form-label fw-medium">Модель</label>
+                            <input type="text" class="form-control" id="model" name="model"
+                                   placeholder="Например: X5, C-Class, Q7">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium d-block">Источники</label>
+                            <div class="btn-group source-checkbox" role="group">
+                                <input type="checkbox" class="btn-check" id="drom" name="sources" value="drom" checked>
+                                <label class="btn btn-outline-primary" for="drom">Drom</label>
+
+                                <input type="checkbox" class="btn-check" id="avito" name="sources" value="avito" checked>
+                                <label class="btn btn-outline-primary" for="avito">Avito</label>
+
+                                <input type="checkbox" class="btn-check" id="autoru" name="sources" value="autoru" checked>
+                                <label class="btn btn-outline-primary" for="autoru">Auto.ru</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h5 class="mb-4 fw-semibold">
+                        <i class="bi bi-funnel me-2"></i>Фильтры
+                    </h5>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3">
+                            <label for="year_min" class="form-label">Год от</label>
+                            <input type="number" class="form-control" id="year_min" name="year_min"
+                                   value="2015" min="1990" max="2026">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="year_max" class="form-label">Год до</label>
+                            <input type="number" class="form-control" id="year_max" name="year_max"
+                                   value="2026" min="1990" max="2026">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="price_min" class="form-label">Цена от (₽)</label>
+                            <input type="number" class="form-control" id="price_min" name="price_min"
+                                   value="0" min="0" step="100000">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="price_max" class="form-label">Цена до (₽)</label>
+                            <input type="number" class="form-control" id="price_max" name="price_max"
+                                   value="50000000" min="0" step="500000">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="mileage_min" class="form-label">Пробег от (км)</label>
+                            <input type="number" class="form-control" id="mileage_min" name="mileage_min"
+                                   value="0" min="0" step="1000">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="mileage_max" class="form-label">Пробег до (км)</label>
+                            <input type="number" class="form-control" id="mileage_max" name="mileage_max"
+                                   value="300000" min="0" step="1000">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="owners_min" class="form-label">Владельцев от</label>
+                            <input type="number" class="form-control" id="owners_min" name="owners_min"
+                                   value="0" min="0" max="10">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="owners_max" class="form-label">Владельцев до</label>
+                            <input type="number" class="form-control" id="owners_max" name="owners_max"
+                                   value="5" min="0" max="10">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="transmission" class="form-label">Коробка</label>
+                            <select class="form-select" id="transmission" name="transmission">
+                                <option value="">Любая</option>
+                                <option value="automatic">Автомат</option>
+                                <option value="manual">Механика</option>
+                                <option value="robot">Робот</option>
+                                <option value="variator">Вариатор</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="fuel" class="form-label">Топливо</label>
+                            <select class="form-select" id="fuel" name="fuel">
+                                <option value="">Любое</option>
+                                <option value="petrol">Бензин</option>
+                                <option value="diesel">Дизель</option>
+                                <option value="electric">Электро</option>
+                                <option value="hybrid">Гибрид</option>
+                                <option value="gas">Газ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="drive" class="form-label">Привод</label>
+                            <select class="form-select" id="drive" name="drive">
+                                <option value="">Любой</option>
+                                <option value="front">Передний</option>
+                                <option value="rear">Задний</option>
+                                <option value="four_wheel">Полный</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="body_type" class="form-label">Кузов</label>
+                            <select class="form-select" id="body_type" name="body_type">
+                                <option value="">Любой</option>
+                                <option value="sedan">Седан</option>
+                                <option value="suv">Внедорожник</option>
+                                <option value="crossover">Кроссовер</option>
+                                <option value="hatchback">Хэтчбек</option>
+                                <option value="wagon">Универсал</option>
+                                <option value="coupe">Купе</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="region" class="form-label">Регион</label>
+                            <input type="text" class="form-control" id="region" name="region"
+                                   placeholder="Например: Москва">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="limit" class="form-label">Результатов</label>
+                            <input type="number" class="form-control" id="limit" name="limit"
+                                   value="20" min="1" max="100">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-search w-100">
+                                <i class="bi bi-search me-2"></i>Найти автомобили
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Quick Brand Selection -->
+                <div class="text-center mt-4">
+                    <span class="text-muted small me-2">Популярные марки:</span>
+                    {% for brand in brands[:10] %}
+                    <span class="brand-badge" onclick="selectBrand('{{ brand }}')">{{ brand.title() }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="row g-4 mt-5" id="features">
+            <div class="col-md-4 animate-fade-in delay-1">
+                <div class="feature-box">
+                    <i class="bi bi-speedometer2 feature-icon"></i>
+                    <h4 class="fw-bold">Быстрый поиск</h4>
+                    <p class="text-muted">Одновременный парсинг трех крупнейших площадок за считанные минуты</p>
+                </div>
+            </div>
+
+            <div class="col-md-4 animate-fade-in delay-2">
+                <div class="feature-box">
+                    <i class="bi bi-graph-up-arrow feature-icon"></i>
+                    <h4 class="fw-bold">Умный скоринг</h4>
+                    <p class="text-muted">Анализ рыночной стоимости и расчет вероятности выгодной сделки</p>
+                </div>
+            </div>
+
+            <div class="col-md-4 animate-fade-in delay-3">
+                <div class="feature-box">
+                    <i class="bi bi-shield-check feature-icon"></i>
+                    <h4 class="fw-bold">Проверенные данные</h4>
+                    <p class="text-muted">Только актуальные объявления с детальной информацией</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p class="mb-2">&copy; 2024 Car Parser 2.0. Все права защищены.</p>
+            <p class="small text-muted">Современный инструмент для анализа автомобильного рынка</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const popularModels = {{ models_json | safe }};
+
+        function selectBrand(brand) {
+            document.getElementById('brand').value = brand;
+            document.getElementById('model').focus();
+            document.querySelector('.search-card').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Update model suggestions based on brand
+        document.getElementById('brand').addEventListener('change', function() {
+            const brand = this.value;
+            const modelInput = document.getElementById('model');
+            
+            if (popularModels[brand] && popularModels[brand].length > 0) {
+                modelInput.placeholder = `Например: ${popularModels[brand][0]}`;
+            } else {
+                modelInput.placeholder = 'Например: X5, C-Class, Q7';
+            }
+        });
+
+        // Show loading overlay on form submit
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            const overlay = document.getElementById('loadingOverlay');
+            const steps = document.getElementById('loadingSteps');
+            
+            overlay.classList.add('active');
+            
+            const messages = [
+                'Подключение к площадкам...',
+                'Парсинг Drom...',
+                'Проверка Avito...',
+                'Анализ Auto.ru...',
+                'Расчет рыночных цен...',
+                'Оценка ликвидности...',
+                'Формирование результатов...'
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < messages.length) {
+                    steps.textContent = messages[i];
+                    i++;
+                }
+            }, 800);
+            
+            // Prevent actual form submission for AJAX (optional)
+            // e.preventDefault();
+        });
+
+        // Validate price range
+        document.getElementById('price_max').addEventListener('blur', function() {
+            const minVal = parseInt(document.getElementById('price_min').value) || 0;
+            const maxVal = parseInt(this.value) || 0;
+            if (maxVal < minVal) {
+                this.value = minVal;
+            }
+        });
+    </script>
+</body>
+</html>

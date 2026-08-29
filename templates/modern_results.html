@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результаты - {{ brand }} {{ model }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+        }
+
+        body {
+            background: var(--primary-gradient);
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.98) !important;
+            backdrop-filter: blur(10px);
+        }
+
+        .results-container {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 24px;
+            padding: 2.5rem;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+
+        .result-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .car-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border-left: 6px solid transparent;
+        }
+
+        .car-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+        }
+
+        .car-card.excellent { border-left-color: var(--success-color); }
+        .car-card.good { border-left-color: var(--info-color); }
+        .car-card.average { border-left-color: var(--warning-color); }
+        .car-card.poor { border-left-color: var(--danger-color); }
+
+        .car-image {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            background: #f8f9fa;
+        }
+
+        .price-tag {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+
+        .probability-badge {
+            font-size: 1.1rem;
+            padding: 0.5rem 1.25rem;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+
+        .platform-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.4rem 0.9rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .platform-drom { background: #0ea5e9; color: white; }
+        .platform-avito { background: #00aaff; color: white; }
+        .platform-autoru { background: #ffcc00; color: #1a1a2e; }
+
+        .market-info {
+            background: #f8f9fa;
+            padding: 1.25rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 0;
+        }
+
+        .detail-icon {
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .btn-view {
+            background: var(--primary-gradient);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .btn-view:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .score-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .score-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .filters-summary {
+            background: #f8f9fa;
+            padding: 1.25rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-badge {
+            background: #e9ecef;
+            color: #495057;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 0.25rem;
+            display: inline-block;
+        }
+
+        footer {
+            background: rgba(26, 26, 46, 0.95);
+            color: rgba(255,255,255,0.8);
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+
+        /* Animation */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .car-card {
+            animation: slideIn 0.5s ease forwards;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="bi bi-car-front-fill me-2" style="color: #667eea;"></i>
+                Car Parser 2.0
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/"><i class="bi bi-house me-1"></i>Главная</a>
+                <a class="nav-link" href="#"><i class="bi bi-arrow-counterclockwise me-1"></i>Новый поиск</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Results Container -->
+    <div class="container">
+        <div class="results-container">
+            <!-- Header -->
+            <div class="result-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="mb-2">
+                            <i class="bi bi-car-front me-2"></i>
+                            {{ brand }} {{ model }}
+                        </h2>
+                        <p class="mb-0 opacity-75">
+                            Найдено: <strong>{{ total }}</strong> объявлений 
+                            {% if search_time %} за {{ "%.1f"|format(search_time) }} сек {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <a href="/" class="btn btn-light btn-view">
+                            <i class="bi bi-search me-2"></i>Новый поиск
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Errors -->
+            {% if errors %}
+            <div class="alert alert-danger border-0 shadow-sm">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Внимание:</strong> При парсинге возникли ошибки:
+                <ul class="mb-0 mt-2">
+                    {% for error in errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Results -->
+            {% if results %}
+            <div class="row">
+                {% for car in results %}
+                <div class="col-12">
+                    <div class="car-card {% if car.probability and car.probability >= 0.8 %}excellent{% elif car.probability and car.probability >= 0.6 %}good{% elif car.probability and car.probability >= 0.4 %}average{% else %}poor{% endif %}"
+                         style="position: relative; animation-delay: {{ loop.index * 0.05 }}s;">
+
+                        <!-- Platform Badge -->
+                        <span class="platform-badge platform-{{ car.platform }}">
+                            <i class="bi bi-{% if car.platform == 'drom' %}globe{% elif car.platform == 'avito' %}chat-left-text{% else %}car-front{% endif %} me-1"></i>
+                            {{ {'drom': 'Drom', 'avito': 'Avito', 'autoru': 'Auto.ru'}[car.platform] }}
+                        </span>
+
+                        <div class="row">
+                            <div class="col-md-8">
+                                <img src="{{ car.image_url }}" alt="{{ car.title }}" class="car-image" 
+                                     onerror="this.src='https://via.placeholder.com/400x220?text=No+Image'">
+                                
+                                <h4 class="mb-2">{{ car.title }}</h4>
+                                <div class="price-tag mb-3">{{ "{:,}".format(car.price).replace(',', ' ') }} ₽</div>
+
+                                <div class="row g-2">
+                                    {% if car.year %}
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="detail-item">
+                                            <i class="bi bi-calendar3 detail-icon"></i>
+                                            <span>{{ car.year }} г.</span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if car.mileage %}
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="detail-item">
+                                            <i class="bi bi-speedometer2 detail-icon"></i>
+                                            <span>{{ "{:,}".format(car.mileage).replace(',', ' ') }} км</span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if car.owners %}
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="detail-item">
+                                            <i class="bi bi-people detail-icon"></i>
+                                            <span>{{ car.owners }} вл.</span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if car.region %}
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="detail-item">
+                                            <i class="bi bi-geo-alt detail-icon"></i>
+                                            <span>{{ car.region }}</span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if car.transmission %}
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="detail-item">
+                                            <i class="bi bi-gear detail-icon"></i>
+                                            <span>{{ {'automatic': 'АКПП', 'manual': 'МКПП', 'robot': 'Робот', 'variator': 'Вариатор'}[car.transmission] }}</span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if car.fuel %}
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="detail-item">
+                                            <i class="bi bi-fuel-pump detail-icon"></i>
+                                            <span>{{ {'petrol': 'Бензин', 'diesel': 'Дизель', 'electric': 'Электро', 'hybrid': 'Гибрид', 'gas': 'Газ'}[car.fuel] }}</span>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Market Info -->
+                                {% if car.market_price %}
+                                <div class="market-info">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Средняя рыночная цена:</small>
+                                            <div class="fw-bold fs-5">{{ "{:,}".format(car.market_price).replace(',', ' ') }} ₽</div>
+                                            {% if car.market_deviation %}
+                                            <small class="{% if car.market_deviation < 0 %}text-success{% else %}text-danger{% endif %}">
+                                                Отклонение: {{ "%.1f"|format(car.market_deviation * 100) }}%
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Вероятность сделки:</small>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="probability-badge {{ car.badge_class }} text-white">
+                                                    {{ "%.0f"|format((car.probability or 0) * 100) }}%
+                                                </span>
+                                            </div>
+                                            {% if car.liquidity %}
+                                            <div class="mt-2">
+                                                <small class="text-muted">Ликвидность: {{ "%.0f"|format((car.liquidity or 0) * 100) }}%</small>
+                                                <div class="score-bar">
+                                                    <div class="score-fill {{ car.badge_class }}" 
+                                                         style="width: {{ (car.liquidity or 0) * 100 }}%; background: currentColor;"></div>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="col-md-4 d-flex flex-column justify-content-center align-items-center">
+                                <a href="{{ car.url }}" target="_blank" class="btn btn-view btn-lg w-100 mb-3">
+                                    <i class="bi bi-box-arrow-up-right me-2"></i>Перейти к объявлению
+                                </a>
+                                {% if car.probability %}
+                                <div class="text-center w-100">
+                                    <small class="text-muted">Рейтинг сделки</small>
+                                    <div class="score-bar">
+                                        <div class="score-fill {{ car.badge_class }}" 
+                                             style="width: {{ (car.probability or 0) * 100 }}%; background: currentColor;"></div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <h3 class="mt-3">Ничего не найдено</h3>
+                <p class="text-muted">Попробуйте изменить параметры поиска</p>
+                <a href="/" class="btn btn-view mt-3">
+                    <i class="bi bi-arrow-left me-2"></i>Вернуться к поиску
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p class="mb-2">&copy; 2024 Car Parser 2.0. Все права защищены.</p>
+            <p class="small text-muted">Интеллектуальный анализ автомобильных объявлений</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Animate cards on load
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.car-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                }, index * 50);
+            });
+        });
+    </script>
+</body>
+</html>
