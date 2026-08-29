@@ -1,0 +1,190 @@
+﻿===== AVITO PARSER =====
+from app.parsers.base_parser import BaseParser
+from app.parsers.avito.core.parser_engine import AvitoParserEngine
+from app.parsers.avito.normalizer import normalize_avito_item
+class AvitoParser(BaseParser):
+    def __init__(self): self.engine=AvitoParserEngine()
+    def search(self,filters): return [normalize_avito_item(x,filters.get("brand",""),filters.get("model","")) for x in self.engine.search(filters)]
+    def parse_card(self,card): return self.engine.parse_card(card)
+
+
+===== PARSER ENGINE =====
+import re
+from pathlib import Path
+from urllib.parse import urljoin,urlencode
+from bs4 import BeautifulSoup
+from loguru import logger
+from app.parsers.avito.config import config
+from app.parsers.avito.http.client import AvitoHttpClient
+from app.parsers.avito.models import AvitoListing
+from app.parsers.avito.normalizer import digits
+from app.parsers.avito.selectors import CARD,LINK,PRICE,TITLE
+class AvitoParserEngine:
+    def __init__(self,client=None): self.client=client or AvitoHttpClient(config.request_timeout)
+    def build_url(self,filters,page=1):
+        brand=str(filters.get("brand") or "").strip().lower(); model=str(filters.get("model") or "").strip().lower(); region=str(filters.get("region") or filters.get("target_region") or "rossiya").strip().lower()
+        path=f"/{region}/avtomobili/" + ((brand+"/"+model+"/") if brand and model else (brand+"/") if brand else "")
+        return "https://www.avito.ru"+path+("?"+urlencode({"p":page}) if page>1 else "")
+    def search(self,filters):
+        limit=min(int(filters.get("limit") or config.search_limit),1000); results=[]; seen=set(); max_pages=max(1,min(config.max_pages,(limit+9)//10))
+        for page in range(1,max_pages+1):
+            if len(results)>=limit: break
+            url=self.build_url(filters,page); logger.info("AVITO SEARCH: {}",url); response=self.client.get(url)
+            if not response or response.status_code!=200: continue
+            if config.save_debug_html:
+                p=Path("data")/f"avito_debug_{page}.html"; p.parent.mkdir(parents=True,exist_ok=True); p.write_text(response.text,encoding="utf-8")
+            soup=BeautifulSoup(response.text,"lxml"); cards=self._find_cards(soup); logger.info("AVITO CARDS page={} count={}",page,len(cards))
+            if not cards: break
+            for card in cards:
+                item=self.parse_card(card,filters)
+                if not item or not item.get("url"): continue
+                key=item.get("external_id") or item["url"]
+                if key in seen: continue
+                seen.add(key); results.append(item)
+                if len(results)>=limit: break
+        logger.info("AVITO FOUND: {}",len(results)); return results
+    def _find_cards(self,soup):
+        for selector in CARD:
+            cards=soup.select(selector)
+            if cards:return cards
+        return []
+    @staticmethod
+    def _first_text(node,selectors):
+        for selector in selectors:
+            found=node.select_one(selector)
+            if found:return found.get_text(" ",strip=True)
+        return ""
+    @staticmethod
+    def _first_href(node,selectors):
+        for selector in selectors:
+            found=node.select_one(selector)
+            if found and found.get("href"):return urljoin("https://www.avito.ru",found["href"])
+        return ""
+    def parse_card(self,card,filters=None):
+        filters=filters or {}; title=self._first_text(card,TITLE); url=self._first_href(card,LINK)
+        if not title or not url:return None
+        text=card.get_text(" ",strip=True); price=digits(self._first_text(card,PRICE)); ym=re.search(r"\b(19\d{2}|20\d{2})\b",title+" "+text); mm=re.search(r"([\d\s]{3,})\s*РєРј",text,re.I); im=re.search(r"_(\d{6,})$",url.rstrip("/").split("/")[-1])
+        return AvitoListing(url=url,title=title,price=price,year=int(ym.group(1)) if ym else None,mileage=digits(mm.group(1)) if mm else None,brand=filters.get("brand"),model=filters.get("model"),region=filters.get("region") or filters.get("target_region"),external_id=im.group(1) if im else None).to_dict()
+
+
+===== HTTP CLIENT =====
+import random,time
+from dataclasses import dataclass
+import requests
+from loguru import logger
+@dataclass
+class AvitoHttpResponse:
+    status_code:int
+    text:str
+    url:str
+class AvitoHttpClient:
+    def __init__(self,timeout=20):
+        self.timeout=timeout; self.session=requests.Session(); self.session.headers.update({"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/151.0 Safari/537.36","Accept-Language":"ru-RU,ru;q=0.9,en;q=0.8","Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"})
+    def get(self,url,params=None,retries=3):
+        for attempt in range(retries):
+            try:
+                if attempt: time.sleep(min(8,2**attempt+random.random()))
+                r=self.session.get(url,params=params,timeout=self.timeout); logger.info("AVITO HTTP {}: {}",r.status_code,r.url)
+                if r.status_code in (403,429,439): logger.warning("AVITO BLOCK/RATE LIMIT {}",r.status_code); continue
+                if r.status_code>=500: continue
+                return AvitoHttpResponse(r.status_code,r.text,r.url)
+            except requests.RequestException as e: logger.warning("AVITO HTTP ERROR: {}",e)
+        return None
+
+
+===== NORMALIZER =====
+import re
+from urllib.parse import urlparse
+def digits(value):
+    raw = re.sub(r"\D", "", value or "")
+    return int(raw) if raw else 0
+def normalize_avito_item(item, brand="", model=""):
+    title = str(item.get("title") or "Unknown").strip()
+    year = item.get("year")
+    if year is None:
+        m = re.search(r"\b(19\d{2}|20\d{2})\b", title)
+        year = int(m.group(1)) if m else 0
+    region = item.get("region") or ""
+    if not region:
+        parts=[p for p in urlparse(item.get("url","")).path.split("/") if p]
+        region=parts[0] if parts else ""
+    return {**item,"title":title,"brand":item.get("brand") or brand.lower(),"model":item.get("model") or model.lower(),"price":int(item.get("price") or 0),"year":int(year or 0),"mileage":int(item.get("mileage") or 0),"region":region,"data_confidence":0.65,"source":"avito","platform":"avito"}
+
+
+===== CONFIG =====
+import os
+class AvitoConfig:
+    base_url = "https://www.avito.ru"
+    search_limit = int(os.getenv("AVITO_SEARCH_LIMIT", "20"))
+    max_pages = int(os.getenv("AVITO_MAX_PAGES", "3"))
+    request_timeout = int(os.getenv("AVITO_REQUEST_TIMEOUT", "20"))
+    save_debug_html = os.getenv("AVITO_DEBUG_HTML", "true").lower() == "true"
+    use_spfa_converter = os.getenv("AVITO_USE_SPFA_CONVERTER", "false").lower() == "true"
+config = AvitoConfig()
+
+
+===== SELECTORS =====
+CARD=["div[data-marker='item']","div[data-marker='item-snippet']"]
+TITLE=["h3","[itemprop='name']","[data-marker='item-title']"]
+PRICE=["[data-marker='item-price']","[itemprop='price']"]
+LINK=["a[data-marker='item-title']","a[href*='/avtomobili/']","a[href]"]
+
+
+===== MODELS =====
+from dataclasses import dataclass, field
+from typing import Optional
+@dataclass
+class AvitoListing:
+    url: str
+    title: str
+    price: int = 0
+    year: Optional[int] = None
+    mileage: Optional[int] = None
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    region: Optional[str] = None
+    seller_type: Optional[str] = None
+    description: Optional[str] = None
+    external_id: Optional[str] = None
+    photos: list[str] = field(default_factory=list)
+    source: str = "avito"
+    def to_dict(self) -> dict:
+        return self.__dict__.copy()
+
+
+===== AVITO TESTS =====
+from bs4 import BeautifulSoup
+
+from app.parsers.avito.avito_parser import AvitoParser
+from app.parsers.avito.core.parser_engine import AvitoParserEngine
+
+
+def test_avito_url():
+    url = AvitoParserEngine().build_url(
+        {"brand": "bmw", "model": "x5", "region": "moskva"}, 2
+    )
+    assert "/moskva/avtomobili/bmw/x5/" in url
+    assert "p=2" in url
+
+
+def test_avito_adapter():
+    assert AvitoParser().engine is not None
+
+
+def test_avito_card_normalization():
+    html = '''
+    <div data-marker="item">
+      <h3>BMW X5, 2018</h3>
+      <div data-marker="item-price">3 950 000 в‚Ѕ</div>
+      <div>85 000 РєРј</div>
+      <a data-marker="item-title" href="/moskva/avtomobili/bmw/x5/123456789">BMW X5</a>
+    </div>
+    '''
+    card = BeautifulSoup(html, "lxml").select_one("div[data-marker='item']")
+    item = AvitoParser().parse_card(card)
+    assert item["title"] == "BMW X5, 2018"
+    assert item["price"] == 3950000
+    assert item["year"] == 2018
+    assert item["mileage"] == 85000
+    assert item["url"].endswith("123456789")
+
