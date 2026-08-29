@@ -82,7 +82,11 @@ class AutoRuParser(BaseParser):
             browser_args = AutoRuConfig.get_browser_args(self.headless)
             
             if self.current_proxy:
-                browser_args["proxy"] = {"server": self.current_proxy}
+                # Playwright требует формат 'http://user:pass@ip:port'
+                proxy_server = self.current_proxy
+                if '://' not in proxy_server:
+                    proxy_server = f'http://{proxy_server}'
+                browser_args["proxy"] = {"server": proxy_server}
             
             self.browser = await playwright.chromium.launch(**browser_args)
             

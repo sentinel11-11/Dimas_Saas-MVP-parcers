@@ -178,7 +178,7 @@ def parse_cars(brand, model, sources, limit, year_min, year_max, mileage_min, mi
                 continue
             if car.mileage and (car.mileage < mileage_min or car.mileage > mileage_max):
                 continue
-            if car.owners_count and (car.owners_count < owners_min or car.owners_count > owners_max):
+            if car.owners and (car.owners < owners_min or car.owners > owners_max):
                 continue
             if car.price and (car.price < price_min or car.price > price_max):
                 continue
@@ -425,7 +425,7 @@ def main():
                 "Цена": f"{car.price:,} ₽" if car.price else "N/A",
                 "Год": car.year,
                 "Пробег": f"{car.mileage:,} км" if car.mileage else "N/A",
-                "Владельцы": car.owners_count,
+                "Владельцы": car.owners if car.owners else "Не указано",
                 "Регион": car.region,
                 "Рыночная цена": f"{car.market_price:,} ₽" if car.market_price else "N/A",
                 "Отклонение": f"{car.market_deviation:.1f}%" if car.market_deviation else "N/A",
@@ -455,7 +455,7 @@ def main():
                         st.markdown(f"**{i}. {car.title}**")
                         st.write(f"💰 Цена: **{car.price:,} ₽**")
                         st.write(f"📅 Год: {car.year} | 🛣️ Пробег: {car.mileage:,} км" if car.mileage else "")
-                        st.write(f"👥 Владельцев: {car.owners_count}" if car.owners_count else "")
+                        st.write(f"👥 Владельцев: {car.owners}" if car.owners else "")
                         st.write(f"📍 {car.region}" if car.region else "")
                     with col2:
                         st.metric("Рыночная цена", f"{car.market_price:,} ₽" if car.market_price else "N/A")
