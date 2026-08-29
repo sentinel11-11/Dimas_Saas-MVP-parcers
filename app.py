@@ -243,14 +243,20 @@ def main():
     with st.sidebar:
         st.header("🔍 Параметры поиска")
         
-        # Выбор марки и модели
-        brand = st.selectbox("Марка", ALL_BRANDS, index=ALL_BRANDS.index("audi") if "audi" in ALL_BRANDS else 0)
+        # Выбор марки и модели (без жесткого значения по умолчанию)
+        brand_index = 0
+        if config.BRAND and config.BRAND.lower() in ALL_BRANDS:
+            brand_index = ALL_BRANDS.index(config.BRAND.lower())
+        brand = st.selectbox("Марка", ALL_BRANDS, index=brand_index)
         
-        # Динамический список моделей
+        # Динамический список моделей + возможность ввода своей модели
         models_list = POPULAR_MODELS.get(brand, [])
-        if not models_list:
-            models_list = [""]
-        model = st.selectbox("Модель", models_list if models_list else [""], index=0)
+        model_input = st.text_input("Модель", placeholder="Введите модель или выберите из списка", value="")
+        if not model_input and models_list:
+            selected_model = st.selectbox("Или выберите из популярных", [""] + models_list, index=0)
+            model = selected_model if selected_model else ""
+        else:
+            model = model_input.strip().lower() if model_input else ""
         
         # Источники
         sources = st.multiselect(

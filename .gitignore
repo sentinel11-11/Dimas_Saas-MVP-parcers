@@ -1,45 +1,5 @@
-```
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Examples 1:
 
-# Environment
-.env
-.env.local
-.env.*
+# Example 2 (Project with artifacts):
 
-# Logs
-*.log
-
-# Temporary files
-*.tmp
-*.swp
-*.swo
-
-# Coverage
-.coverage
-coverage/
-htmlcov/
-
-# Dependencies
-.venv/
-venv/
-node_modules/
-
-# Build artifacts
-dist/
-build/
-target/
-.mypy_cache/
-.pytest_cache/
-
-# Editors
-.vscode/
-.idea/
-
-# System
-.DS_Store
-Thumbs.db
-```
+# Final reminder: Output ONLY the .gitignore content. If nothing should be ignored, output NOTHING.
