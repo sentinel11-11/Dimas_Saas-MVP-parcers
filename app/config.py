@@ -5,12 +5,12 @@ class Config:
 
     BRAND = os.getenv(
         "BRAND",
-        "bmw"
+        "audi"
     )
 
     MODEL = os.getenv(
         "MODEL",
-        "x5"
+        "q3"
     )
     
     # Параметры поиска (для MVP с максимальным функционалом)

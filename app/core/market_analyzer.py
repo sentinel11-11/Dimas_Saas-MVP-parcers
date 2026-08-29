@@ -224,28 +224,62 @@ class MarketAnalyzer:
             score += 0.05  # Региональный центр
         
         # === Фактор 6: Ликвидность марки (макс +0.20) ===
+        # Динамическая система оценки ликвидности для ЛЮБОЙ марки
         brand = (car.brand or "").lower()
         
-        # Высоколиквидные марки (всегда в спросе)
+        # Высоколиквидные марки (всегда в спросе) - расширенный список
         high_liquidity_brands = {
-            'toyota': 0.20, 'lexus': 0.20,
-            'honda': 0.18, 'mazda': 0.16,
-            'kia': 0.17, 'hyundai': 0.16,
-            'volkswagen': 0.15, 'skoda': 0.15,
+            # Японские премиум и масс-маркет
+            'toyota': 0.20, 'lexus': 0.20, 'honda': 0.18, 'mazda': 0.16,
+            'nissan': 0.12, 'infiniti': 0.08, 'acura': 0.07, 'mitsubishi': 0.11,
+            'subaru': 0.13, 'suzuki': 0.10, 'isuzu': 0.06,
+            
+            # Корейские
+            'kia': 0.17, 'hyundai': 0.16, 'genesis': 0.12,
+            
+            # Немецкие премиум и масс-маркет
             'bmw': 0.14, 'mercedes': 0.14, 'audi': 0.13,
-            'nissan': 0.12, 'renault': 0.10,
-            'lada': 0.15,  # В России всегда ликвидна
-            'geely': 0.12, 'chery': 0.11, 'haval': 0.12,  # Китайские набирают популярность
-            'exeed': 0.10, 'tank': 0.10, 'omoda': 0.09, 'jaecoo': 0.09,
-            'lixiang': 0.08, 'zeekr': 0.08, 'voyah': 0.08, 'hongqi': 0.07
+            'volkswagen': 0.15, 'skoda': 0.15, 'porsche': 0.11,
+            'opel': 0.09,
+            
+            # Китайские (набирают популярность)
+            'geely': 0.12, 'chery': 0.11, 'haval': 0.12, 'exeed': 0.10,
+            'tank': 0.10, 'omoda': 0.09, 'jaecoo': 0.09, 'lixiang': 0.08,
+            'zeekr': 0.08, 'voyah': 0.08, 'hongqi': 0.07, 'byd': 0.09,
+            'changan': 0.10, 'jac': 0.07, 'faaw': 0.06, 'dongfeng': 0.07,
+            'gac': 0.08, 'greatwall': 0.09, 'wey': 0.08, 'polestar': 0.07,
+            
+            # Европейские
+            'volvo': 0.13, 'land rover': 0.11, 'range rover': 0.12,
+            'jaguar': 0.09, 'mini': 0.10, 'fiat': 0.07, 'alfa romeo': 0.06,
+            'peugeot': 0.09, 'citroen': 0.08, 'renault': 0.10,
+            'seat': 0.08, 'ford': 0.10, 'chevrolet': 0.09, 'cadillac': 0.08,
+            
+            # Российские
+            'lada': 0.15, 'ua': 0.08, 'gaz': 0.06,
+            
+            # Американские
+            'ford': 0.10, 'chevrolet': 0.09, 'cadillac': 0.08,
+            'jeep': 0.08, 'dodge': 0.07, 'chrysler': 0.06,
+            'tesla': 0.14, 'lincoln': 0.07, 'buick': 0.06,
+            
+            # Другие
+            'daewoo': 0.08, 'ssangyong': 0.07, 'ravon': 0.06,
+            'datsun': 0.07, 'smart': 0.06, 'bentley': 0.05,
+            'rolls-royce': 0.04, 'maserati': 0.05, 'ferrari': 0.04,
+            'lamborghini': 0.04, 'mclaren': 0.04, 'aston martin': 0.04
         }
         
         if brand in high_liquidity_brands:
             score += high_liquidity_brands[brand]
-        elif brand in ['ford', 'chevrolet', 'opel', 'peugeot', 'citroen']:
-            score += 0.08  # Среднеликвидные
-        elif brand in ['infiniti', 'acura', 'jeep', 'dodge']:
-            score += 0.05  # Низколиквидные в РФ
+        else:
+            # Для ЛЮБОЙ другой марки - базовая ликвидность 0.05
+            # Это позволяет работать с неизвестными/редкими марками
+            score += 0.05
+            
+            # Бонус за длину названия (косвенный признак известности)
+            if len(brand) > 4:
+                score += 0.02
         
         # === Фактор 7: Тип кузова (макс +0.10) ===
         body_type = (car.body_type or "").lower()

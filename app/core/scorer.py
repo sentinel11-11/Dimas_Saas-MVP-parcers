@@ -158,11 +158,61 @@ class CarScorer:
                 score += 0   # Передний привод стандарт
         
         # === Фактор 9: Ликвидность марки/модели (макс +10) ===
-        # Здесь можно добавить базу данных ликвидности марок
+        # Расширенная система оценки ликвидности для ЛЮБОЙ марки
         brand = car.brand if hasattr(car, 'brand') else None
-        high_liquidity_brands = ['toyota', 'honda', 'lexus', 'bmw', 'mercedes', 'audi', 'kia', 'hyundai']
-        if brand and brand.lower() in high_liquidity_brands:
-            score += 10  # Ликвидная марка
+        
+        # Высоколиквидные марки с весами - расширенный список
+        high_liquidity_brands = {
+            # Японские
+            'toyota': 10, 'lexus': 10, 'honda': 9, 'mazda': 8,
+            'nissan': 6, 'infiniti': 4, 'acura': 3, 'mitsubishi': 5,
+            'subaru': 6, 'suzuki': 5, 'isuzu': 3,
+            
+            # Корейские
+            'kia': 8, 'hyundai': 8, 'genesis': 6,
+            
+            # Немецкие
+            'bmw': 7, 'mercedes': 7, 'audi': 6,
+            'volkswagen': 7, 'skoda': 7, 'porsche': 5,
+            'opel': 4,
+            
+            # Китайские
+            'geely': 6, 'chery': 5, 'haval': 6, 'exeed': 5,
+            'tank': 5, 'omoda': 4, 'jaecoo': 4, 'lixiang': 4,
+            'zeekr': 4, 'voyah': 4, 'hongqi': 3, 'byd': 4,
+            'changan': 5, 'jac': 3, 'faaw': 3, 'dongfeng': 3,
+            'gac': 4, 'greatwall': 4, 'wey': 4, 'polestar': 3,
+            
+            # Европейские
+            'volvo': 6, 'land rover': 5, 'range rover': 6,
+            'jaguar': 4, 'mini': 5, 'fiat': 3, 'alfa romeo': 3,
+            'peugeot': 4, 'citroen': 4, 'renault': 5,
+            'seat': 4, 'ford': 5, 'chevrolet': 4, 'cadillac': 4,
+            
+            # Российские
+            'lada': 7, 'uaz': 4, 'gaz': 3,
+            
+            # Американские
+            'tesla': 7, 'jeep': 4, 'dodge': 3, 'chrysler': 3,
+            'lincoln': 3, 'buick': 3,
+            
+            # Другие
+            'daewoo': 4, 'ssangyong': 3, 'ravon': 3,
+            'datsun': 3, 'smart': 3, 'bentley': 2,
+            'rolls-royce': 2, 'maserati': 2, 'ferrari': 2,
+            'lamborghini': 2, 'mclaren': 2, 'aston martin': 2
+        }
+        
+        if brand:
+            brand_lower = brand.lower()
+            if brand_lower in high_liquidity_brands:
+                score += high_liquidity_brands[brand_lower]
+            else:
+                # Для ЛЮБОЙ другой марки - базовые 2 балла
+                score += 2
+                # Бонус за длину названия
+                if len(brand_lower) > 4:
+                    score += 1
         
         # Ограничиваем оценку диапазоном [0, 100]
         final_score = max(0, min(100, score))
