@@ -11,8 +11,10 @@ class AvitoHttpResponse:
     url:str
     
 class AvitoHttpClient:
-    def __init__(self,timeout=30):
+    def __init__(self,timeout=30, proxy_list=None):
         self.timeout=timeout; self.session=requests.Session()
+        self.proxy_list = proxy_list or []
+        self.current_proxy_index = 0
         # Ротация User-Agent для обхода блокировок
         self.user_agents = [
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
@@ -32,6 +34,28 @@ class AvitoHttpClient:
             "Sec-Fetch-Site": "none",
             "Cache-Control": "max-age=0"
         })
+    
+    def _get_next_proxy(self) -> dict:
+        """Получение следующего прокси из списка"""
+        if not self.proxy_list:
+            return {}
+        proxy = self.proxy_list[self.current_proxy_index % len(self.proxy_list)]
+        self.current_proxy_index += 1
+        # Преобразование формата прокси в dict для requests
+        # Поддерживаемые форматы: "user:pass@ip:port", "ip:port", "http://user:pass@ip:port"
+        if "://" in proxy:
+            return {"http": proxy, "https": proxy}
+        else:
+            return {"http": f"http://{proxy}", "https": f"http://{proxy}"}
+    
+    def rotate_proxy(self):
+        """Ротация прокси для следующего запроса"""
+        proxies = self._get_next_proxy()
+        if proxies:
+            self.session.proxies.update(proxies)
+            logger.info(f"AVITO: Rotated proxy to {proxies.get('http', 'N/A')}")
+        else:
+            self.session.proxies.clear()
         
     def get(self,url,params=None,retries=None):
         if retries is None:
@@ -39,6 +63,10 @@ class AvitoHttpClient:
             
         for attempt in range(retries):
             try:
+                # Ротация прокси при каждой попытке (если прокси настроены)
+                if self.proxy_list:
+                    self.rotate_proxy()
+                
                 # Увеличенная задержка перед каждым запросом для обхода rate limit
                 if attempt == 0:
                     delay = random.uniform(5, 10)  # Начальная задержка 5-10 секунд

@@ -176,13 +176,9 @@
                         
                         <div class="col-md-3">
                             <label for="limit" class="form-label">Количество результатов</label>
-                            <select class="form-select" id="limit" name="limit">
-                                <option value="5">5</option>
-                                <option value="10" selected>10</option>
-                                <option value="20">20</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
+                            <input type="number" class="form-control" id="limit" name="limit" 
+                                   value="10" min="1" max="500" placeholder="10">
+                            <small class="text-muted">Введите число от 1 до 500</small>
                         </div>
                         
                         <div class="col-md-9 d-flex align-items-end">
@@ -253,10 +249,21 @@
         
         // Обновление списка моделей при выборе марки
         function updateModelDropdown(brand) {
-            const modelSelect = document.getElementById('model');
+            const modelInput = document.getElementById('model');
             const models = popularModels[brand] || [];
             
             if (models.length > 0) {
+                // Создаем выпадающий список если его нет
+                let modelSelect = document.getElementById('model');
+                if (modelInput.tagName === 'INPUT') {
+                    modelSelect = document.createElement('select');
+                    modelSelect.className = 'form-select';
+                    modelSelect.id = 'model';
+                    modelSelect.name = 'model';
+                    modelSelect.required = true;
+                    modelInput.parentNode.replaceChild(modelSelect, modelInput);
+                }
+                
                 modelSelect.innerHTML = '<option value="">Выберите модель...</option>';
                 models.forEach(model => {
                     const option = document.createElement('option');
@@ -265,29 +272,36 @@
                     modelSelect.appendChild(option);
                 });
             } else {
-                modelSelect.placeholder = 'Введите модель вручную';
+                // Возвращаем input если моделей нет
+                if (modelInput.tagName === 'SELECT') {
+                    const newInput = document.createElement('input');
+                    newInput.type = 'text';
+                    newInput.className = 'form-control';
+                    newInput.id = 'model';
+                    newInput.name = 'model';
+                    newInput.placeholder = 'Например: X5, C-Class, A6';
+                    newInput.required = true;
+                    modelInput.parentNode.replaceChild(newInput, modelInput);
+                }
             }
         }
         
         // Автозаполнение модели при выборе марки
         document.getElementById('brand').addEventListener('change', function() {
             updateModelDropdown(this.value);
-            const modelInput = document.getElementById('model');
-            if (!modelInput.value && this.value) {
-                modelInput.focus();
+            const modelField = document.getElementById('model');
+            if (!modelField.value && this.value) {
+                modelField.focus();
             }
         });
         
-        // Поддержка произвольного количества автомобилей
-        document.getElementById('limit').addEventListener('click', function() {
-            // Можно добавить кастомное значение через prompt
-            if (this.value === 'custom') {
-                const customValue = prompt('Введите количество автомобилей (1-500):', '20');
-                if (customValue && !isNaN(customValue) && customValue > 0 && customValue <= 500) {
-                    this.value = customValue;
-                } else {
-                    this.value = '10';
-                }
+        // Валидация количества результатов
+        document.getElementById('limit').addEventListener('blur', function() {
+            let value = parseInt(this.value);
+            if (isNaN(value) || value < 1) {
+                this.value = 1;
+            } else if (value > 500) {
+                this.value = 500;
             }
         });
     </script>

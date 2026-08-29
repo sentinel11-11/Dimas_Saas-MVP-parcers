@@ -24,13 +24,15 @@ from app.models.car_listing import CarListing
 app = FastAPI(title="Car Parser MVP", description="Парсинг и анализ автомобильных объявлений")
 
 # Подключение статики и шаблонов
-# Список всех марок автомобилей
+# Список всех марок автомобилей (расширенный)
 ALL_BRANDS = [
     "audi", "bmw", "chevrolet", "chrysler", "citroen", "dodge", "fiat", "ford",
     "geely", "genesis", "gmc", "honda", "hyundai", "infiniti", "jaguar", "jeep",
     "kia", "land rover", "lexus", "mazda", "mercedes", "mini", "mitsubishi",
     "nissan", "opel", "peugeot", "porsche", "renault", "skoda", "subaru",
-    "suzuki", "toyota", "volkswagen", "volvo", "lada", "gaz", "uaz"
+    "suzuki", "toyota", "volkswagen", "volvo", "lada", "gaz", "uaz",
+    "chery", "haval", "geely", "exeed", "tank", "omoda", "jaecoo", "kowloon",
+    "faaw", "dongfeng", "foton", "great wall", "lifan", "brilliance"
 ]
 
 # Популярные модели для каждой марки
@@ -133,10 +135,15 @@ async def search_cars(
             logger.error(f"DROM SEARCH ERROR: {e}")
             errors.append(f"Drom поиск: {str(e)}")
     
-    # 2. Парсинг Avito
+    # 2. Парсинг Avito (с поддержкой прокси)
     if "avito" in sources:
         try:
-            avito_parser = AvitoParser()
+            # Прокси передаются через конфигурацию или переменные окружения
+            import os
+            proxy_list_str = os.getenv("AVITO_PROXIES", "")
+            avito_proxy_list = [p.strip() for p in proxy_list_str.split(",") if p.strip()] if proxy_list_str else None
+            
+            avito_parser = AvitoParser(proxy_list=avito_proxy_list)
             avito_ads = avito_parser.search({"brand": brand, "model": model, "limit": limit, "target_region": "rossiya"})
             logger.info(f"AVITO FOUND: {len(avito_ads)}")
             
@@ -155,10 +162,15 @@ async def search_cars(
             logger.error(f"AVITO SEARCH ERROR: {e}")
             errors.append(f"Avito поиск: {str(e)}")
     
-    # 3. Парсинг Auto.ru (используем asyncio.create_task вместо asyncio.run)
+    # 3. Парсинг Auto.ru (с поддержкой прокси)
     if "autoru" in sources:
         try:
-            autoru_parser = AutoRuParser(headless=True)
+            # Прокси передаются через конфигурацию или переменные окружения
+            import os
+            autoru_proxy_list_str = os.getenv("AUTORU_PROXIES", "")
+            autoru_proxy_list = [p.strip() for p in autoru_proxy_list_str.split(",") if p.strip()] if autoru_proxy_list_str else None
+            
+            autoru_parser = AutoRuParser(headless=True, proxy_list=autoru_proxy_list)
             
             # Создаем задачу в текущем event loop
             autoru_task = asyncio.create_task(

@@ -24,6 +24,7 @@ class CarListing(BaseModel):
     liquidity_score: float = 0
     probability_good_deal: float = 0
     data_confidence: float = 0
+    image_url: Optional[str] = None
     model_config = {
         "extra": "allow"
     }

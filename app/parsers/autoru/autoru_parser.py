@@ -37,15 +37,19 @@ class AutoRuParser(BaseParser):
     def __init__(
         self, 
         headless: bool = True, 
-        use_proxy: bool = False, 
+        use_proxy: bool = None,  # По умолчанию None, чтобы использовать конфиг
         proxy_list: List[str] = None,
         max_requests_per_session: int = AutoRuConfig.DEFAULT_MAX_REQUESTS_PER_SESSION,
         base_delay: float = AutoRuConfig.DEFAULT_BASE_DELAY,
         randomize_delay: bool = AutoRuConfig.DEFAULT_RANDOMIZE_DELAY
     ):
         self.headless = headless
-        self.use_proxy = use_proxy
-        self.proxy_manager = ProxyManager(proxy_list or [])
+        # Используем прокси из параметра или из конфигурации
+        if proxy_list is None:
+            proxy_list = AutoRuConfig.PROXY_LIST or []
+        # Если use_proxy не указан явно, включаем его если есть прокси
+        self.use_proxy = use_proxy if use_proxy is not None else bool(proxy_list)
+        self.proxy_manager = ProxyManager(proxy_list)
         self.user_agent_rotator = UserAgentRotator(AutoRuConfig.USER_AGENTS)
         self.current_proxy = None
         

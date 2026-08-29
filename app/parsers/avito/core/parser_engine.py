@@ -11,7 +11,8 @@ from app.parsers.avito.models import AvitoListing
 from app.parsers.avito.normalizer import digits
 from app.parsers.avito.selectors import CARD,LINK,PRICE,TITLE
 class AvitoParserEngine:
-    def __init__(self,client=None): self.client=client or AvitoHttpClient(config.request_timeout)
+    def __init__(self, client=None, proxy_list=None):
+        self.client = client or AvitoHttpClient(config.request_timeout, proxy_list)
     def build_url(self,filters,page=1):
         brand=str(filters.get("brand") or "").strip().lower(); model=str(filters.get("model") or "").strip().lower(); region=str(filters.get("region") or filters.get("target_region") or "rossiya").strip().lower()
         path=f"/{region}/avtomobili/" + ((brand+"/"+model+"/") if brand and model else (brand+"/") if brand else "")

@@ -2,6 +2,7 @@
 Конфигурация парсера Auto.ru
 """
 
+import os
 from typing import List, Dict, Any
 
 
@@ -10,6 +11,9 @@ class AutoRuConfig:
     
     BASE_URL = "https://auto.ru"
     SEARCH_URL = "https://auto.ru/cars/sale/"
+    
+    # Прокси конфигурация (из переменных окружения)
+    PROXY_LIST: List[str] = [p.strip() for p in os.getenv("AUTORU_PROXIES", "").split(",") if p.strip()] if os.getenv("AUTORU_PROXIES") else None
     
     # Расширенный список User-Agent для ротации
     USER_AGENTS: List[str] = [
