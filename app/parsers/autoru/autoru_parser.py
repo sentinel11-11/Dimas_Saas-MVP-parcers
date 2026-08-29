@@ -1,7 +1,14 @@
 """
-Улучшенный парсер для auto.ru на основе vavilovnv/auto-ru-parser
+Парсер для auto.ru на основе vavilovnv/auto-ru-parser
 Использует Playwright для обхода защиты и рендеринга JS.
 Поддерживает proxy rotation, рандомизацию user-agent и умные задержки.
+
+Модульная архитектура:
+- config.py: Конфигурация и константы
+- http/client.py: Менеджеры прокси и User-Agent
+- core/parser_engine.py: Утилиты для задержек, сессий и очистки данных
+- models.py: Pydantic модели данных
+- autoru_parser.py: Основной класс парсера
 """
 
 import asyncio
@@ -12,88 +19,63 @@ from playwright.async_api import async_playwright, Browser, Page, BrowserContext
 
 from app.parsers.base_parser import BaseParser
 from app.models.car_listing import CarListing
+from .config import AutoRuConfig
+from .http.client import ProxyManager, UserAgentRotator
+from .core.parser_engine import DelayManager, SessionManager, DataCleaner
+from .models import AutoRuCardData, AutoRuDetailData
 
 
 class AutoRuParser(BaseParser):
     """
     Production-ready парсер auto.ru с улучшенной защитой от блокировок
+    Использует модульную архитектуру для разделения ответственности
     """
 
-    BASE_URL = "https://auto.ru"
-    SEARCH_URL = "https://auto.ru/cars/sale/"
-
-    # Расширенный список User-Agent для ротации
-    USER_AGENTS = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
-    ]
-
-    # Селекторы для поиска объявлений
-    LISTING_SELECTORS = [
-        'div[class*="ListingItem"]',
-        'a[href*="/cars/sale/offer/"]',
-        'section[class*="Listing"]',
-        'article[class*="card"]',
-        '.ListingItemTitle',
-        '[data-name="card"]',
-    ]
+    BASE_URL = AutoRuConfig.BASE_URL
+    SEARCH_URL = AutoRuConfig.SEARCH_URL
 
     def __init__(
         self, 
         headless: bool = True, 
         use_proxy: bool = False, 
         proxy_list: List[str] = None,
-        max_requests_per_session: int = 50,
-        base_delay: float = 2.0,
-        randomize_delay: bool = True
+        max_requests_per_session: int = AutoRuConfig.DEFAULT_MAX_REQUESTS_PER_SESSION,
+        base_delay: float = AutoRuConfig.DEFAULT_BASE_DELAY,
+        randomize_delay: bool = AutoRuConfig.DEFAULT_RANDOMIZE_DELAY
     ):
         self.headless = headless
         self.use_proxy = use_proxy
-        self.proxy_list = proxy_list or []
+        self.proxy_manager = ProxyManager(proxy_list or [])
+        self.user_agent_rotator = UserAgentRotator(AutoRuConfig.USER_AGENTS)
         self.current_proxy = None
+        
         self.browser: Optional[Browser] = None
         self.context: Optional[BrowserContext] = None
         self.page: Optional[Page] = None
-        self._request_count = 0
-        self._max_requests_per_session = max_requests_per_session
-        self._base_delay = base_delay
-        self._randomize_delay = randomize_delay
+        
+        # Менеджеры для управления сессией и задержками
+        self.session_manager = SessionManager(max_requests_per_session)
+        self.delay_manager = DelayManager(
+            base_delay=base_delay,
+            randomize=randomize_delay
+        )
 
     async def init_browser(self):
         """Инициализация браузера Playwright с улучшенной эмуляцией человека"""
         if self.browser is None:
             playwright = await async_playwright().start()
             
-            # Ротация прокси
-            if self.use_proxy and self.proxy_list:
-                self.current_proxy = self._get_next_proxy()
+            # Ротация прокси через ProxyManager
+            if self.use_proxy and not self.proxy_manager.is_empty():
+                self.current_proxy = self.proxy_manager.get_next_proxy()
                 logger.info(f"Using proxy: {self.current_proxy}")
             
-            # Рандомизация User-Agent
-            user_agent = random.choice(self.USER_AGENTS)
+            # Рандомизация User-Agent через UserAgentRotator
+            user_agent = self.user_agent_rotator.get_user_agent()
             logger.debug(f"Using User-Agent: {user_agent[:50]}...")
             
-            # Аргументы для обхода детекции автоматизации
-            args = [
-                "--disable-blink-features=AutomationControlled",
-                "--no-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-web-security",
-                "--disable-features=IsolateOrigins,site-per-process",
-                "--disable-software-rasterizer",
-                "--disable-gpu-sandbox",
-                "--window-size=1920,1080",
-            ]
-            
-            browser_args = {
-                "headless": self.headless,
-                "args": args,
-            }
+            # Аргументы для обхода детекции автоматизации из конфига
+            browser_args = AutoRuConfig.get_browser_args(self.headless)
             
             if self.current_proxy:
                 browser_args["proxy"] = {"server": self.current_proxy}
@@ -128,15 +110,13 @@ class AutoRuParser(BaseParser):
             """)
             
             self.page = await self.context.new_page()
-            self._request_count = 0
+            self.session_manager.reset()
             
             logger.info("Browser initialized successfully")
 
     def _get_next_proxy(self) -> str:
-        """Получение следующего прокси из списка"""
-        if not self.proxy_list:
-            return None
-        return random.choice(self.proxy_list)
+        """Получение следующего прокси из списка (устарело, использовать proxy_manager)"""
+        return self.proxy_manager.get_next_proxy()
 
     async def close(self):
         """Закрытие браузера и очистка ресурсов"""
@@ -203,7 +183,7 @@ class AutoRuParser(BaseParser):
         
         try:
             # Переход на страницу поиска
-            response = await self.page.goto(url, wait_until="networkidle", timeout=30000)
+            response = await self.page.goto(url, wait_until="networkidle", timeout=AutoRuConfig.PAGE_LOAD_TIMEOUT)
             
             if not response or response.status != 200:
                 logger.error(f"Failed to load page: {response.status if response else 'No response'}")
@@ -212,13 +192,13 @@ class AutoRuParser(BaseParser):
             logger.info(f"STATUS {response.status}: {url}")
             
             # Ожидание загрузки контента
-            await self.page.wait_for_timeout(3000)
+            await self.page.wait_for_timeout(AutoRuConfig.SCROLL_DELAY)
             
-            # Поиск работающих селекторов
+            # Поиск работающих селекторов из конфига
             found_selector = None
-            for selector in self.LISTING_SELECTORS:
+            for selector in AutoRuConfig.LISTING_SELECTORS:
                 try:
-                    await self.page.wait_for_selector(selector, timeout=5000)
+                    await self.page.wait_for_selector(selector, timeout=AutoRuConfig.SELECTOR_WAIT_TIMEOUT)
                     found_selector = selector
                     logger.info(f"Found listings with selector: {selector}")
                     break
@@ -267,14 +247,13 @@ class AutoRuParser(BaseParser):
                     except Exception as ve:
                         logger.warning(f"Validation error for car data: {ve}")
                 
-                # Умная задержка между запросами
+                # Умная задержка через DelayManager
                 if i < limit - 1:
-                    delay = self._calculate_delay()
-                    await asyncio.sleep(delay)
+                    await self.delay_manager.wait()
                 
-                # Ротация сессии при достижении лимита
-                self._request_count += 1
-                if self._request_count >= self._max_requests_per_session:
+                # Ротация сессии через SessionManager
+                self.session_manager.increment_request()
+                if self.session_manager.should_rotate():
                     logger.info("Session limit reached, rotating browser session")
                     await self.close()
                     await self.init_browser()
