@@ -1,121 +1,103 @@
 import sqlite3
+from sqlalchemy import create_engine, Session
+from sqlalchemy.orm import sessionmaker
+from typing import List, Optional
+from loguru import logger
 
+from app.database.models import Base, CarListingORM
 
 DB_PATH = "data/cars.db"
 
-conn = sqlite3.connect(
-    DB_PATH,
-    check_same_thread=False
-)
+# SQLite connection for legacy compatibility
+sqlite_conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+
+# SQLAlchemy setup
+engine = create_engine(f"sqlite:///{DB_PATH}", echo=False, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 
 def init_db():
-
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS listings (
-
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        url TEXT UNIQUE,
-        title TEXT,
-        platform TEXT,
-
-        brand TEXT,
-        model TEXT,
-
-        price INTEGER,
-        year INTEGER,
-        mileage INTEGER,
-
-        engine_volume REAL,
-        horsepower INTEGER,
-
-        transmission TEXT,
-        drive TEXT,
-        body_type TEXT,
-
-        owners INTEGER,
-        accidents INTEGER,
-
-        pts TEXT,
-        region TEXT,
-
-        market_score REAL,
-        probability_good_deal REAL,
-
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-
-    conn.commit()
+    """Инициализация базы данных через SQLAlchemy"""
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database initialized with SQLAlchemy")
 
 
 def save_listing(car):
+    """Сохранение объявления через SQLAlchemy ORM"""
+    session = SessionLocal()
+    try:
+        listing = CarListingORM(
+            title=car.title,
+            price=car.price,
+            year=car.year,
+            mileage=car.mileage,
+            owners=car.owners,
+            engine_volume=car.engine_volume,
+            horsepower=car.horsepower,
+            transmission=car.transmission,
+            drive=car.drive,
+            body_type=car.body_type,
+            region=car.region,
+            accidents=car.accidents,
+            pts=car.pts,
+            market_score=car.market_score,
+            final_score=car.probability_good_deal,
+            url=car.url,
+            source=car.platform
+        )
+        
+        # Проверка на дубликаты
+        existing = session.query(CarListingORM).filter(CarListingORM.url == car.url).first()
+        if existing:
+            # Обновление существующей записи
+            for key, value in vars(listing).items():
+                if not key.startswith('_'):
+                    setattr(existing, key, value)
+            session.commit()
+            logger.debug(f"Updated listing: {car.url}")
+        else:
+            session.add(listing)
+            session.commit()
+            logger.debug(f"Saved new listing: {car.url}")
+            
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error saving listing: {e}")
+        raise
+    finally:
+        session.close()
 
-    cursor = conn.cursor()
 
-    cursor.execute("""
-    INSERT OR REPLACE INTO listings (
+def get_all_listings() -> List[CarListingORM]:
+    """Получить все объявления из БД"""
+    session = SessionLocal()
+    try:
+        listings = session.query(CarListingORM).all()
+        return listings
+    finally:
+        session.close()
 
-        url,
-        title,
-        platform,
 
-        brand,
-        model,
+def get_listing_by_url(url: str) -> Optional[CarListingORM]:
+    """Получить объявление по URL"""
+    session = SessionLocal()
+    try:
+        listing = session.query(CarListingORM).filter(CarListingORM.url == url).first()
+        return listing
+    finally:
+        session.close()
 
-        price,
-        year,
-        mileage,
 
-        engine_volume,
-        horsepower,
-
-        transmission,
-        drive,
-        body_type,
-
-        owners,
-        accidents,
-
-        pts,
-        region,
-
-        market_score,
-        probability_good_deal
-
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-
-        car.url,
-        car.title,
-        car.platform,
-
-        car.brand,
-        car.model,
-
-        car.price,
-        car.year,
-        car.mileage,
-
-        car.engine_volume,
-        car.horsepower,
-
-        car.transmission,
-        car.drive,
-        car.body_type,
-
-        car.owners,
-        car.accidents,
-
-        car.pts,
-        car.region,
-
-        car.market_score,
-        car.probability_good_deal
-    ))
-
-    conn.commit()
+def delete_listing(url: str):
+    """Удалить объявление по URL"""
+    session = SessionLocal()
+    try:
+        session.query(CarListingORM).filter(CarListingORM.url == url).delete()
+        session.commit()
+        logger.info(f"Deleted listing: {url}")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error deleting listing: {e}")
+        raise
+    finally:
+        session.close()
