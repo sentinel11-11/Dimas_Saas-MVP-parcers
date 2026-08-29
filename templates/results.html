@@ -268,19 +268,78 @@
             
             <!-- Заголовок -->
             <div class="result-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
+                <div class="row w-100">
+                    <div class="col-md-8">
                         <h2 class="mb-1">
                             <i class="bi bi-car-front me-2"></i>
                             {{ brand }} {{ model }}
                         </h2>
                         <p class="mb-0 opacity-75">Найдено объявлений: {{ total }}</p>
                     </div>
-                    <a href="/" class="btn btn-light btn-back">
-                        <i class="bi bi-search me-2"></i>Новый поиск
-                    </a>
+                    <div class="col-md-4 text-end">
+                        <a href="/" class="btn btn-light btn-back">
+                            <i class="bi bi-search me-2"></i>Новый поиск
+                        </a>
+                    </div>
                 </div>
             </div>
+            
+            <!-- Примененные фильтры -->
+            {% if filters_applied %}
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-body bg-light rounded">
+                    <h6 class="mb-3"><i class="bi bi-funnel me-2"></i>Примененные фильтры:</h6>
+                    <div class="row g-2">
+                        <div class="col-md-3 col-sm-6">
+                            <span class="badge bg-secondary me-1">Год:</span>
+                            <span>{{ filters_applied.year_min }}-{{ filters_applied.year_max }}</span>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <span class="badge bg-secondary me-1">Пробег:</span>
+                            <span>{{ "{:,}".format(filters_applied.mileage_min or 0).replace(',', ' ') }}-{{ "{:,}".format(filters_applied.mileage_max or 0).replace(',', ' ') }} км</span>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <span class="badge bg-secondary me-1">Владельцы:</span>
+                            <span>{{ filters_applied.owners_min }}-{{ filters_applied.owners_max }}</span>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <span class="badge bg-secondary me-1">Цена:</span>
+                            <span>{{ "{:,}".format(filters_applied.price_min or 0).replace(',', ' ') }}-{{ "{:,}".format(filters_applied.price_max or 0).replace(',', ' ') }} ₽</span>
+                        </div>
+                        {% if filters_applied.transmission %}
+                        <div class="col-md-3 col-sm-6">
+                            <span class="badge bg-secondary me-1">КПП:</span>
+                            <span>{{ {'automatic': 'Автомат', 'manual': 'Механика', 'robot': 'Робот', 'variator': 'Вариатор'}[filters_applied.transmission] }}</span>
+                        </div>
+                        {% endif %}
+                        {% if filters_applied.fuel %}
+                        <div class="col-md-3 col-sm-6">
+                            <span class="badge bg-secondary me-1">Топливо:</span>
+                            <span>{{ {'petrol': 'Бензин', 'diesel': 'Дизель', 'electric': 'Электро', 'hybrid': 'Гибрид', 'gas': 'Газ'}[filters_applied.fuel] }}</span>
+                        </div>
+                        {% endif %}
+                        {% if filters_applied.drive %}
+                        <div class="col-md-3 col-sm-6">
+                            <span class="badge bg-secondary me-1">Привод:</span>
+                            <span>{{ {'front': 'Передний', 'rear': 'Задний', 'four_wheel': 'Полный'}[filters_applied.drive] }}</span>
+                        </div>
+                        {% endif %}
+                        {% if filters_applied.body_type %}
+                        <div class="col-md-3 col-sm-6">
+                            <span class="badge bg-secondary me-1">Кузов:</span>
+                            <span>{{ {'sedan': 'Седан', 'suv': 'Внедорожник', 'crossover': 'Кроссовер', 'hatchback': 'Хэтчбек', 'wagon': 'Универсал', 'coupe': 'Купе', 'convertible': 'Кабриолет', 'minivan': 'Минивэн'}[filters_applied.body_type] }}</span>
+                        </div>
+                        {% endif %}
+                        {% if filters_applied.region %}
+                        <div class="col-md-3 col-sm-6">
+                            <span class="badge bg-secondary me-1">Регион:</span>
+                            <span>{{ {'moscow': 'Москва', 'spb': 'Санкт-Петербург', 'novosibirsk': 'Новосибирск', 'ekaterinburg': 'Екатеринбург', 'kazan': 'Казань', 'krasnoyarsk': 'Красноярск', 'vladivostok': 'Владивосток'}[filters_applied.region] }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
             
             <!-- Ошибки -->
             {% if errors %}
@@ -324,10 +383,28 @@
                                         <i class="bi bi-speedometer2 detail-icon"></i>
                                         <span>{{ "{:,}".format(car.mileage or 0).replace(',', ' ') }} км</span>
                                     </div>
+                                    {% if car.owners %}
+                                    <div class="detail-item">
+                                        <i class="bi bi-people detail-icon"></i>
+                                        <span>{{ car.owners }} вл.</span>
+                                    </div>
+                                    {% endif %}
                                     <div class="detail-item">
                                         <i class="bi bi-geo-alt detail-icon"></i>
                                         <span>{{ car.region or 'Н/Д' }}</span>
                                     </div>
+                                    {% if car.transmission %}
+                                    <div class="detail-item">
+                                        <i class="bi bi-gear detail-icon"></i>
+                                        <span>{{ {'automatic': 'АКПП', 'manual': 'МКПП', 'robot': 'Робот', 'variator': 'Вариатор'}[car.transmission] }}</span>
+                                    </div>
+                                    {% endif %}
+                                    {% if car.fuel %}
+                                    <div class="detail-item">
+                                        <i class="bi bi-fuel-pump detail-icon"></i>
+                                        <span>{{ {'petrol': 'Бензин', 'diesel': 'Дизель', 'electric': 'Электро', 'hybrid': 'Гибрид', 'gas': 'Газ'}[car.fuel] }}</span>
+                                    </div>
+                                    {% endif %}
                                     {% if car.market_deviation %}
                                     <div class="detail-item">
                                         <i class="bi bi-graph-up detail-icon"></i>

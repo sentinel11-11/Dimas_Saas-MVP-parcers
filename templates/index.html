@@ -143,21 +143,22 @@
             <!-- Форма поиска -->
             <div class="search-form">
                 <form action="/search" method="POST" id="searchForm">
-                    <div class="row g-3">
+                    <h5 class="mb-3">Основные параметры</h5>
+                    <div class="row g-3 mb-4">
                         <div class="col-md-4">
-                            <label for="brand" class="form-label">Марка автомобиля</label>
+                            <label for="brand" class="form-label">Марка автомобиля *</label>
                             <select class="form-select" id="brand" name="brand" required>
                                 <option value="">Выберите марку...</option>
                                 {% for brand in brands %}
-                                <option value="{{ brand }}">{{ brand.capitalize() }}</option>
+                                <option value="{{ brand }}" {% if brand == 'audi' %}selected{% endif %}>{{ brand.capitalize() }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         
                         <div class="col-md-4">
-                            <label for="model" class="form-label">Модель</label>
+                            <label for="model" class="form-label">Модель *</label>
                             <input type="text" class="form-control" id="model" name="model" 
-                                   placeholder="Например: X5, C-Class, A6" required>
+                                   placeholder="Например: Q3, X5, C-Class" value="q3" required>
                         </div>
                         
                         <div class="col-md-4">
@@ -166,22 +167,122 @@
                                 <input type="checkbox" class="btn-check" id="drom" name="sources" value="drom" checked>
                                 <label class="btn btn-outline-primary" for="drom">Drom</label>
                                 
-                                <input type="checkbox" class="btn-check" id="avito" name="sources" value="avito">
+                                <input type="checkbox" class="btn-check" id="avito" name="sources" value="avito" checked>
                                 <label class="btn btn-outline-primary" for="avito">Avito</label>
                                 
-                                <input type="checkbox" class="btn-check" id="autoru" name="sources" value="autoru">
+                                <input type="checkbox" class="btn-check" id="autoru" name="sources" value="autoru" checked>
                                 <label class="btn btn-outline-primary" for="autoru">Auto.ru</label>
                             </div>
                         </div>
-                        
+                    </div>
+                    
+                    <h5 class="mb-3">Детальные фильтры</h5>
+                    <div class="row g-3 mb-4">
                         <div class="col-md-3">
-                            <label for="limit" class="form-label">Количество результатов</label>
-                            <input type="number" class="form-control" id="limit" name="limit" 
-                                   value="10" min="1" max="500" placeholder="10">
-                            <small class="text-muted">Введите число от 1 до 500</small>
+                            <label for="year_min" class="form-label">Год от</label>
+                            <input type="number" class="form-control" id="year_min" name="year_min" 
+                                   value="2018" min="1990" max="2026">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="year_max" class="form-label">Год до</label>
+                            <input type="number" class="form-control" id="year_max" name="year_max" 
+                                   value="2026" min="1990" max="2026">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="mileage_min" class="form-label">Пробег от (км)</label>
+                            <input type="number" class="form-control" id="mileage_min" name="mileage_min" 
+                                   value="0" min="0" max="1000000">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="mileage_max" class="form-label">Пробег до (км)</label>
+                            <input type="number" class="form-control" id="mileage_max" name="mileage_max" 
+                                   value="300000" min="0" max="1000000">
                         </div>
                         
-                        <div class="col-md-9 d-flex align-items-end">
+                        <div class="col-md-3">
+                            <label for="owners_min" class="form-label">Владельцев от</label>
+                            <input type="number" class="form-control" id="owners_min" name="owners_min" 
+                                   value="1" min="0" max="10">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="owners_max" class="form-label">Владельцев до</label>
+                            <input type="number" class="form-control" id="owners_max" name="owners_max" 
+                                   value="3" min="0" max="10">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="price_min" class="form-label">Цена от (₽)</label>
+                            <input type="number" class="form-control" id="price_min" name="price_min" 
+                                   value="0" min="0" max="1000000000">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="price_max" class="form-label">Цена до (₽)</label>
+                            <input type="number" class="form-control" id="price_max" name="price_max" 
+                                   value="100000000" min="0" max="1000000000">
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="transmission" class="form-label">Коробка передач</label>
+                            <select class="form-select" id="transmission" name="transmission">
+                                <option value="">Любая</option>
+                                <option value="automatic">Автомат</option>
+                                <option value="manual">Механика</option>
+                                <option value="robot">Робот</option>
+                                <option value="variator">Вариатор</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="fuel" class="form-label">Тип топлива</label>
+                            <select class="form-select" id="fuel" name="fuel">
+                                <option value="">Любой</option>
+                                <option value="petrol">Бензин</option>
+                                <option value="diesel">Дизель</option>
+                                <option value="electric">Электро</option>
+                                <option value="hybrid">Гибрид</option>
+                                <option value="gas">Газ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="drive" class="form-label">Привод</label>
+                            <select class="form-select" id="drive" name="drive">
+                                <option value="">Любой</option>
+                                <option value="front">Передний</option>
+                                <option value="rear">Задний</option>
+                                <option value="four_wheel">Полный</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="body_type" class="form-label">Тип кузова</label>
+                            <select class="form-select" id="body_type" name="body_type">
+                                <option value="">Любой</option>
+                                <option value="sedan">Седан</option>
+                                <option value="suv">Внедорожник</option>
+                                <option value="crossover">Кроссовер</option>
+                                <option value="hatchback">Хэтчбек</option>
+                                <option value="wagon">Универсал</option>
+                                <option value="coupe">Купе</option>
+                                <option value="convertible">Кабриолет</option>
+                                <option value="minivan">Минивэн</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="region" class="form-label">Регион</label>
+                            <select class="form-select" id="region" name="region">
+                                <option value="">Вся Россия</option>
+                                <option value="moscow">Москва</option>
+                                <option value="spb">Санкт-Петербург</option>
+                                <option value="novosibirsk">Новосибирск</option>
+                                <option value="ekaterinburg">Екатеринбург</option>
+                                <option value="kazan">Казань</option>
+                                <option value="krasnoyarsk">Красноярск</option>
+                                <option value="vladivostok">Владивосток</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="limit" class="form-label">Количество результатов</label>
+                            <input type="number" class="form-control" id="limit" name="limit" 
+                                   value="20" min="1" max="500">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary btn-search w-100">
                                 <i class="bi bi-search me-2"></i>Найти выгодные предложения
                             </button>

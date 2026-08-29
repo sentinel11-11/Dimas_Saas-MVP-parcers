@@ -102,10 +102,25 @@ async def search_cars(
     brand: str = Form(...),
     model: str = Form(...),
     sources: List[str] = Form(default=["drom"]),
-    limit: int = Form(default=10)
+    limit: int = Form(default=20),
+    year_min: int = Form(default=2018),
+    year_max: int = Form(default=2026),
+    mileage_min: int = Form(default=0),
+    mileage_max: int = Form(default=300000),
+    owners_min: int = Form(default=1),
+    owners_max: int = Form(default=3),
+    price_min: int = Form(default=0),
+    price_max: int = Form(default=100000000),
+    transmission: str = Form(default=""),
+    fuel: str = Form(default=""),
+    drive: str = Form(default=""),
+    body_type: str = Form(default=""),
+    region: str = Form(default="")
 ):
-    """Обработка поиска автомобилей"""
+    """Обработка поиска автомобилей с полными фильтрами"""
     logger.info(f"Search request: brand={brand}, model={model}, sources={sources}, limit={limit}")
+    logger.info(f"Filters: year={year_min}-{year_max}, mileage={mileage_min}-{mileage_max}, owners={owners_min}-{owners_max}")
+    logger.info(f"Advanced: transmission={transmission}, fuel={fuel}, drive={drive}, body_type={body_type}, region={region}")
     
     enriched = []
     errors = []
@@ -138,13 +153,12 @@ async def search_cars(
     # 2. Парсинг Avito (с поддержкой прокси)
     if "avito" in sources:
         try:
-            # Прокси передаются через конфигурацию или переменные окружения
             import os
             proxy_list_str = os.getenv("AVITO_PROXIES", "")
             avito_proxy_list = [p.strip() for p in proxy_list_str.split(",") if p.strip()] if proxy_list_str else None
             
             avito_parser = AvitoParser(proxy_list=avito_proxy_list)
-            avito_ads = avito_parser.search({"brand": brand, "model": model, "limit": limit, "target_region": "rossiya"})
+            avito_ads = avito_parser.search({"brand": brand, "model": model, "limit": limit, "target_region": region if region else "rossiya"})
             logger.info(f"AVITO FOUND: {len(avito_ads)}")
             
             for ad in avito_ads:
@@ -165,14 +179,12 @@ async def search_cars(
     # 3. Парсинг Auto.ru (с поддержкой прокси)
     if "autoru" in sources:
         try:
-            # Прокси передаются через конфигурацию или переменные окружения
             import os
             autoru_proxy_list_str = os.getenv("AUTORU_PROXIES", "")
             autoru_proxy_list = [p.strip() for p in autoru_proxy_list_str.split(",") if p.strip()] if autoru_proxy_list_str else None
             
             autoru_parser = AutoRuParser(headless=True, proxy_list=autoru_proxy_list)
             
-            # Создаем задачу в текущем event loop
             autoru_task = asyncio.create_task(
                 autoru_parser.search(
                     filters={"brand": brand, "model": model},
@@ -198,7 +210,47 @@ async def search_cars(
             logger.error(f"AUTORU SEARCH ERROR: {e}")
             errors.append(f"Auto.ru поиск: {str(e)}")
     
-    logger.info(f"TOTAL ENRICHED: {len(enriched)}")
+    logger.info(f"TOTAL ENRICHED BEFORE FILTERS: {len(enriched)}")
+    
+    # Применение фильтров к результатам
+    filtered_enriched = []
+    for car in enriched:
+        try:
+            # Фильтр по году
+            if car.year and (car.year < year_min or car.year > year_max):
+                continue
+            # Фильтр по пробегу
+            if car.mileage and (car.mileage < mileage_min or car.mileage > mileage_max):
+                continue
+            # Фильтр по владельцам
+            if car.owners_count and (car.owners_count < owners_min or car.owners_count > owners_max):
+                continue
+            # Фильтр по цене
+            if car.price and (car.price < price_min or car.price > price_max):
+                continue
+            # Фильтр по трансмиссии
+            if transmission and car.transmission and car.transmission.lower() != transmission.lower():
+                continue
+            # Фильтр по топливу
+            if fuel and car.fuel and car.fuel.lower() != fuel.lower():
+                continue
+            # Фильтр по приводу
+            if drive and car.drive and car.drive.lower() != drive.lower():
+                continue
+            # Фильтр по типу кузова
+            if body_type and car.body_type and car.body_type.lower() != body_type.lower():
+                continue
+            # Фильтр по региону
+            if region and car.region and region.lower() not in car.region.lower():
+                continue
+            
+            filtered_enriched.append(car)
+        except Exception as e:
+            logger.error(f"FILTER ERROR: {e}")
+            filtered_enriched.append(car)  # Добавляем если ошибка фильтрации
+    
+    enriched = filtered_enriched
+    logger.info(f"TOTAL ENRICHED AFTER FILTERS: {len(enriched)}")
     
     # Расчет скоринга
     if enriched:
@@ -240,7 +292,12 @@ async def search_cars(
             "market_deviation": car.market_deviation,
             "probability": car.probability_good_deal,
             "liquidity": car.liquidity_score,
-            "badge_class": get_badge_class(car.probability_good_deal) if car.probability_good_deal else "bg-secondary"
+            "badge_class": get_badge_class(car.probability_good_deal) if car.probability_good_deal else "bg-secondary",
+            "owners": car.owners_count,
+            "transmission": car.transmission,
+            "fuel": car.fuel,
+            "drive": car.drive,
+            "body_type": car.body_type
         })
     
     # Сохранение результатов в глобальном хранилище
@@ -256,7 +313,22 @@ async def search_cars(
             "model": model.capitalize(),
             "total": len(results_data),
             "errors": errors,
-            "sources_used": sources
+            "sources_used": sources,
+            "filters_applied": {
+                "year_min": year_min,
+                "year_max": year_max,
+                "mileage_min": mileage_min,
+                "mileage_max": mileage_max,
+                "owners_min": owners_min,
+                "owners_max": owners_max,
+                "price_min": price_min,
+                "price_max": price_max,
+                "transmission": transmission,
+                "fuel": fuel,
+                "drive": drive,
+                "body_type": body_type,
+                "region": region
+            }
         }
     )
 
