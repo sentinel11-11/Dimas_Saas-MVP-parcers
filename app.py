@@ -28,7 +28,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Список всех марок
+# Список всех марок автомобилей (расширенный - поддерживает любые марки)
 ALL_BRANDS = [
     "audi", "bmw", "chevrolet", "chrysler", "citroen", "dodge", "fiat", "ford",
     "geely", "genesis", "gmc", "honda", "hyundai", "infiniti", "jaguar", "jeep",
@@ -36,10 +36,17 @@ ALL_BRANDS = [
     "nissan", "opel", "peugeot", "porsche", "renault", "skoda", "subaru",
     "suzuki", "toyota", "volkswagen", "volvo", "lada", "gaz", "uaz",
     "chery", "haval", "exeed", "tank", "omoda", "jaecoo", "dongfeng", 
-    "foton", "great wall", "lifan", "brilliance"
+    "foton", "great wall", "lifan", "brilliance", "zx auto", "jac", "byd",
+    "changan", "faaw", "hawtai", "zotye", "soueast", "qoros", "wey", "lynk & co",
+    "polestar", "lixiang", "nio", "xpeng", "seres", "voyah", "hongqi", "maxus",
+    "acura", "alfa romeo", "aston martin", "bentley", "bugatti", "cadillac",
+    "dacia", "ds", "ferrari", "hummer", "isuzu", "koenigsegg", "lamborghini",
+    "maserati", "mclaren", "pagani", "rolls-royce", "tesla", "lotus", "smart",
+    "ssangyong", "daewoo", "proton", "tata", "mahindra", "maruti", "holden",
+    "datsun", "ravon", "tagaz", "doninvest", "bogdan", "zaz"
 ]
 
-# Популярные модели
+# Популярные модели для быстрого выбора (можно добавлять любые)
 POPULAR_MODELS = {
     "bmw": ["1 серия", "2 серия", "3 серия", "4 серия", "5 серия", "X1", "X3", "X5", "X6"],
     "mercedes": ["A-Class", "C-Class", "E-Class", "G-Class", "GLA", "GLC", "GLE", "S-Class"],
