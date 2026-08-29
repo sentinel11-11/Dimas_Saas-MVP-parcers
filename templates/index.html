@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - Car Parser MVP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --success-color: #27ae60;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+        
+        .hero-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 3rem;
+            margin-top: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .search-form {
+            background: #f8f9fa;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-top: 2rem;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 0.75rem;
+            transition: all 0.3s;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .btn-search {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: transform 0.3s;
+            height: 100%;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+        
+        footer {
+            background: rgba(44, 62, 80, 0.95);
+            color: white;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+        
+        .car-brands {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .brand-badge {
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--secondary-color);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .brand-badge:hover {
+            background: var(--secondary-color);
+            color: white;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="bi bi-car-front-fill me-2"></i>Car Parser MVP
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/"><i class="bi bi-house me-1"></i>Главная</a>
+                <a class="nav-link" href="#features"><i class="bi bi-star me-1"></i>Преимущества</a>
+                <a class="nav-link" href="#contact"><i class="bi bi-envelope me-1"></i>Контакты</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Герой секция -->
+    <div class="container">
+        <div class="hero-section text-center">
+            <h1 class="display-4 fw-bold mb-3">{{ title }}</h1>
+            <p class="lead text-muted mb-4">
+                Автоматический парсинг и анализ автомобильных объявлений с Drom, Auto.ru и Avito
+            </p>
+            
+            <!-- Форма поиска -->
+            <div class="search-form">
+                <form action="/search" method="POST" id="searchForm">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="brand" class="form-label">Марка автомобиля</label>
+                            <select class="form-select" id="brand" name="brand" required>
+                                <option value="">Выберите марку...</option>
+                                {% for brand in brands %}
+                                <option value="{{ brand }}">{{ brand.capitalize() }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="model" class="form-label">Модель</label>
+                            <input type="text" class="form-control" id="model" name="model" 
+                                   placeholder="Например: X5, C-Class, A6" required>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label class="form-label d-block">Источники поиска</label>
+                            <div class="btn-group" role="group">
+                                <input type="checkbox" class="btn-check" id="drom" name="sources" value="drom" checked>
+                                <label class="btn btn-outline-primary" for="drom">Drom</label>
+                                
+                                <input type="checkbox" class="btn-check" id="avito" name="sources" value="avito">
+                                <label class="btn btn-outline-primary" for="avito">Avito</label>
+                                
+                                <input type="checkbox" class="btn-check" id="autoru" name="sources" value="autoru">
+                                <label class="btn btn-outline-primary" for="autoru">Auto.ru</label>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-3">
+                            <label for="limit" class="form-label">Количество</label>
+                            <select class="form-select" id="limit" name="limit">
+                                <option value="5">5</option>
+                                <option value="10" selected>10</option>
+                                <option value="20">20</option>
+                                <option value="50">50</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-9 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary btn-search w-100">
+                                <i class="bi bi-search me-2"></i>Найти выгодные предложения
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Быстрый выбор марок -->
+                <div class="car-brands justify-content-center mt-4">
+                    <span class="text-muted small me-2">Популярные:</span>
+                    {% for brand in brands[:6] %}
+                    <span class="brand-badge" onclick="selectBrand('{{ brand }}')">{{ brand.capitalize() }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Преимущества -->
+        <div class="row g-4 mt-5" id="features">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <i class="bi bi-speedometer2 feature-icon"></i>
+                    <h4>Быстрый поиск</h4>
+                    <p class="text-muted">Автоматический парсинг трех крупнейших площадок за считанные минуты</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <i class="bi bi-graph-up-arrow feature-icon"></i>
+                    <h4>Умный скоринг</h4>
+                    <p class="text-muted">Анализ рыночной стоимости и расчет вероятности выгодной сделки</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <i class="bi bi-shield-check feature-icon"></i>
+                    <h4>Проверенные данные</h4>
+                    <p class="text-muted">Только актуальные объявления с детальной информацией об автомобиле</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Футер -->
+    <footer id="contact">
+        <div class="container text-center">
+            <p class="mb-2">&copy; 2024 Car Parser MVP. Все права защищены.</p>
+            <p class="small text-muted">Создано для анализа автомобильного рынка</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function selectBrand(brand) {
+            document.getElementById('brand').value = brand;
+            // Плавная прокрутка к форме
+            document.querySelector('.search-form').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Автозаполнение модели при выборе марки (можно расширить)
+        document.getElementById('brand').addEventListener('change', function() {
+            const modelInput = document.getElementById('model');
+            if (!modelInput.value) {
+                modelInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>

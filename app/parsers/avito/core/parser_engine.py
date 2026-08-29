@@ -1,4 +1,6 @@
 import re
+import random
+import time
 from pathlib import Path
 from urllib.parse import urljoin,urlencode
 from bs4 import BeautifulSoup
@@ -19,7 +21,18 @@ class AvitoParserEngine:
         for page in range(1,max_pages+1):
             if len(results)>=limit: break
             url=self.build_url(filters,page); logger.info("AVITO SEARCH: {}",url); response=self.client.get(url)
-            if not response or response.status_code!=200: continue
+            if not response: 
+                logger.warning("AVITO: No response received")
+                continue
+            if response.status_code==429:
+                logger.error("AVITO: Rate limit exceeded, waiting 60 seconds...")
+                time.sleep(60)
+                # Повторная попытка с новым User-Agent
+                self.client.session.headers["User-Agent"] = random.choice(self.client.user_agents)
+                response=self.client.get(url)
+            if not response or response.status_code!=200: 
+                logger.warning("AVITO: Bad status code {}", response.status_code if response else "None")
+                continue
             if config.save_debug_html:
                 p=Path("data")/f"avito_debug_{page}.html"; p.parent.mkdir(parents=True,exist_ok=True); p.write_text(response.text,encoding="utf-8")
             soup=BeautifulSoup(response.text,"lxml"); cards=self._find_cards(soup); logger.info("AVITO CARDS page={} count={}",page,len(cards))

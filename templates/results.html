@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результаты поиска - {{ brand }} {{ model }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+        }
+        
+        .results-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-top: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .result-header {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+        
+        .car-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-left: 5px solid transparent;
+        }
+        
+        .car-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        
+        .car-card.excellent { border-left-color: var(--success-color); }
+        .car-card.good { border-left-color: var(--secondary-color); }
+        .car-card.average { border-left-color: var(--warning-color); }
+        .car-card.poor { border-left-color: var(--danger-color); }
+        
+        .price-tag {
+            font-size: 1.75rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .probability-badge {
+            font-size: 1.2rem;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 600;
+        }
+        
+        .car-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .detail-icon {
+            color: var(--secondary-color);
+            font-size: 1.1rem;
+        }
+        
+        .platform-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .platform-drom { background: #3498db; color: white; }
+        .platform-avito { background: #00AAFF; color: white; }
+        .platform-autoru { background: #ffcc00; color: black; }
+        
+        .market-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+        }
+        
+        .btn-back {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            border: none;
+            padding: 0.75rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .btn-back:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 3rem;
+        }
+        
+        .alert-custom {
+            border-radius: 10px;
+            border: none;
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--danger-color);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        footer {
+            background: rgba(44, 62, 80, 0.95);
+            color: white;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+        
+        .score-indicator {
+            width: 100%;
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        
+        .score-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="bi bi-car-front-fill me-2"></i>Car Parser MVP
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/"><i class="bi bi-house me-1"></i>Главная</a>
+                <a class="nav-link" href="#"><i class="bi bi-arrow-counterclockwise me-1"></i>Новый поиск</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Контейнер результатов -->
+    <div class="container">
+        <div class="results-container">
+            <!-- Заголовок -->
+            <div class="result-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="mb-1">
+                            <i class="bi bi-car-front me-2"></i>
+                            {{ brand }} {{ model }}
+                        </h2>
+                        <p class="mb-0 opacity-75">Найдено объявлений: {{ total }}</p>
+                    </div>
+                    <a href="/" class="btn btn-light btn-back">
+                        <i class="bi bi-search me-2"></i>Новый поиск
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Ошибки -->
+            {% if errors %}
+            <div class="alert alert-custom">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Внимание:</strong> При парсинге возникли ошибки:
+                <ul class="mb-0 mt-2">
+                    {% for error in errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <!-- Результаты -->
+            {% if results %}
+            <div class="row">
+                {% for car in results %}
+                <div class="col-12">
+                    <div class="car-card {% if car.probability and car.probability >= 0.8 %}excellent{% elif car.probability and car.probability >= 0.6 %}good{% elif car.probability and car.probability >= 0.4 %}average{% else %}poor{% endif %}" 
+                         style="position: relative;">
+                        
+                        <!-- Бейдж платформы -->
+                        <span class="platform-badge platform-{{ car.platform }}">
+                            <i class="bi bi-{% if car.platform == 'drom' %}globe{% elif car.platform == 'avito' %}chat-left-text{% else %}car-front{% endif %} me-1"></i>
+                            {{ {'drom': 'Drom', 'avito': 'Avito', 'autoru': 'Auto.ru'}[car.platform] }}
+                        </span>
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h4 class="mb-2">{{ car.title }}</h4>
+                                <div class="price-tag mb-3">{{ "{:,}".format(car.price).replace(',', ' ') }} ₽</div>
+                                
+                                <div class="car-details">
+                                    <div class="detail-item">
+                                        <i class="bi bi-calendar3 detail-icon"></i>
+                                        <span>{{ car.year or 'Н/Д' }} г.</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="bi bi-speedometer2 detail-icon"></i>
+                                        <span>{{ "{:,}".format(car.mileage or 0).replace(',', ' ') }} км</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="bi bi-geo-alt detail-icon"></i>
+                                        <span>{{ car.region or 'Н/Д' }}</span>
+                                    </div>
+                                    {% if car.market_deviation %}
+                                    <div class="detail-item">
+                                        <i class="bi bi-graph-up detail-icon"></i>
+                                        <span>Отклонение: {{ "%.1f"|format(car.market_deviation * 100) }}%</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Информация о рынке -->
+                                {% if car.market_price %}
+                                <div class="market-info">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Средняя рыночная цена:</small>
+                                            <div class="fw-bold">{{ "{:,}".format(car.market_price).replace(',', ' ') }} ₽</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted">Вероятность выгодной сделки:</small>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="probability-badge {{ car.badge_class }} text-white">
+                                                    {{ "%.0f"|format((car.probability or 0) * 100) }}%
+                                                </span>
+                                            </div>
+                                            {% if car.liquidity %}
+                                            <small class="text-muted d-block mt-1">
+                                                Ликвидность: {{ "%.0f"|format((car.liquidity or 0) * 100) }}%
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-4 text-end d-flex flex-column justify-content-center">
+                                <a href="{{ car.url }}" target="_blank" class="btn btn-primary btn-lg mb-2">
+                                    <i class="bi bi-box-arrow-up-right me-2"></i>Перейти к объявлению
+                                </a>
+                                {% if car.probability %}
+                                <div class="mt-2">
+                                    <small class="text-muted">Рейтинг сделки</small>
+                                    <div class="score-indicator">
+                                        <div class="score-fill {{ car.badge_class }}" 
+                                             style="width: {{ (car.probability or 0) * 100 }}%"></div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <h3 class="mt-3">Ничего не найдено</h3>
+                <p class="text-muted">Попробуйте изменить параметры поиска или выбрать другие источники</p>
+                <a href="/" class="btn btn-primary btn-back mt-3">
+                    <i class="bi bi-arrow-left me-2"></i>Вернуться к поиску
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Футер -->
+    <footer>
+        <div class="container text-center">
+            <p class="mb-2">&copy; 2024 Car Parser MVP. Все права защищены.</p>
+            <p class="small text-muted">Автоматический анализ автомобильных объявлений</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Анимация при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.car-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'opacity 0.5s, transform 0.5s';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>
