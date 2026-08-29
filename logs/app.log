@@ -647,3 +647,170 @@ horsepower
 2026-08-29 12:20:53.589 | INFO     | __main__:run_analysis:151 - [1.0] BMW X5, 2006 | 1500000 ₽ | market=2070000 ₽ | dev=0.2754 | liq=0.8 | novosibirsk
 2026-08-29 12:20:53.589 | INFO     | __main__:run_analysis:151 - [1.0] BMW X5, 2009 | 1900000 ₽ | market=2070000 ₽ | dev=0.0821 | liq=0.7 | simferopol
 2026-08-29 12:20:53.589 | INFO     | __main__:run_analysis:151 - [1.0] BMW X5, 2007 | 1150000 ₽ | market=2070000 ₽ | dev=0.4444 | liq=0.7 | nizhnevartovsk
+2026-08-29 22:13:26.298 | INFO     | app.database.db:init_db:22 - Database initialized with SQLAlchemy
+2026-08-29 22:13:26.298 | INFO     | app.parsers.drom.drom_parser:search:35 - DROM SEARCH: https://auto.drom.ru/audi/q3/
+2026-08-29 22:13:26.298 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 0.51 sec
+2026-08-29 22:13:27.414 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/audi/q3/
+2026-08-29 22:13:27.469 | INFO     | app.parsers.drom.drom_parser:search:56 - REAL CARDS: 20
+2026-08-29 22:13:27.473 | INFO     | __main__:run_analysis:55 - DROM FOUND ADS: 20
+2026-08-29 22:13:27.473 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/audi/q3/933513383.html
+2026-08-29 22:13:27.473 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 1.02 sec
+2026-08-29 22:13:29.021 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/audi/q3/933513383.html
+2026-08-29 22:13:29.049 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/tver/audi/q3/871647900.html
+2026-08-29 22:13:29.049 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 1.99 sec
+2026-08-29 22:13:31.559 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/tver/audi/q3/871647900.html
+2026-08-29 22:13:31.585 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/pyatigorsk/audi/q3/845074547.html
+2026-08-29 22:13:31.585 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.77 sec
+2026-08-29 22:13:35.058 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/pyatigorsk/audi/q3/845074547.html
+2026-08-29 22:13:35.084 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/irkutsk/audi/q3/822842394.html
+2026-08-29 22:13:35.084 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.72 sec
+2026-08-29 22:13:38.394 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/irkutsk/audi/q3/822842394.html
+2026-08-29 22:13:38.417 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/tula/audi/q3/737917642.html
+2026-08-29 22:13:38.418 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.55 sec
+2026-08-29 22:13:42.507 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/tula/audi/q3/737917642.html
+2026-08-29 22:13:42.533 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/krasnodar/audi/q3/669614869.html
+2026-08-29 22:13:42.533 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.22 sec
+2026-08-29 22:13:46.184 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/krasnodar/audi/q3/669614869.html
+2026-08-29 22:13:46.208 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/audi/q3/651206766.html
+2026-08-29 22:13:46.209 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 1.64 sec
+2026-08-29 22:13:48.356 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/audi/q3/651206766.html
+2026-08-29 22:13:48.380 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/zheleznogorsk-krasnoyarsk/audi/q3/471194908.html
+2026-08-29 22:13:48.380 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 1.55 sec
+2026-08-29 22:13:51.489 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/zheleznogorsk-krasnoyarsk/audi/q3/471194908.html
+2026-08-29 22:13:51.513 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/ekaterinburg/audi/q3/336857836.html
+2026-08-29 22:13:51.514 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.80 sec
+2026-08-29 22:13:56.484 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/ekaterinburg/audi/q3/336857836.html
+2026-08-29 22:13:56.509 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/krasnodar/audi/q3/314931227.html
+2026-08-29 22:13:56.510 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.52 sec
+2026-08-29 22:14:00.767 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/krasnodar/audi/q3/314931227.html
+2026-08-29 22:14:00.845 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/audi/q3/262094403.html
+2026-08-29 22:14:00.845 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.49 sec
+2026-08-29 22:14:04.854 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/audi/q3/262094403.html
+2026-08-29 22:14:04.877 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/stavropol/audi/q3/210105933.html
+2026-08-29 22:14:04.877 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 4.42 sec
+2026-08-29 22:14:09.839 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/stavropol/audi/q3/210105933.html
+2026-08-29 22:14:09.872 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/audi/q3/119093176.html
+2026-08-29 22:14:09.872 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 1.59 sec
+2026-08-29 22:14:12.085 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/audi/q3/119093176.html
+2026-08-29 22:14:12.110 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/audi/q3/852838729.html
+2026-08-29 22:14:12.110 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 4.01 sec
+2026-08-29 22:14:16.684 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/audi/q3/852838729.html
+2026-08-29 22:14:16.711 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/audi/q3/484896883.html
+2026-08-29 22:14:16.711 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 1.98 sec
+2026-08-29 22:14:19.253 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/audi/q3/484896883.html
+2026-08-29 22:14:19.278 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/spb/audi/q3/912966330.html
+2026-08-29 22:14:19.278 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.31 sec
+2026-08-29 22:14:22.125 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/spb/audi/q3/912966330.html
+2026-08-29 22:14:22.151 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/khanty-mansiysk/audi/q3/278601718.html
+2026-08-29 22:14:22.151 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.82 sec
+2026-08-29 22:14:26.719 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/khanty-mansiysk/audi/q3/278601718.html
+2026-08-29 22:14:26.743 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/simferopol/audi/q3/239735209.html
+2026-08-29 22:14:26.744 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.82 sec
+2026-08-29 22:14:30.085 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/simferopol/audi/q3/239735209.html
+2026-08-29 22:14:30.109 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/kazan/audi/q3/704689887.html
+2026-08-29 22:14:30.109 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.21 sec
+2026-08-29 22:14:32.942 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/kazan/audi/q3/704689887.html
+2026-08-29 22:14:32.968 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/tomsk/audi/q3/628875816.html
+2026-08-29 22:14:32.968 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 4.42 sec
+2026-08-29 22:14:38.937 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/tomsk/audi/q3/628875816.html
+2026-08-29 22:14:38.964 | INFO     | __main__:run_analysis:74 - Starting Avito parsing...
+2026-08-29 22:14:38.964 | INFO     | app.parsers.avito.core.parser_engine:search:24 - AVITO SEARCH: https://www.avito.ru/rossiya/avtomobili/audi/q3/
+2026-08-29 22:14:38.964 | INFO     | app.parsers.avito.http.client:rotate_proxy:56 - AVITO: Rotated proxy to http://user435202:rftbv3@185.81.147.98:1206
+2026-08-29 22:14:48.293 | WARNING  | app.parsers.avito.http.client:get:99 - AVITO HTTP ERROR: HTTPSConnectionPool(host='www.avito.ru', port=443): Max retries exceeded with url: /rossiya/avtomobili/audi/q3/ (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 403 Forbidden')))
+2026-08-29 22:14:48.293 | INFO     | app.parsers.avito.http.client:rotate_proxy:56 - AVITO: Rotated proxy to http://user435202:rftbv3@185.81.147.98:1206
+2026-08-29 22:14:48.293 | INFO     | app.parsers.avito.http.client:get:75 - AVITO RETRY 2/3 after 21.1s
+2026-08-29 22:15:09.870 | WARNING  | app.parsers.avito.http.client:get:99 - AVITO HTTP ERROR: HTTPSConnectionPool(host='www.avito.ru', port=443): Max retries exceeded with url: /rossiya/avtomobili/audi/q3/ (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 403 Forbidden')))
+2026-08-29 22:15:09.870 | INFO     | app.parsers.avito.http.client:rotate_proxy:56 - AVITO: Rotated proxy to http://user435202:rftbv3@185.81.147.98:1206
+2026-08-29 22:15:09.871 | INFO     | app.parsers.avito.http.client:get:75 - AVITO RETRY 3/3 after 27.12s
+2026-08-29 22:15:37.460 | WARNING  | app.parsers.avito.http.client:get:99 - AVITO HTTP ERROR: HTTPSConnectionPool(host='www.avito.ru', port=443): Max retries exceeded with url: /rossiya/avtomobili/audi/q3/ (Caused by ProxyError('Unable to connect to proxy', OSError('Tunnel connection failed: 403 Forbidden')))
+2026-08-29 22:15:37.460 | WARNING  | app.parsers.avito.core.parser_engine:search:26 - AVITO: No response received
+2026-08-29 22:15:37.460 | INFO     | app.parsers.avito.core.parser_engine:search:48 - AVITO FOUND: 0
+2026-08-29 22:15:37.460 | INFO     | __main__:run_analysis:77 - AVITO FOUND ADS: 0
+2026-08-29 22:15:37.460 | INFO     | __main__:run_analysis:88 - Starting Auto.ru parsing...
+2026-08-29 22:15:37.884 | INFO     | app.parsers.autoru.autoru_parser:init_browser:75 - Using proxy: user435202:rftbv3@185.81.147.98:1206
+2026-08-29 22:15:38.122 | INFO     | app.parsers.autoru.core.parser_engine:reset:83 - Session rotated - request count reset
+2026-08-29 22:15:38.122 | INFO     | app.parsers.autoru.autoru_parser:init_browser:119 - Browser initialized successfully
+2026-08-29 22:15:38.122 | INFO     | app.parsers.autoru.autoru_parser:search:184 - AUTO.RU SEARCH: https://auto.ru/cars/sale/audi/q3/
+2026-08-29 22:15:39.026 | ERROR    | app.parsers.autoru.autoru_parser:search:193 - Failed to load page: 407
+2026-08-29 22:15:39.057 | INFO     | __main__:run_analysis:100 - AUTO.RU FOUND: 0
+2026-08-29 22:15:39.057 | INFO     | __main__:run_analysis:105 - TOTAL ENRICHED CARS: 20
+2026-08-29 22:15:39.097 | INFO     | __main__:run_analysis:149 - TOP DEALS READY
+2026-08-29 22:15:39.097 | INFO     | __main__:run_analysis:151 - [1.0] Audi Q3, 2026 | 3900000 ₽ | market=3270000 ₽ | dev=-0.1927 | liq=1.0 | moscow
+2026-08-29 22:15:39.097 | INFO     | __main__:run_analysis:151 - [1.0] Audi Q3, 2014 | 1548000 ₽ | market=1880000 ₽ | dev=0.1766 | liq=0.92 | tver
+2026-08-29 22:15:39.097 | INFO     | __main__:run_analysis:151 - [1.0] Audi Q3, 2017 | 2400000 ₽ | market=1880000 ₽ | dev=-0.2766 | liq=0.9 | pyatigorsk
+2026-08-29 22:15:39.097 | INFO     | __main__:run_analysis:151 - [1.0] Audi Q3, 2016 | 1880000 ₽ | market=1890000 ₽ | dev=0.0053 | liq=0.9 | irkutsk
+2026-08-29 22:15:39.098 | INFO     | __main__:run_analysis:151 - [1.0] Audi Q3, 2026 | 4920000 ₽ | market=3270000 ₽ | dev=-0.5046 | liq=1.0 | tula
+2026-08-29 22:15:39.098 | INFO     | __main__:run_analysis:151 - [1.0] Audi Q3, 2015 | 1470000 ₽ | market=3270000 ₽ | dev=0.5505 | liq=1.0 | krasnodar
+2026-08-29 22:15:39.098 | INFO     | __main__:run_analysis:151 - [1.0] Audi Q3, 2026 | 4643000 ₽ | market=3270000 ₽ | dev=-0.4199 | liq=1.0 | moscow
+2026-08-29 22:15:39.098 | INFO     | __main__:run_analysis:151 - [1.0] Audi Q3, 2017 | 2650000 ₽ | market=1880000 ₽ | dev=-0.4096 | liq=0.9 | zheleznogorsk-krasnoyarsk
+2026-08-29 22:15:39.098 | INFO     | __main__:run_analysis:151 - [1.0] Audi Q3, 2014 | 1700000 ₽ | market=1880000 ₽ | dev=0.0957 | liq=0.9 | ekaterinburg
+2026-08-29 22:15:39.098 | INFO     | __main__:run_analysis:151 - [1.0] Audi Q3, 2012 | 1177000 ₽ | market=1880000 ₽ | dev=0.3739 | liq=0.85 | krasnodar
+2026-08-29 22:15:42.425 | INFO     | app.database.db:init_db:22 - Database initialized with SQLAlchemy
+2026-08-29 22:15:42.426 | INFO     | app.parsers.drom.drom_parser:search:35 - DROM SEARCH: https://auto.drom.ru/audi/q3/
+2026-08-29 22:15:42.426 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 0.59 sec
+2026-08-29 22:15:44.192 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/audi/q3/
+2026-08-29 22:15:44.245 | INFO     | app.parsers.drom.drom_parser:search:56 - REAL CARDS: 20
+2026-08-29 22:15:44.250 | INFO     | __main__:run_analysis:55 - DROM FOUND ADS: 20
+2026-08-29 22:15:44.250 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/audi/q3/933513383.html
+2026-08-29 22:15:44.250 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 0.98 sec
+2026-08-29 22:15:45.916 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/audi/q3/933513383.html
+2026-08-29 22:15:45.946 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/tver/audi/q3/871647900.html
+2026-08-29 22:15:45.946 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 1.74 sec
+2026-08-29 22:15:48.396 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/tver/audi/q3/871647900.html
+2026-08-29 22:15:48.423 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/pyatigorsk/audi/q3/845074547.html
+2026-08-29 22:15:48.423 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 4.30 sec
+2026-08-29 22:15:54.124 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/pyatigorsk/audi/q3/845074547.html
+2026-08-29 22:15:54.149 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/irkutsk/audi/q3/822842394.html
+2026-08-29 22:15:54.149 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 4.19 sec
+2026-08-29 22:15:58.874 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/irkutsk/audi/q3/822842394.html
+2026-08-29 22:15:58.903 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/tula/audi/q3/737917642.html
+2026-08-29 22:15:58.903 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 4.35 sec
+2026-08-29 22:16:03.947 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/tula/audi/q3/737917642.html
+2026-08-29 22:16:03.977 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/krasnodar/audi/q3/669614869.html
+2026-08-29 22:16:03.977 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.20 sec
+2026-08-29 22:16:07.866 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/krasnodar/audi/q3/669614869.html
+2026-08-29 22:16:07.889 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/audi/q3/651206766.html
+2026-08-29 22:16:07.889 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 1.86 sec
+2026-08-29 22:16:10.443 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/audi/q3/651206766.html
+2026-08-29 22:16:10.470 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/zheleznogorsk-krasnoyarsk/audi/q3/471194908.html
+2026-08-29 22:16:10.470 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 4.37 sec
+2026-08-29 22:16:15.401 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/zheleznogorsk-krasnoyarsk/audi/q3/471194908.html
+2026-08-29 22:16:15.427 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/ekaterinburg/audi/q3/336857836.html
+2026-08-29 22:16:15.427 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.16 sec
+2026-08-29 22:16:19.042 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/ekaterinburg/audi/q3/336857836.html
+2026-08-29 22:16:19.068 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/krasnodar/audi/q3/314931227.html
+2026-08-29 22:16:19.068 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.53 sec
+2026-08-29 22:16:23.559 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/krasnodar/audi/q3/314931227.html
+2026-08-29 22:16:23.640 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/audi/q3/262094403.html
+2026-08-29 22:16:23.640 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.70 sec
+2026-08-29 22:16:28.144 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/audi/q3/262094403.html
+2026-08-29 22:16:28.168 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/stavropol/audi/q3/210105933.html
+2026-08-29 22:16:28.168 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.18 sec
+2026-08-29 22:16:30.814 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/stavropol/audi/q3/210105933.html
+2026-08-29 22:16:30.843 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/audi/q3/119093176.html
+2026-08-29 22:16:30.843 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.56 sec
+2026-08-29 22:16:33.887 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/audi/q3/119093176.html
+2026-08-29 22:16:33.926 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/audi/q3/852838729.html
+2026-08-29 22:16:33.927 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.58 sec
+2026-08-29 22:16:38.282 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/audi/q3/852838729.html
+2026-08-29 22:16:38.307 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/audi/q3/484896883.html
+2026-08-29 22:16:38.307 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.37 sec
+2026-08-29 22:16:42.420 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/audi/q3/484896883.html
+2026-08-29 22:16:42.447 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/spb/audi/q3/912966330.html
+2026-08-29 22:16:42.448 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 4.36 sec
+2026-08-29 22:16:47.468 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/spb/audi/q3/912966330.html
+2026-08-29 22:16:47.492 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/khanty-mansiysk/audi/q3/278601718.html
+2026-08-29 22:16:47.493 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.36 sec
+2026-08-29 22:16:50.410 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/khanty-mansiysk/audi/q3/278601718.html
+2026-08-29 22:16:50.439 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/simferopol/audi/q3/239735209.html
+2026-08-29 22:16:50.439 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.26 sec
+2026-08-29 22:16:54.145 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/simferopol/audi/q3/239735209.html
+2026-08-29 22:16:54.168 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/kazan/audi/q3/704689887.html
+2026-08-29 22:16:54.168 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.62 sec
+2026-08-29 22:16:58.928 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/kazan/audi/q3/704689887.html
+2026-08-29 22:16:58.956 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/tomsk/audi/q3/628875816.html
+2026-08-29 22:16:58.956 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.74 sec
+2026-08-29 22:17:02.362 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/tomsk/audi/q3/628875816.html
+2026-08-29 22:17:02.386 | INFO     | __main__:run_analysis:74 - Starting Avito parsing...
+2026-08-29 22:17:02.386 | INFO     | app.parsers.avito.core.parser_engine:search:24 - AVITO SEARCH: https://www.avito.ru/rossiya/avtomobili/audi/q3/
+2026-08-29 22:17:02.386 | INFO     | app.parsers.avito.http.client:rotate_proxy:56 - AVITO: Rotated proxy to http://user435202:rftbv3@185.81.147.98:1206

@@ -1,5 +1,13 @@
-# Examples 1:
+```
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-# Example 2 (Project with artifacts):
+# Logs
+*.log
 
-# Final reminder: Output ONLY the .gitignore content. If nothing should be ignored, output NOTHING.
+# Database
+*.db
+```

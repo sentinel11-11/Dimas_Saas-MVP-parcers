@@ -3,7 +3,14 @@
 """
 
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 from typing import List, Dict, Any
+
+# Загружаем .env из корня проекта
+env_path = Path(__file__).parent.parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
 
 
 class AutoRuConfig:
@@ -26,14 +33,16 @@ class AutoRuConfig:
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
     ]
     
-    # Селекторы для поиска объявлений
+    # Селекторы для поиска объявлений (обновленные)
     LISTING_SELECTORS: List[str] = [
         'div[class*="ListingItem"]',
-        'a[href*="/cars/sale/offer/"]',
         'section[class*="Listing"]',
         'article[class*="card"]',
+        'a[href*="/cars/sale/offer/"]',
         '.ListingItemTitle',
         '[data-name="card"]',
+        'div.ListingItem',
+        'div[class*="OfferTree"]'
     ]
     
     # Настройки браузера

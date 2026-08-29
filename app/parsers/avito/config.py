@@ -1,4 +1,12 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Загружаем .env из корня проекта
+env_path = Path(__file__).parent.parent.parent.parent / ".env"
+if env_path.exists():
+    load_dotenv(dotenv_path=env_path)
+
 class AvitoConfig:
     base_url = "https://www.avito.ru"
     search_limit = int(os.getenv("AVITO_SEARCH_LIMIT", "20"))
