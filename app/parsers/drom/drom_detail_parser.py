@@ -161,19 +161,29 @@ class DromDetailParser:
     # =========================
     def normalize(self, d):
 
-        # engine
+        # engine - ensure float with default
         if isinstance(d.get("engine_volume"), str):
             try:
                 d["engine_volume"] = float(d["engine_volume"].replace(",", "."))
             except:
-                d["engine_volume"] = None
-
+                d["engine_volume"] = 0.0
+        elif d.get("engine_volume") is None:
+            d["engine_volume"] = 0.0
+            
         if d.get("engine_volume") and d["engine_volume"] > 10:
-            d["engine_volume"] = None
+            d["engine_volume"] = 0.0
 
-        # hp sanity
+        # hp sanity - ensure int with default
+        if d.get("horsepower"):
+            try:
+                d["horsepower"] = int(d["horsepower"])
+            except:
+                d["horsepower"] = 0
+        else:
+            d["horsepower"] = 0
+            
         if d.get("horsepower") and d["horsepower"] > 1500:
-            d["horsepower"] = None
+            d["horsepower"] = 0
 
         # mileage sanity
         if d.get("mileage") and d["mileage"] > 2_000_000:

@@ -69,11 +69,11 @@ def run_analysis():
         except Exception as e:
             logger.error(f"DROM DETAIL ERROR: {e}")
 
-    # 2. Парсинг Avito
+    # 2. Парсинг Avito с улучшенной защитой от блокировок
     if config.AVITO_ENABLED:
         logger.info("Starting Avito parsing...")
         try:
-            avito_ads = AvitoParser().search({"brand": config.BRAND, "model": config.MODEL, "limit": 20, "target_region": "rossiya"})
+            avito_ads = AvitoParser().search({"brand": config.BRAND, "model": config.MODEL, "limit": 10, "target_region": "rossiya"})
             logger.info(f"AVITO FOUND ADS: {len(avito_ads)}")
             for ad in avito_ads:
                 try:
@@ -84,18 +84,23 @@ def run_analysis():
         except Exception as e:
             logger.error(f"AVITO SEARCH ERROR: {e}")
 
-    # 2. Парсинг Auto.ru (асинхронный)
+    # 3. Парсинг Auto.ru (асинхронный)
     logger.info("Starting Auto.ru parsing...")
     autoru_parser = AutoRuParser()
     
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    # Используем asyncio.run() для корректной работы с асинхронным кодом
+    async def run_autoru_parsing():
+        return await autoru_parser.search(
+            filters={"brand": config.BRAND, "model": config.MODEL},
+            limit=10
+        )
     
-    autoru_cars = loop.run_until_complete(parse_autoru_ads(autoru_parser, limit=10))
-    enriched.extend(autoru_cars)
+    try:
+        autoru_cars = asyncio.run(run_autoru_parsing())
+        logger.info(f"AUTO.RU FOUND: {len(autoru_cars)}")
+        enriched.extend(autoru_cars)
+    except Exception as e:
+        logger.error(f"AUTORU SEARCH ERROR: {e}")
     
     logger.info(f"TOTAL ENRICHED CARS: {len(enriched)}")
     if not enriched:
