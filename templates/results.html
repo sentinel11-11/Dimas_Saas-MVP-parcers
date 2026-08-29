@@ -76,6 +76,15 @@
             font-weight: 600;
         }
         
+        .car-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            background: #f8f9fa;
+        }
+        
         .car-details {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -166,9 +175,71 @@
             height: 100%;
             transition: width 0.5s ease;
         }
+        
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(102, 126, 234, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .loading-content {
+            text-align: center;
+            color: white;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid rgba(255,255,255,0.3);
+            border-top: 6px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .loading-subtext {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <div class="loading-text">Поиск выгодных предложений...</div>
+            <div class="loading-subtext" id="loadingSubtext">Анализируем объявления с выбранных площадок</div>
+        </div>
+    </div>
+
     <!-- Навигация -->
     <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
@@ -230,6 +301,7 @@
                         
                         <div class="row">
                             <div class="col-md-8">
+                                <img src="{{ car.image_url }}" alt="{{ car.title }}" class="car-image" onerror="this.src='/static/images/car-placeholder.svg'">
                                 <h4 class="mb-2">{{ car.title }}</h4>
                                 <div class="price-tag mb-3">{{ "{:,}".format(car.price).replace(',', ' ') }} ₽</div>
                                 
@@ -323,8 +395,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Анимация при загрузке
+        // Показываем loading overlay при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            
+            // Показываем overlay
+            loadingOverlay.classList.add('active');
+            
+            // Скрываем через 2 секунды или когда страница полностью загружена
+            setTimeout(() => {
+                loadingOverlay.classList.remove('active');
+            }, 2000);
+            
+            // Анимация карточек
             const cards = document.querySelectorAll('.car-card');
             cards.forEach((card, index) => {
                 card.style.opacity = '0';
@@ -333,9 +416,29 @@
                     card.style.transition = 'opacity 0.5s, transform 0.5s';
                     card.style.opacity = '1';
                     card.style.transform = 'translateY(0)';
-                }, index * 100);
+                }, index * 100 + 2000);
             });
         });
+        
+        // Динамическое обновление текста загрузки
+        const loadingMessages = [
+            'Подключаемся к площадкам...',
+            'Парсим объявления с Drom...',
+            'Проверяем Avito...',
+            'Анализируем Auto.ru...',
+            'Считаем рыночные цены...',
+            'Оцениваем ликвидность...',
+            'Формируем результаты...'
+        ];
+        
+        let messageIndex = 0;
+        setInterval(() => {
+            const subtext = document.getElementById('loadingSubtext');
+            if (subtext && messageIndex < loadingMessages.length) {
+                subtext.textContent = loadingMessages[messageIndex];
+                messageIndex++;
+            }
+        }, 800);
     </script>
 </body>
 </html>

@@ -8,6 +8,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import asyncio
+import json
 from loguru import logger
 
 from app.database.db import init_db, get_all_listings, delete_listing
@@ -23,6 +24,40 @@ from app.models.car_listing import CarListing
 app = FastAPI(title="Car Parser MVP", description="Парсинг и анализ автомобильных объявлений")
 
 # Подключение статики и шаблонов
+# Список всех марок автомобилей
+ALL_BRANDS = [
+    "audi", "bmw", "chevrolet", "chrysler", "citroen", "dodge", "fiat", "ford",
+    "geely", "genesis", "gmc", "honda", "hyundai", "infiniti", "jaguar", "jeep",
+    "kia", "land rover", "lexus", "mazda", "mercedes", "mini", "mitsubishi",
+    "nissan", "opel", "peugeot", "porsche", "renault", "skoda", "subaru",
+    "suzuki", "toyota", "volkswagen", "volvo", "lada", "gaz", "uaz"
+]
+
+# Популярные модели для каждой марки
+POPULAR_MODELS = {
+    "bmw": ["1 серия", "2 серия", "3 серия", "4 серия", "5 серия", "6 серия", "7 серия", "8 серия", 
+            "X1", "X2", "X3", "X4", "X5", "X6", "X7", "Z4", "i3", "i4", "iX"],
+    "mercedes": ["A-Class", "B-Class", "C-Class", "CLA", "CLS", "E-Class", "G-Class", "GLA", "GLB", 
+                 "GLC", "GLE", "GLS", "S-Class", "SL", "AMG GT"],
+    "audi": ["A1", "A3", "A4", "A5", "A6", "A7", "A8", "Q2", "Q3", "Q4", "Q5", "Q7", "Q8", "TT", "e-tron"],
+    "toyota": ["Camry", "Corolla", "RAV4", "Land Cruiser", "Highlander", "Prius", "Yaris", "Avalon"],
+    "honda": ["Accord", "Civic", "CR-V", "HR-V", "Pilot", "Odyssey", "Fit"],
+    "nissan": ["Almera", "Altima", "Juke", "Kashqai", "Leaf", "Maxima", "Murano", "Note", "Pathfinder", "Qashqai", "Terrano", "X-Trail"],
+    "volkswagen": ["Golf", "Jetta", "Passat", "Polo", "Tiguan", "Touareg", "Arteon"],
+    "ford": ["Fiesta", "Focus", "Fusion", "Kuga", "Mondeo", "Mustang", "Explorer", "F-150"],
+    "hyundai": ["Accent", "Elantra", "Genesis", "Grandeur", "i30", "Santa Fe", "Sonata", "Tucson"],
+    "kia": ["Ceed", "Cerato", "K5", "Mohave", "Optima", "Picanto", "Rio", "Sorento", "Sportage", "Stinger"],
+    "lexus": ["ES", "GS", "IS", "LS", "LX", "NX", "RX", "UX"],
+    "mazda": ["2", "3", "5", "6", "CX-3", "CX-5", "CX-7", "CX-9", "MX-5"],
+    "subaru": ["Forester", "Impreza", "Legacy", "Outback", "WRX", "XV"],
+    "mitsubishi": ["ASX", "Eclipse Cross", "L200", "Lancer", "Outlander", "Pajero"],
+    "porsche": ["718", "911", "Cayenne", "Macan", "Panamera", "Taycan"],
+    "volvo": ["S40", "S60", "S90", "V40", "V60", "V90", "XC40", "XC60", "XC90"],
+    "lada": ["Granta", "Kalina", "Priora", "Vesta", "XRAY", "Niva", "Largus"],
+    "gaz": ["Volga", "Gazelle", "Next"],
+    "uaz": ["Patriot", "Hunter", "Pickup", "Cargo"]
+}
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
@@ -52,7 +87,9 @@ async def home(request: Request):
         {
             "request": request,
             "title": "Поиск выгодных автомобилей",
-            "brands": ["bmw", "mercedes", "audi", "toyota", "honda", "nissan", "volkswagen", "ford", "hyundai", "kia"]
+            "brands": ALL_BRANDS,
+            "models_json": json.dumps(POPULAR_MODELS),
+            "custom_limit_enabled": True
         }
     )
 
@@ -118,20 +155,33 @@ async def search_cars(
             logger.error(f"AVITO SEARCH ERROR: {e}")
             errors.append(f"Avito поиск: {str(e)}")
     
-    # 3. Парсинг Auto.ru
+    # 3. Парсинг Auto.ru (используем asyncio.create_task вместо asyncio.run)
     if "autoru" in sources:
         try:
             autoru_parser = AutoRuParser(headless=True)
             
-            async def run_autoru():
-                return await autoru_parser.search(
+            # Создаем задачу в текущем event loop
+            autoru_task = asyncio.create_task(
+                autoru_parser.search(
                     filters={"brand": brand, "model": model},
                     limit=limit
                 )
-            
-            autoru_cars = asyncio.run(run_autoru())
+            )
+            autoru_cars = await autoru_task
             logger.info(f"AUTO.RU FOUND: {len(autoru_cars)}")
-            enriched.extend(autoru_cars)
+            
+            for car_data in autoru_cars:
+                try:
+                    if isinstance(car_data, CarListing):
+                        enriched.append(car_data)
+                    else:
+                        normalized = DataNormalizer.normalize(car_data)
+                        normalized["platform"] = "autoru"
+                        car = CarListing(**normalized)
+                        enriched.append(car)
+                except Exception as e:
+                    logger.error(f"AUTORU NORMALIZATION ERROR: {e}")
+                    errors.append(f"Auto.ru обработка: {str(e)}")
         except Exception as e:
             logger.error(f"AUTORU SEARCH ERROR: {e}")
             errors.append(f"Auto.ru поиск: {str(e)}")
@@ -173,6 +223,7 @@ async def search_cars(
             "region": car.region,
             "url": car.url,
             "platform": car.platform,
+            "image_url": car.image_url or "/static/images/no-car-image.png",
             "market_price": car.market_price,
             "market_deviation": car.market_deviation,
             "probability": car.probability_good_deal,

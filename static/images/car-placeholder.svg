@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250">
+  <rect width="400" height="250" fill="#f0f0f0"/>
+  <text x="200" y="110" font-family="Arial, sans-serif" font-size="18" fill="#999" text-anchor="middle">Нет изображения</text>
+  <text x="200" y="140" font-family="Arial, sans-serif" font-size="14" fill="#ccc" text-anchor="middle">Автомобиль</text>
+  <path d="M100 170 L150 150 L250 150 L300 170 L300 190 L100 190 Z" fill="#ddd" stroke="#bbb" stroke-width="2"/>
+  <circle cx="140" cy="190" r="15" fill="#bbb"/>
+  <circle cx="260" cy="190" r="15" fill="#bbb"/>
+</svg>

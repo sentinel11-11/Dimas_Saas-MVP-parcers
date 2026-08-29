@@ -175,12 +175,13 @@
                         </div>
                         
                         <div class="col-md-3">
-                            <label for="limit" class="form-label">Количество</label>
+                            <label for="limit" class="form-label">Количество результатов</label>
                             <select class="form-select" id="limit" name="limit">
                                 <option value="5">5</option>
                                 <option value="10" selected>10</option>
                                 <option value="20">20</option>
                                 <option value="50">50</option>
+                                <option value="100">100</option>
                             </select>
                         </div>
                         
@@ -195,7 +196,7 @@
                 <!-- Быстрый выбор марок -->
                 <div class="car-brands justify-content-center mt-4">
                     <span class="text-muted small me-2">Популярные:</span>
-                    {% for brand in brands[:6] %}
+                    {% for brand in brands[:8] %}
                     <span class="brand-badge" onclick="selectBrand('{{ brand }}')">{{ brand.capitalize() }}</span>
                     {% endfor %}
                 </div>
@@ -240,17 +241,53 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Данные о моделях для каждой марки
+        const popularModels = {{ models_json | safe }};
+        
         function selectBrand(brand) {
             document.getElementById('brand').value = brand;
+            updateModelDropdown(brand);
             // Плавная прокрутка к форме
             document.querySelector('.search-form').scrollIntoView({ behavior: 'smooth' });
         }
         
-        // Автозаполнение модели при выборе марки (можно расширить)
+        // Обновление списка моделей при выборе марки
+        function updateModelDropdown(brand) {
+            const modelSelect = document.getElementById('model');
+            const models = popularModels[brand] || [];
+            
+            if (models.length > 0) {
+                modelSelect.innerHTML = '<option value="">Выберите модель...</option>';
+                models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model;
+                    option.textContent = model;
+                    modelSelect.appendChild(option);
+                });
+            } else {
+                modelSelect.placeholder = 'Введите модель вручную';
+            }
+        }
+        
+        // Автозаполнение модели при выборе марки
         document.getElementById('brand').addEventListener('change', function() {
+            updateModelDropdown(this.value);
             const modelInput = document.getElementById('model');
-            if (!modelInput.value) {
+            if (!modelInput.value && this.value) {
                 modelInput.focus();
+            }
+        });
+        
+        // Поддержка произвольного количества автомобилей
+        document.getElementById('limit').addEventListener('click', function() {
+            // Можно добавить кастомное значение через prompt
+            if (this.value === 'custom') {
+                const customValue = prompt('Введите количество автомобилей (1-500):', '20');
+                if (customValue && !isNaN(customValue) && customValue > 0 && customValue <= 500) {
+                    this.value = customValue;
+                } else {
+                    this.value = '10';
+                }
             }
         });
     </script>
