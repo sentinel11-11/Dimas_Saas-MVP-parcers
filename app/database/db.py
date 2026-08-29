@@ -1,6 +1,6 @@
 import sqlite3
-from sqlalchemy import create_engine, Session
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 from typing import List, Optional
 from loguru import logger
 

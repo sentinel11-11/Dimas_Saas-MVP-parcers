@@ -1,0 +1,35 @@
+2026-08-29 11:39:10.586 | INFO     | app.database.db:init_db:22 - Database initialized with SQLAlchemy
+2026-08-29 11:39:10.586 | INFO     | app.parsers.drom.drom_parser:search:35 - DROM SEARCH: https://auto.drom.ru/bmw/x5/
+2026-08-29 11:39:10.586 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 1.06 sec
+2026-08-29 11:39:12.950 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/bmw/x5/
+2026-08-29 11:39:12.999 | INFO     | app.parsers.drom.drom_parser:search:56 - REAL CARDS: 20
+2026-08-29 11:39:13.002 | INFO     | __main__:run_analysis:56 - DROM FOUND ADS: 20
+2026-08-29 11:39:13.002 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/bmw/x5/260343971.html
+2026-08-29 11:39:13.002 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 0.87 sec
+2026-08-29 11:39:14.807 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/bmw/x5/260343971.html
+2026-08-29 11:39:14.828 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/moscow/bmw/x5/895401332.html
+2026-08-29 11:39:14.828 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.89 sec
+2026-08-29 11:39:18.239 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/moscow/bmw/x5/895401332.html
+2026-08-29 11:39:18.260 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/novosibirsk/bmw/x5/113300248.html
+2026-08-29 11:39:18.261 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.61 sec
+2026-08-29 11:39:21.820 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/novosibirsk/bmw/x5/113300248.html
+2026-08-29 11:39:21.839 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/simferopol/bmw/x5/129498011.html
+2026-08-29 11:39:21.839 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.73 sec
+2026-08-29 11:39:25.194 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/simferopol/bmw/x5/129498011.html
+2026-08-29 11:39:25.212 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/nizhnevartovsk/bmw/x5/900865998.html
+2026-08-29 11:39:25.213 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.39 sec
+2026-08-29 11:39:29.355 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/nizhnevartovsk/bmw/x5/900865998.html
+2026-08-29 11:39:29.382 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/magnitogorsk/bmw/x5/174338772.html
+2026-08-29 11:39:29.382 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 3.54 sec
+2026-08-29 11:39:33.673 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/magnitogorsk/bmw/x5/174338772.html
+2026-08-29 11:39:33.693 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/novosibirsk/bmw/x5/514684319.html
+2026-08-29 11:39:33.693 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 1.96 sec
+2026-08-29 11:39:36.258 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/novosibirsk/bmw/x5/514684319.html
+2026-08-29 11:39:36.278 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/spb/bmw/x5/416421913.html
+2026-08-29 11:39:36.278 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 1.65 sec
+2026-08-29 11:39:38.498 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/spb/bmw/x5/416421913.html
+2026-08-29 11:39:38.516 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/shahty/bmw/x5/320452856.html
+2026-08-29 11:39:38.516 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 2.38 sec
+2026-08-29 11:39:41.492 | INFO     | app.utils.http_client:get:88 - STATUS 200: https://auto.drom.ru/shahty/bmw/x5/320452856.html
+2026-08-29 11:39:41.513 | INFO     | app.parsers.drom.drom_detail_parser:parse:24 - DETAIL V5: https://auto.drom.ru/novosibirsk/bmw/x5/627602647.html
+2026-08-29 11:39:41.513 | INFO     | app.utils.http_client:_smart_sleep:51 - Sleep: 4.18 sec

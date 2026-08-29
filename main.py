@@ -30,9 +30,8 @@ async def parse_drom_ads(detail_parser, url):
 async def parse_autoru_ads(parser, limit=10):
     """Асинхронный парсинг Auto.ru."""
     try:
-        cars = await parser.parse_search(
-            brand=config.BRAND,
-            model=config.MODEL,
+        cars = await parser.search(
+            filters={"brand": config.BRAND, "model": config.MODEL},
             limit=limit
         )
         logger.info(f"AUTORU FOUND: {len(cars)}")
