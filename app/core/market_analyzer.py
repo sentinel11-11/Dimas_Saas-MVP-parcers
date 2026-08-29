@@ -304,8 +304,12 @@ class MarketAnalyzer:
         )
 
     @staticmethod
-    def calculate_final_probability(car):
-
+    def calculate_final_probability(car, search_config=None):
+        """
+        Расчет вероятности выгодной сделки с учетом конфигурации поиска пользователя
+        
+        Если передана search_config, учитываем соответствие параметров поиска
+        """
         z = 0
 
         # рынок
@@ -319,6 +323,74 @@ class MarketAnalyzer:
 
         # market score
         z += car.market_score * 2.0
+        
+        # === Бонус за соответствие параметрам поиска пользователя ===
+        if search_config:
+            match_bonus = 0
+            
+            # Год выпуска в диапазоне
+            if search_config.year_min <= car.year <= search_config.year_max:
+                match_bonus += 0.3
+            else:
+                # Штраф за выход за пределы диапазона
+                year_dist = max(
+                    abs(car.year - search_config.year_min),
+                    abs(car.year - search_config.year_max)
+                )
+                z -= min(year_dist / 10, 0.5)  # Макс штраф 0.5
+            
+            # Пробег в диапазоне
+            mileage = car.mileage or 0
+            if search_config.mileage_min <= mileage <= search_config.mileage_max:
+                match_bonus += 0.3
+            else:
+                mileage_dist = max(
+                    abs(mileage - search_config.mileage_min),
+                    abs(mileage - search_config.mileage_max)
+                )
+                z -= min(mileage_dist / 50000, 0.5)
+            
+            # Количество владельцев в диапазоне
+            owners = car.owners or 0
+            if search_config.owners_min <= owners <= search_config.owners_max:
+                match_bonus += 0.2
+            else:
+                z -= 0.3  # Штраф за несоответствие
+            
+            # Трансмиссия (если указана в поиске)
+            if search_config.transmission:
+                car_trans = (car.transmission or "").lower()
+                if search_config.transmission.lower() in car_trans:
+                    match_bonus += 0.15
+                else:
+                    z -= 0.2  # Штраф за несоответствие
+            
+            # Тип топлива (если указан в поиске)
+            if search_config.fuel:
+                car_fuel = (car.fuel or "").lower()
+                if search_config.fuel.lower() in car_fuel:
+                    match_bonus += 0.1
+                else:
+                    z -= 0.15
+            
+            # Привод (если указан в поиске)
+            if search_config.drive:
+                car_drive = (car.drive or "").lower()
+                if search_config.drive.lower() in car_drive:
+                    match_bonus += 0.1
+                else:
+                    z -= 0.15
+            
+            # Регион (если указан в поиске)
+            if search_config.region:
+                car_region = (car.region or "").lower()
+                if search_config.region.lower() in car_region:
+                    match_bonus += 0.15
+                else:
+                    z -= 0.2
+            
+            # Добавляем бонус за совпадения
+            z += match_bonus
 
         return round(
             MarketAnalyzer.sigmoid(z),
