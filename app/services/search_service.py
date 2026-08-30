@@ -189,6 +189,8 @@ async def _search_autoru(filters: dict, limit: int, errors: list) -> List[CarLis
         "region": filters.get("region"),
         "year_from": filters.get("year_min"),
         "year_to": filters.get("year_max"),
+        "price_from": filters.get("price_min"),
+        "price_to": filters.get("price_max"),
     }
     cars = []
     for use_proxy in (False, True):
@@ -285,6 +287,13 @@ def run_search(params: dict) -> dict:
 
     logger.info(f"TOTAL ENRICHED BEFORE FILTERS: {len(enriched)}")
     filtered = [c for c in enriched if apply_filters(c, filters)]
+    dropped_autoru = [
+        c for c in enriched
+        if (c.platform or "").lower() in ("auto_ru", "autoru") and c not in filtered
+    ]
+    if dropped_autoru:
+        sample = [(c.price, c.year, c.mileage, c.owners) for c in dropped_autoru[:8]]
+        logger.info(f"AUTORU FILTERED OUT {len(dropped_autoru)} e.g. {sample}")
     if not filtered and enriched:
         filtered = enriched
         errors.append("Строгие фильтры не сработали — показана вся выборка")

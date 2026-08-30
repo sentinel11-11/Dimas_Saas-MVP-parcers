@@ -40,10 +40,22 @@ def infer_fuel(fuel: Optional[str], engine_volume: float = 0, horsepower: int = 
     return "petrol"
 
 
+ALIASES = {
+    "arhangelsk": "arkhangelsk",
+    "salehard": "salekhard",
+    "uhta": "ukhta",
+    "ukhta": "ukhta",
+    "belokuriha": "belokurikha",
+    "goryachiy-kluch": "goryachiy-klyuch",
+    "goryachiy-klyuch": "goryachiy-klyuch",
+}
+
+
 def _lookup(slug: Optional[str]) -> Optional[Tuple[float, float]]:
     if not slug:
         return None
-    key = str(slug).strip().lower()
+    key = str(slug).strip().lower().replace(" ", "-")
+    key = ALIASES.get(key, key)
     if key in COORDS:
         return COORDS[key]
     for s, (lat, lon) in COORDS.items():
