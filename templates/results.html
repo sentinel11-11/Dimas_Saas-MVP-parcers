@@ -63,7 +63,7 @@
             <article class="car-card car-row" data-price="{{ car.price or 0 }}" data-year="{{ car.year or 0 }}" data-probability="{{ car.probability or 0 }}" data-net="{{ car.net_vs_market or 0 }}">
                 <img src="{{ car.image_url }}" alt="" onerror="this.src='/static/images/car-placeholder.svg'">
                 <div>
-                    <span class="badge {{ car.platform }}">{{ car.platform }}</span>
+                    <span class="badge {{ car.platform }}">{{ {'drom': 'Drom', 'avito': 'Avito', 'autoru': 'Auto.ru', 'auto_ru': 'Auto.ru'}.get(car.platform, car.platform) }}</span>
                     {% if car.deal_pct %}<span class="badge">оценка {{ car.deal_pct }} из 100</span>{% endif %}
                     <h3 style="margin:8px 0 4px">{{ car.title }}</h3>
                     <div class="price">{{ car.price_fmt }} ₽ <span style="font-size:14px;color:var(--muted);font-family:var(--font);font-weight:400">цена в объявлении</span></div>
@@ -110,10 +110,9 @@
                         около {{ car.relocation.distance_km }} км, расход {{ car.relocation.fuel_l_100 }} л/100 км
                         {% if car.relocation.fuel_price %}при {{ car.relocation.fuel_price|int }} ₽/л{% endif %}.
                         Топливо {{ "{:,}".format(car.relocation.fuel_cost).replace(',', ' ') }} ₽
-                        + водитель {{ "{:,}".format(car.relocation.driver_cost).replace(',', ' ') }} ₽
                         {% if car.relocation.ferry_cost %} + паром {{ "{:,}".format(car.relocation.ferry_cost).replace(',', ' ') }} ₽{% endif %}
                         = <strong>{{ "{:,}".format(car.relocation.total).replace(',', ' ') }} ₽</strong>.
-                        <div style="margin-top:6px">Цена у вас в городе: <strong>{{ car.landed_fmt }} ₽</strong> (объявление + дорога).</div>
+                        <div style="margin-top:6px">Цена у вас в городе: <strong>{{ car.landed_fmt }} ₽</strong> (объявление + топливо{% if car.relocation.ferry_cost %} и паром{% endif %}).</div>
                     </div>
                     {% elif car.relocation and car.relocation.same_city %}
                     <div class="insight">Машина уже в вашем городе — дорогу считать не нужно.</div>

@@ -1,4 +1,4 @@
-"""Расстояние и оценка перегона (топливо + водитель + паром ДВ)."""
+"""Расстояние и оценка перегона (только топливо + паром ДВ)."""
 from __future__ import annotations
 
 import math
@@ -7,7 +7,7 @@ from typing import Optional, Tuple
 from app.data.geo_cities import COORDS, LABELS
 
 FUEL_RUB_PER_LITER = 62.0
-DRIVER_RUB_PER_KM = 12.0
+DRIVER_RUB_PER_KM = 0.0
 ROAD_FACTOR = 1.25
 FERRY_CITIES = {
     "yuzhno-sakhalinsk": 85000,
@@ -123,16 +123,16 @@ def relocation(
     price_l = FUEL_RUB_PER_LITER if fuel_price is None else float(fuel_price)
     price_l = max(30.0, min(price_l, 250.0))
     fuel_cost = round(liters * price_l)
-    driver = round(dist * DRIVER_RUB_PER_KM)
+    driver = 0
     region_key = str(listing_region).strip().lower()
     ferry = FERRY_CITIES.get(region_key, 0)
     return {
         "distance_km": dist,
         "fuel_l_100": l100,
         "fuel_cost": fuel_cost,
-        "driver_cost": driver,
+        "driver_cost": 0,
         "ferry_cost": ferry,
-        "total": fuel_cost + driver + ferry,
+        "total": fuel_cost + ferry,
         "same_city": False,
         "from_label": LABELS.get(region_key, listing_region),
         "to_label": LABELS.get(str(buyer_city).lower(), buyer_city),

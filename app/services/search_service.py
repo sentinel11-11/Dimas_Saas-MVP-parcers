@@ -51,7 +51,7 @@ def _listing_to_dict(car: CarListing) -> dict:
         "mileage_fmt": _fmt_money(car.mileage),
         "region": city(car.region) or car.region,
         "url": car.url,
-        "platform": car.platform,
+        "platform": {"auto_ru": "autoru", "auto.ru": "autoru"}.get((car.platform or "").lower(), car.platform),
         "image_url": car.image_url or "/static/images/no-car-image.png",
         "market_price": car.market_price,
         "market_price_fmt": _fmt_money(car.market_price),
@@ -245,6 +245,7 @@ def run_search(params: dict) -> dict:
         "body_type": params.get("body_type") or "",
         "region": params.get("region") or "",
         "buyer_city": params.get("buyer_city") or "",
+        "fuel_price": float(params.get("fuel_price") or 62),
     }
     cache_payload = {**filters, "sources": sources, "limit": limit}
     key = _cache_key(cache_payload)
@@ -288,6 +289,8 @@ def run_search(params: dict) -> dict:
         filtered = enriched
         errors.append("Строгие фильтры не сработали — показана вся выборка")
     filtered = dedup(filtered)
+    from collections import Counter
+    logger.info(f"BY PLATFORM AFTER FILTERS: {dict(Counter((c.platform or '') for c in filtered))}")
     from app.core.geo import relocation
 
     buyer = filters.get("buyer_city") or ""

@@ -17,6 +17,8 @@ def test_relocation_cheaper_example():
     r = relocation("moscow", "spb", engine_volume=2.0, fuel="petrol")
     assert r["distance_km"] > 600
     assert r["total"] > 0
+    assert r["driver_cost"] == 0
+    assert r["total"] == r["fuel_cost"] + r["ferry_cost"]
     assert r["total"] < 400_000  # не миллион за перегон легкового
 
 

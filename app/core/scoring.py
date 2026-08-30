@@ -16,13 +16,14 @@ LIQUID_REGIONS = {
 
 def dedup(cars: List[CarListing]) -> List[CarListing]:
     seen_urls = set()
-    fingerprints = []
+    fingerprints = set()
     result = []
     for car in cars:
         url = (car.url or "").split("?")[0]
         if url in seen_urls:
             continue
         fp = (
+            (car.platform or "").lower(),
             car.year or 0,
             round((car.mileage or 0) / 1500),
             round((car.price or 0) / 2000),
@@ -32,7 +33,7 @@ def dedup(cars: List[CarListing]) -> List[CarListing]:
         if fp in fingerprints and car.price:
             continue
         seen_urls.add(url)
-        fingerprints.append(fp)
+        fingerprints.add(fp)
         result.append(car)
     return result
 
