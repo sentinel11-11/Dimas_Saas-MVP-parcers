@@ -155,13 +155,8 @@ class DromParser(BaseParser):
             if digits:
                 mileage = int(digits)
 
-        # IMAGES - извлечение фотографии
-        image_url = None
-        img_tag = card.find("img")
-        if img_tag:
-            image_url = img_tag.get("src") or img_tag.get("data-src")
-            if image_url and image_url.startswith("//"):
-                image_url = "https:" + image_url
+        # IMAGES
+        image_url = self._card_image(card)
 
         if not title or not url:
             return None
@@ -185,3 +180,28 @@ class DromParser(BaseParser):
             "image_url": image_url,
             "region": region,
         }
+
+    @staticmethod
+    def _card_image(card) -> str:
+        skip = ("data:", "placeholder", "no-photo", "nophoto", "stub", "logo", "icon", "1x1", ".svg")
+        cands = []
+        for img in card.find_all(["img", "source"]):
+            for attr in ("src", "data-src", "data-lazy", "data-original", "srcset", "data-srcset"):
+                raw = img.get(attr) or ""
+                if not raw:
+                    continue
+                first = raw.split(",")[0].strip().split()[0]
+                cands.append(first)
+        for tag in card.find_all(style=True):
+            m = re.search(r"url\(['\"]?([^'\")]+)['\"]?\)", tag.get("style") or "")
+            if m:
+                cands.append(m.group(1))
+        for raw in cands:
+            s = raw.strip()
+            if not s or any(x in s.lower() for x in skip):
+                continue
+            if s.startswith("//"):
+                s = "https:" + s
+            if s.startswith("http"):
+                return s
+        return None

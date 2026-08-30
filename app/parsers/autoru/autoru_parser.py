@@ -520,21 +520,27 @@ class AutoRuParser(BaseParser):
                     title = (h && h.textContent ? h.textContent : '').trim() || title;
                 }
                 const text = (box.innerText || '').replace(/\\s+/g, ' ');
-                let image = '';
-                const imgs = box.querySelectorAll('img');
-                for (const img of imgs) {
-                    let s = img.currentSrc || img.src || img.getAttribute('src') || img.getAttribute('data-src') || '';
-                    if (s.includes(' ')) s = s.split(' ')[0];
-                    if (s && !s.startsWith('data:') && s.length > 12) {
-                        image = s.startsWith('//') ? 'https:' + s : s;
-                        break;
+                const bad = (s) => !s || s.startsWith('data:') || /placeholder|stub|blank|1x1|\.svg/i.test(s);
+                const pickSrc = (el) => {
+                    const attrs = [el.currentSrc, el.src, el.getAttribute && el.getAttribute('src'), el.getAttribute && el.getAttribute('data-src'), el.getAttribute && el.getAttribute('srcset')];
+                    for (let s of attrs) {
+                        if (!s) continue;
+                        s = String(s).split(',')[0].trim().split(' ')[0];
+                        if (bad(s)) continue;
+                        return s.startsWith('//') ? 'https:' + s : s;
                     }
+                    return '';
+                };
+                let image = '';
+                for (const img of box.querySelectorAll('img, source')) {
+                    image = pickSrc(img);
+                    if (image) break;
                 }
                 if (!image) {
                     const bg = box.querySelector('[style*="background-image"]');
                     if (bg) {
-                        const m = (bg.getAttribute('style') || '').match(/url\\(["']?([^"')]+)["']?\\)/);
-                        if (m) image = m[1].startsWith('//') ? 'https:' + m[1] : m[1];
+                        const m = (bg.getAttribute('style') || '').match(/url\(["']?([^"')]+)["']?\)/);
+                        if (m && !bad(m[1])) image = m[1].startsWith('//') ? 'https:' + m[1] : m[1];
                     }
                 }
                 const priceEl = box.querySelector('[class*="Price"]');

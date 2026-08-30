@@ -65,6 +65,7 @@ class DromDetailParser:
                 "fuel": None,
                 "color": None,
                 "steering": None,
+                "image_url": None,
 
                 "data_confidence": 0.5
             }
@@ -160,6 +161,7 @@ class DromDetailParser:
             "fuel": self.extract_fuel(text),
             "color": self.extract_color(text),
             "steering": self.extract_steering(text),
+            "image_url": self.extract_image(soup),
         }
 
     # =========================
@@ -359,6 +361,22 @@ class DromDetailParser:
             return "gas"
         if "электромобил" in t or "электромотор" in t:
             return "electric"
+        return None
+
+    def extract_image(self, soup):
+        og = soup.find("meta", attrs={"property": "og:image"})
+        if og and og.get("content"):
+            s = og["content"]
+            if s.startswith("//"):
+                s = "https:" + s
+            return s
+        img = soup.find("img", src=True)
+        if img:
+            s = img.get("src") or ""
+            if s.startswith("//"):
+                s = "https:" + s
+            if s.startswith("http") and "data:" not in s:
+                return s
         return None
 
     def extract_body_type(self, text):
