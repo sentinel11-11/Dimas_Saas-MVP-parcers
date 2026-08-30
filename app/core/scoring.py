@@ -1,10 +1,17 @@
-"""Честный скоринг по текущей выборке, не «рынок РФ»."""
+"""Скоринг лотов относительно сопоставимой когорты, не «рынка РФ»."""
 from __future__ import annotations
 
+import math
 import statistics
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from app.models.car_listing import CarListing
+
+LIQUID_REGIONS = {
+    "moscow", "spb", "khimki", "balashikha", "podolsk", "korolev",
+    "mytishchi", "lyubertsy", "krasnogorsk", "odintsovo", "domodedovo",
+    "zelenograd", "istra",
+}
 
 
 def dedup(cars: List[CarListing]) -> List[CarListing]:
@@ -69,48 +76,119 @@ def apply_filters(car: CarListing, f: dict) -> bool:
     return True
 
 
+def _robust_median(vals: List[float]) -> float:
+    if not vals:
+        return 0.0
+    m = statistics.median(vals)
+    if len(vals) < 4:
+        return float(m)
+    mad = statistics.median([abs(v - m) for v in vals]) or 1.0
+    band = 3.5 * 1.4826 * mad
+    kept = [v for v in vals if abs(v - m) <= band]
+    return float(statistics.median(kept) if kept else m)
+
+
+def _peer_key(car: CarListing) -> Tuple[int, int]:
+    year_bin = ((car.year or 0) // 2) * 2
+    hp_bin = int(round((car.horsepower or 0) / 50.0) * 50)
+    return year_bin, hp_bin
+
+
+def _peers(car: CarListing, cars: List[CarListing]) -> List[CarListing]:
+    key = _peer_key(car)
+    same = [c for c in cars if _peer_key(c) == key and c.price]
+    if len(same) >= 3:
+        return same
+    y = car.year or 0
+    hp = car.horsepower or 0
+    close = [
+        c
+        for c in cars
+        if c.price
+        and abs((c.year or 0) - y) <= 2
+        and (not hp or not c.horsepower or abs(c.horsepower - hp) <= 80)
+    ]
+    return close if len(close) >= 2 else [c for c in cars if c.price]
+
+
+def _mileage_factor(car: CarListing, peers: List[CarListing]) -> float:
+    miles = [c.mileage for c in peers if c.mileage]
+    if not miles or not car.mileage:
+        return 1.0
+    med = statistics.median(miles)
+    # ~0.7% цены за каждые 10 тыс. км относительно медианы когорты
+    delta = (car.mileage - med) / 10000.0
+    factor = 1.0 - 0.007 * delta
+    return max(0.82, min(1.12, factor))
+
+
+def _sigmoid(x: float) -> float:
+    return 1.0 / (1.0 + math.exp(-x))
+
+
 def score_batch(cars: List[CarListing]) -> List[CarListing]:
-    prices = [c.price for c in cars if c.price and c.price > 0]
-    mileages = [c.mileage for c in cars if c.mileage]
-    median_price = statistics.median(prices) if prices else 0
-    median_mileage = statistics.median(mileages) if mileages else 0
+    if not cars:
+        return cars
 
     for car in cars:
-        car.market_price = float(median_price or car.price or 0)
-        if car.market_price > 0 and car.price:
-            car.market_deviation = round(
-                (car.market_price - car.price) / car.market_price, 4
-            )
+        peers = _peers(car, cars)
+        peer_prices = [c.price for c in peers if c.price]
+        raw_median = _robust_median(peer_prices)
+        fair = raw_median * _mileage_factor(car, peers)
+        reloc = car.relocation or {}
+        landed = int(car.price or 0) + int(reloc.get("total") or 0)
+        car.market_price = float(round(fair))
+        net = fair - landed
+        if fair > 0 and car.price:
+            car.market_deviation = round(net / fair, 4)
         else:
             car.market_deviation = 0.0
+        car.net_vs_market = round(net)
+        car.landed_price = landed
+        car.peer_size = len(peers)
 
-        score = 0.5
-        if car.market_deviation > 0.15:
-            score += 0.2
-        elif car.market_deviation > 0.05:
-            score += 0.1
-        elif car.market_deviation < -0.1:
-            score -= 0.15
+        deal = _sigmoid(car.market_deviation * 6.0)
 
-        if median_mileage and car.mileage:
-            if car.mileage < median_mileage * 0.8:
-                score += 0.1
-            elif car.mileage > median_mileage * 1.3:
-                score -= 0.1
-
+        region = str(car.region or "").lower()
+        liquidity = 0.55
+        if region in LIQUID_REGIONS:
+            liquidity += 0.2
+        elif reloc.get("distance_km", 0) > 2500:
+            liquidity -= 0.12
         if car.owners is None:
-            pass
+            liquidity -= 0.02
         elif car.owners <= 1:
-            score += 0.1
+            liquidity += 0.08
         elif car.owners >= 3:
-            score -= 0.08
+            liquidity -= 0.08
+        if car.accidents:
+            liquidity -= min(0.15, 0.05 * int(car.accidents))
+        miles = [c.mileage for c in peers if c.mileage]
+        if miles and car.mileage:
+            med_m = statistics.median(miles)
+            if car.mileage < med_m * 0.7:
+                liquidity += 0.06
+            elif car.mileage > med_m * 1.4:
+                liquidity -= 0.08
 
-        if car.year and car.year >= 2020:
-            score += 0.05
+        suspicious = fair > 0 and car.price and car.price < fair * 0.55
+        if suspicious:
+            deal = min(deal, 0.42)
+            note = "Цена сильно ниже когорты (год/л.с.) — проверь комплектацию и состояние"
+        else:
+            note = f"Справедливая цена когорты {int(fair):,} ₽ (n={len(peers)})".replace(",", " ")
 
-        car.liquidity_score = round(max(0.0, min(1.0, score)), 4)
-        car.probability_good_deal = car.liquidity_score
-        car.market_score = round(car.liquidity_score * 100, 2)
+        car.liquidity_score = round(max(0.05, min(0.98, liquidity)), 4)
+        car.probability_good_deal = round(max(0.05, min(0.97, 0.62 * deal + 0.38 * car.liquidity_score)), 4)
+        car.market_score = round(car.probability_good_deal * 100, 2)
+        car.scoring_note = note
+        car.suspicious = suspicious
 
-    cars.sort(key=lambda x: x.probability_good_deal or 0, reverse=True)
+    cars.sort(
+        key=lambda x: (
+            x.net_vs_market if getattr(x, "net_vs_market", None) is not None else 0,
+            x.probability_good_deal or 0,
+        ),
+        reverse=True,
+    )
     return cars

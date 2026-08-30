@@ -52,14 +52,15 @@
         {% endif %}
 
         <div class="chips" style="margin-bottom:16px">
-            <span class="chip" onclick="sortCards('probability')">По выгоде</span>
+            <span class="chip" onclick="sortCards('net')">По выгоде (после перегона)</span>
+            <span class="chip" onclick="sortCards('probability')">По скору</span>
             <span class="chip" onclick="sortCards('price')">По цене</span>
             <span class="chip" onclick="sortCards('year')">По году</span>
         </div>
 
         <div id="cardsRow">
         {% for car in results %}
-            <article class="car-card car-row" data-price="{{ car.price or 0 }}" data-year="{{ car.year or 0 }}" data-probability="{{ car.probability or 0 }}">
+            <article class="car-card car-row" data-price="{{ car.price or 0 }}" data-year="{{ car.year or 0 }}" data-probability="{{ car.probability or 0 }}" data-net="{{ car.net_vs_market or 0 }}">
                 <img src="{{ car.image_url }}" alt="" onerror="this.src='/static/images/car-placeholder.svg'">
                 <div>
                     <span class="badge {{ car.platform }}">{{ car.platform }}</span>
@@ -82,19 +83,24 @@
                         {% if car.vin %}<span>VIN {{ car.vin }}</span>{% endif %}
                     </div>
                     {% if car.market_price %}
-                    <div class="meta">средняя по выдаче {{ "{:,}".format(car.market_price|int).replace(',', ' ') }} ₽
-                        {% if car.market_deviation %} · vs средней {{ "%.0f"|format(car.market_deviation * 100) }}%{% endif %}
+                    <div class="meta">справедливая цена когорты {{ "{:,}".format(car.market_price|int).replace(',', ' ') }} ₽
+                        {% if car.peer_size %} · n={{ car.peer_size }}{% endif %}
+                        {% if car.market_deviation %} · vs когорты {{ "%.0f"|format(car.market_deviation * 100) }}%{% endif %}
                     </div>
                     {% endif %}
+                    {% if car.scoring_note %}<div class="meta">{{ car.scoring_note }}</div>{% endif %}
+                    {% if car.suspicious %}<div class="meta" style="color:#d36b5a">Подозрительно дёшево относительно года/мощности</div>{% endif %}
                     {% if car.relocation and not car.relocation.same_city %}
                     <div class="meta">перегон {{ car.relocation.from_label }} → {{ car.relocation.to_label }}:
                         ~{{ car.relocation.distance_km }} км · {{ car.relocation.fuel_l_100 }} л/100км ·
                         топливо {{ "{:,}".format(car.relocation.fuel_cost).replace(',', ' ') }} ₽ +
-                        водитель {{ "{:,}".format(car.relocation.driver_cost).replace(',', ' ') }} ₽ =
+                        водитель {{ "{:,}".format(car.relocation.driver_cost).replace(',', ' ') }} ₽
+                        {% if car.relocation.ferry_cost %} + паром {{ "{:,}".format(car.relocation.ferry_cost).replace(',', ' ') }} ₽{% endif %}
+                        =
                         <strong>{{ "{:,}".format(car.relocation.total).replace(',', ' ') }} ₽</strong>
                     </div>
                     <div class="meta">цена с перегоном {{ "{:,}".format(car.landed_price or 0).replace(',', ' ') }} ₽
-                        {% if car.net_vs_market %} · экономия к средней {{ "{:,}".format(car.net_vs_market).replace(',', ' ') }} ₽{% endif %}
+                        {% if car.net_vs_market %} · экономия к когорте {{ "{:,}".format(car.net_vs_market).replace(',', ' ') }} ₽{% endif %}
                     </div>
                     {% endif %}
                 </div>

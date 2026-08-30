@@ -28,6 +28,8 @@ from app.exports.exporter import DataExporter
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    from app.core.proxy import ProxySettings
+    logger.info(ProxySettings.status_line())
     logger.info("Web application started")
     yield
 

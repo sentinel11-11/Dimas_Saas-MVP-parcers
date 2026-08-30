@@ -102,10 +102,11 @@ class ProxySettings:
         return f"Proxy: ON  {_mask(url)}"
 
     @classmethod
-    def playwright_proxy(cls) -> Optional[Dict[str, str]]:
+    def playwright_proxy(cls, scheme: Optional[str] = None) -> Optional[Dict[str, str]]:
         if cls.host() and cls.http_port():
-            scheme = "socks5" if cls.protocol() == "socks5" else "http"
-            port = cls.socks_port() if scheme == "socks5" else cls.http_port()
+            # Chromium/Playwright cannot send SOCKS5 username/password.
+            scheme = "http"
+            port = cls.http_port()
             cfg = {"server": f"{scheme}://{cls.host()}:{port}"}
             if cls.user():
                 cfg["username"] = cls.user()

@@ -1,5 +1,7 @@
 from typing import Any, Dict, Optional
 
+from app.core.geo import infer_fuel
+
 
 TRANSMISSION_ALIASES = {
     "automatic": "automatic",
@@ -126,7 +128,11 @@ class DataNormalizer:
             "transmission": _alias(ad.get("transmission"), TRANSMISSION_ALIASES) or "",
             "drive": _alias(ad.get("drive"), DRIVE_ALIASES),
             "body_type": _alias(ad.get("body_type"), BODY_ALIASES),
-            "fuel": _alias(fuel_raw, FUEL_ALIASES),
+            "fuel": infer_fuel(
+                _alias(fuel_raw, FUEL_ALIASES),
+                DataNormalizer._to_float(ad.get("engine_volume"), 0.0),
+                DataNormalizer._to_int(ad.get("horsepower"), 0),
+            ),
             "owners": ad.get("owners"),
             "accidents": ad.get("accidents"),
             "pts": ad.get("pts"),

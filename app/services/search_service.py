@@ -58,9 +58,13 @@ def _listing_to_dict(car: CarListing) -> dict:
         "accidents": car.accidents,
         "steering": extra.get("steering"),
         "relocation": reloc,
-        "landed_price": landed,
-        "net_vs_market": round((car.market_price or 0) - landed),
-        "scoring_note": "Медиана по текущей выдаче марки/модели",
+        "landed_price": extra.get("landed_price") or landed,
+        "net_vs_market": extra.get("net_vs_market")
+        if extra.get("net_vs_market") is not None
+        else round((car.market_price or 0) - landed),
+        "scoring_note": extra.get("scoring_note") or "",
+        "suspicious": extra.get("suspicious") or False,
+        "peer_size": extra.get("peer_size") or 0,
     }
 
 
@@ -262,18 +266,11 @@ def run_search(params: dict) -> dict:
         filtered = enriched
         errors.append("Строгие фильтры не сработали — показана вся выборка")
     filtered = dedup(filtered)
-    from statistics import median
     from app.core.geo import relocation
 
-    sample_prices = [c.price for c in enriched if c.price]
-    market_median = float(median(sample_prices)) if sample_prices else 0
-    filtered = score_batch(filtered)
     buyer = filters.get("buyer_city") or ""
     for car in filtered:
-        if market_median:
-            car.market_price = market_median
-            if car.price:
-                car.market_deviation = round((market_median - car.price) / market_median, 4)
+        car.fuel = car.fuel or ""
         reloc = relocation(
             buyer,
             car.region,
@@ -282,6 +279,7 @@ def run_search(params: dict) -> dict:
             horsepower=car.horsepower or 0,
         )
         car.relocation = reloc
+    filtered = score_batch(filtered)
     logger.info(f"TOTAL ENRICHED AFTER FILTERS: {len(filtered)}")
 
     try:
