@@ -180,4 +180,37 @@ def parse_listing_html(html: str) -> List[Dict[str, Any]]:
         )
     if cards:
         logger.info(f"AUTO.RU HTML sale links: {len(cards)}")
+    return attach_photos(html, cards)
+
+
+def attach_photos(html: str, cards: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    if not cards or not html:
+        return cards
+    raw = PHOTO_RE.findall(html)
+    photos = []
+    seen_p = set()
+    for u in raw:
+        u = unescape(u).split(",")[0].split(" ")[0]
+        if u.startswith("//"):
+            u = "https:" + u
+        if "/32x32" in u or "/120x90" in u:
+            continue
+        key = re.sub(r"/\d+x\d+(?:n)?/?$", "", u)
+        if key in seen_p:
+            continue
+        seen_p.add(key)
+        if re.search(r"/\d+x\d+(?:n)?/?$", u):
+            u = re.sub(r"/\d+x\d+(?:n)?/?$", "/456x342", u)
+        photos.append(u)
+    if not photos:
+        return cards
+    i = 0
+    for c in cards:
+        if c.get("image"):
+            continue
+        if i < len(photos):
+            c["image"] = photos[i]
+            i += 1
+    filled = sum(1 for c in cards if c.get("image"))
+    logger.info(f"AUTO.RU photos attached {filled}/{len(cards)} pool={len(photos)}")
     return cards
