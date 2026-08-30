@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIMAS — быстрый подбор авто</title>
+    <title>DIMAS — выгодный лот за один проход</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/app.css">
@@ -14,29 +14,29 @@
             <a class="brand" href="/"><span class="brand-mark">D</span> DIMAS</a>
             <nav class="nav-links">
                 <a href="#search">Поиск</a>
-                <a href="#features">Как это работает</a>
+                <a href="#features">Как считаем</a>
                 <a href="/searches">Мои поиски</a>
             </nav>
         </header>
 
         <section class="hero">
             <div>
-                <div class="kicker">подбор без шума площадок</div>
-                <h1>Найдите выгодный лот за один проход</h1>
-                <p class="lead">Сравниваем лоты Drom между собой: когорта по году и мощности, цена с перегоном до вашего города. Avito и Auto.ru позже, когда будет другой прокси.</p>
+                <div class="kicker">drom · когорта · перегон</div>
+                <h1>Цена с дорогой, не просто объявление</h1>
+                <p class="lead">До 80 лотов с Drom. Сравниваем год, мощность и коробку, добавляем перегон до вашего города и поднимаем реальную выгоду наверх.</p>
                 <div class="stats">
-                    <div class="stat"><b>1 клик</b><span>форма → список</span></div>
-                    <div class="stat"><b>топ-N</b><span>детали только лучших</span></div>
-                    <div class="stat"><b>честно</b><span>оценка по этой выборке</span></div>
+                    <div class="stat"><b>4 стр.</b><span>листинг Drom</span></div>
+                    <div class="stat"><b>до 80</b><span>объявлений</span></div>
+                    <div class="stat"><b>landed</b><span>цена + дорога</span></div>
                 </div>
             </div>
-            <div class="panel" id="search">
-                <h2>Параметры лота</h2>
+            <div class="panel search-card" id="search">
+                <h2>Собрать выдачу</h2>
                 <form action="/search" method="POST" id="searchForm">
                     <div class="grid grid-2">
                         <div>
-                            <label for="brand">Марка (любая)</label>
-                            <input id="brand" name="brand" list="brandList" value="audi" required placeholder="audi, haval, zeekr…">
+                            <label for="brand">Марка</label>
+                            <input id="brand" name="brand" list="brandList" value="audi" required placeholder="bmw, haval, zeekr">
                             <datalist id="brandList">
                                 {% for brand in brands %}
                                 <option value="{{ brand }}"></option>
@@ -44,8 +44,8 @@
                             </datalist>
                         </div>
                         <div>
-                            <label for="model">Модель (любая)</label>
-                            <input id="model" name="model" list="modelList" value="q3" placeholder="q3, monjaro, vesta" required>
+                            <label for="model">Модель</label>
+                            <input id="model" name="model" list="modelList" value="q3" placeholder="m3, monjaro, vesta" required>
                             <datalist id="modelList"></datalist>
                         </div>
                     </div>
@@ -53,13 +53,13 @@
                         <label>Источники</label>
                         <div class="sources">
                             <label class="source"><input type="checkbox" name="sources" value="drom" checked> Drom</label>
-                            <label class="source"><input type="checkbox" name="sources" value="avito"> Avito</label>
-                            <label class="source"><input type="checkbox" name="sources" value="autoru"> Auto.ru</label>
+                            <label class="source"><input type="checkbox" name="sources" value="avito"> Avito позже</label>
+                            <label class="source"><input type="checkbox" name="sources" value="autoru"> Auto.ru позже</label>
                         </div>
                     </div>
                     <div class="grid grid-3" style="margin-top:12px">
                         <div>
-                            <label for="buyer_city">Вы в городе (куда гнать)</label>
+                            <label for="buyer_city">Вы в городе</label>
                             <select id="buyer_city" name="buyer_city">
                                 {% for r in regions %}
                                 {% if r.value %}
@@ -69,7 +69,7 @@
                             </select>
                         </div>
                         <div>
-                            <label for="region">Искать объявления в</label>
+                            <label for="region">Искать в</label>
                             <select id="region" name="region">
                                 {% for r in regions %}
                                 <option value="{{ r.value }}">{{ r.label }}</option>
@@ -78,7 +78,7 @@
                         </div>
                         <div>
                             <label for="limit">Сколько лотов</label>
-                            <input type="number" id="limit" name="limit" value="20" min="1" max="40">
+                            <input type="number" id="limit" name="limit" value="40" min="1" max="80">
                         </div>
                     </div>
                     <details class="more">
@@ -148,26 +148,26 @@
 
         <section class="features" id="features">
             <article class="feature">
-                <h3>Сначала список</h3>
-                <p>Две страницы Drom, детали по топу, сравнение внутри когорты.</p>
+                <h3>Широкая выборка</h3>
+                <p>Четыре страницы Drom и до 60 детальных карточек — когорта не из десятка случайных лотов.</p>
             </article>
             <article class="feature">
-                <h3>Один экран решения</h3>
-                <p>Цена, пробег, город и ссылка на площадку. Без кабинета и без шума.</p>
+                <h3>Сравнение внутри класса</h3>
+                <p>2021 и 2025, механика и автомат не мешаются в одну «среднюю по рынку».</p>
             </article>
             <article class="feature">
-                <h3>Можно сохранить</h3>
-                <p>До трёх поисков на email и проверка «появилось дешевле».</p>
+                <h3>Цена у вашего города</h3>
+                <p>Топливо, водитель и паром ДВ входят в landed. Сверху — экономия после дороги.</p>
             </article>
         </section>
 
-        <footer class="footer">DIMAS · подбор авто · оценка по текущей выдаче, не «рынок РФ»</footer>
+        <footer class="footer">DIMAS · оценка по текущей выдаче, не рынок РФ</footer>
     </div>
 
     <div class="overlay" id="loadingOverlay">
         <div class="overlay-box">
             <div class="spinner"></div>
-            <div id="loadingText">Ищем лоты… обычно до 30 секунд</div>
+            <div id="loadingText">Собираем Drom… до двух минут на 4 страницы</div>
         </div>
     </div>
 

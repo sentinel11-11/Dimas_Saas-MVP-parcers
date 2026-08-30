@@ -98,7 +98,7 @@ async def search_cars(
     brand: str = Form(...),
     model: str = Form(...),
     sources: List[str] = Form(default=["drom"]),
-    limit: int = Form(default=20),
+    limit: int = Form(default=40),
     year_min: int = Form(default=2018),
     year_max: int = Form(default=2026),
     mileage_min: int = Form(default=0),

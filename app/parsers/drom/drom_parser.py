@@ -50,7 +50,7 @@ class DromParser(BaseParser):
         return url
 
     def search(self, filters):
-        pages = max(1, min(int(filters.get("drom_pages") or 2), 3))
+        pages = max(1, min(int(filters.get("drom_pages") or 4), 5))
         seen = set()
         result = []
         for page in range(1, pages + 1):

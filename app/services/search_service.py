@@ -107,7 +107,7 @@ def _search_drom(filters: dict, limit: int, errors: list) -> List[CarListing]:
     parser = DromParser()
     detail = DromDetailParser()
     payload = dict(filters)
-    payload["drom_pages"] = 2
+    payload["drom_pages"] = 4
     ads = parser.search(payload) or []
     logger.info(f"DROM FOUND: {len(ads)}")
 
@@ -120,7 +120,7 @@ def _search_drom(filters: dict, limit: int, errors: list) -> List[CarListing]:
     pre = [c for c in cars if apply_filters(c, filters)]
     if not pre:
         pre = cars
-    top_n = pre[: min(max(limit, 16), 28)]
+    top_n = pre[: min(max(limit, 24), 60)]
 
     def enrich(car: CarListing) -> CarListing:
         try:
@@ -135,7 +135,7 @@ def _search_drom(filters: dict, limit: int, errors: list) -> List[CarListing]:
         return car
 
     enriched: List[CarListing] = []
-    workers = min(4, len(top_n) or 1)
+    workers = min(5, len(top_n) or 1)
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futs = {pool.submit(enrich, c): c for c in top_n}
         for fut in as_completed(futs):
@@ -214,7 +214,7 @@ def run_search(params: dict) -> dict:
     sources = params.get("sources") or ["drom"]
     if isinstance(sources, str):
         sources = [sources]
-    limit = max(1, min(int(params.get("limit") or 20), 40))
+    limit = max(1, min(int(params.get("limit") or 40), 80))
     filters = {
         "brand": (params.get("brand") or "").strip().lower(),
         "model": (params.get("model") or "").strip().lower(),
