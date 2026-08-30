@@ -263,7 +263,8 @@ class AutoRuParser(BaseParser):
             
             # Извлечение карточек
             cards_data = await self._extract_cards()
-            logger.info(f"AUTO.RU FOUND CARDS: {len(cards_data)}")
+            with_photo = sum(1 for c in cards_data if c.get("image"))
+            logger.info(f"AUTO.RU FOUND CARDS: {len(cards_data)} with photo: {with_photo}")
 
             for card_info in cards_data[:limit]:
                 try:
@@ -582,7 +583,8 @@ class AutoRuParser(BaseParser):
                     tech: techBits.length ? techBits.join(' | ') : ((techEl && techEl.innerText) || text),
                     place: (placeEl && placeEl.innerText) || '',
                     text,
-                    image
+                    image,
+                    html: box.innerHTML || ''
                 });
             });
             const seen = new Set();
@@ -596,8 +598,22 @@ class AutoRuParser(BaseParser):
         try:
             raw_cards = await self.page.evaluate(script)
             for item in raw_cards:
-                if item.get('url'):
-                    cards.append(item)
+                if not item.get("url"):
+                    continue
+                html = item.pop("html", "") or ""
+                img = (item.get("image") or "").strip()
+                if "autoru-vos" not in img and "yandex.net" not in img:
+                    found = re.findall(
+                        r"(?:https?:)?//[^\s\"'<>]+(?:autoru-vos|avatars\.mds\.yandex\.net)[^\s\"'<>]+",
+                        html,
+                        flags=re.I,
+                    )
+                    if found:
+                        img = found[0].split(",")[0].split(" ")[0]
+                if img.startswith("//"):
+                    img = "https:" + img
+                item["image"] = img
+                cards.append(item)
         except Exception as e:
             logger.error(f"Error extracting cards: {e}")
         
