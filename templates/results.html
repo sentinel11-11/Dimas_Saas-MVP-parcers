@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ brand }} {{ model }} — DIMAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/app.css?v=4">
+    <link rel="stylesheet" href="/static/css/app.css?v=5">
 </head>
 <body>
     <div class="wrap">
@@ -118,8 +118,25 @@
                     <div class="insight">Машина уже в вашем городе — дорогу считать не нужно.</div>
                     {% endif %}
                 </div>
-                <div>
+                <div class="card-actions">
                     <a class="btn" href="{{ car.url }}" target="_blank" rel="noopener">Открыть</a>
+                    <button type="button" class="btn ghost" onclick="openCalc(this)">Подробнее</button>
+                    <script type="application/json" class="calc-json">{{ {
+                        'title': car.title,
+                        'price_fmt': car.price_fmt,
+                        'market_fmt': car.market_price_fmt,
+                        'landed_fmt': car.landed_fmt,
+                        'net_fmt': car.net_fmt,
+                        'net': car.net_vs_market or 0,
+                        'peers': car.peer_size or 0,
+                        'deal': car.deal_pct,
+                        'liq': car.liquidity_pct or 0,
+                        'note': car.scoring_note,
+                        'year': car.year,
+                        'mileage_fmt': car.mileage_fmt,
+                        'region': car.region,
+                        'reloc': car.relocation or {}
+                    } | tojson }}</script>
                 </div>
             </article>
         {% else %}
@@ -127,6 +144,14 @@
         {% endfor %}
         </div>
         <footer class="footer">DIMAS · сравнение внутри этой выдачи, не весь рынок РФ</footer>
+    </div>
+    <div class="overlay" id="calcOverlay" onclick="if(event.target===this)closeCalc()">
+        <div class="calc-box" onclick="event.stopPropagation()">
+            <p class="kicker">полный расчёт</p>
+            <h2 id="calcTitle"></h2>
+            <div class="calc-grid" id="calcBody"></div>
+            <button type="button" class="btn ghost" onclick="closeCalc()">Закрыть</button>
+        </div>
     </div>
     <script>
         const SORT_DIR = { net: -1, probability: -1, year: -1, price: 1 };
@@ -137,6 +162,50 @@
             items.sort((a, b) => dir * (Number(a.dataset[key] || 0) - Number(b.dataset[key] || 0)));
             items.forEach(el => row.appendChild(el));
             document.querySelectorAll('#sortChips .chip').forEach(c => c.classList.toggle('on', c.dataset.sort === key));
+        }
+        function money(n) {
+            const x = Math.round(Number(n) || 0);
+            return x.toLocaleString('ru-RU');
+        }
+        function openCalc(btn) {
+            const raw = btn.parentElement.querySelector('.calc-json');
+            if (!raw) return;
+            const d = JSON.parse(raw.textContent);
+            const r = d.reloc || {};
+            document.getElementById('calcTitle').textContent = d.title || '';
+            const rows = [
+                ['Цена в объявлении', (d.price_fmt || '0') + ' ₽'],
+                ['Типичная цена похожих', (d.market_fmt || '—') + (d.market_fmt ? ' ₽' : '')],
+                ['Сравнили объявлений', String(d.peers || 0)],
+                ['Год / пробег', (d.year || '—') + ' · ' + (d.mileage_fmt ? d.mileage_fmt + ' км' : 'не указан')],
+                ['Город продажи', d.region || 'не указан'],
+            ];
+            if (r.unknown) {
+                rows.push(['Дорога', 'город не распознан — топливо не считали']);
+            } else if (r.same_city) {
+                rows.push(['Дорога', 'машина уже в вашем городе']);
+            } else {
+                rows.push(['Маршрут', (r.from_label || '') + ' → ' + (r.to_label || '')]);
+                rows.push(['Расстояние', (r.distance_km || 0) + ' км']);
+                rows.push(['Расход', (r.fuel_l_100 || 0) + ' л/100 км']);
+                rows.push(['Цена топлива', (r.fuel_price || 0) + ' ₽/л']);
+                rows.push(['Топливо', money(r.fuel_cost) + ' ₽']);
+                if (r.ferry_cost) rows.push(['Паром', money(r.ferry_cost) + ' ₽']);
+                rows.push(['Дорога всего', money(r.total) + ' ₽']);
+            }
+            rows.push(['Цена у вас', (d.landed_fmt || '0') + ' ₽']);
+            const netLabel = (d.net || 0) > 0 ? 'Выгода против похожих' : 'Переплата против похожих';
+            rows.push([netLabel, (d.net_fmt || '0') + ' ₽']);
+            rows.push(['Оценка сделки', (d.deal || 0) + ' из 100']);
+            rows.push(['Ликвидность', (d.liq || 0) + ' из 100']);
+            if (d.note) rows.push(['Комментарий', d.note]);
+            document.getElementById('calcBody').innerHTML = rows.map(([k,v]) =>
+                '<div class="spec"><em>' + k + '</em><b>' + v + '</b></div>'
+            ).join('');
+            document.getElementById('calcOverlay').classList.add('on');
+        }
+        function closeCalc() {
+            document.getElementById('calcOverlay').classList.remove('on');
         }
     </script>
 </body>

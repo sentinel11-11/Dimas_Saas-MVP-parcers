@@ -206,6 +206,21 @@ details.more summary { cursor: pointer; color: var(--amber-2); }
 .badge.drom { color: #8ec8ff; }
 .badge.avito { color: #7ad3ff; }
 .badge.autoru { color: #f0c36a; }
+.card-actions { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.card-actions .btn { white-space: nowrap; }
+.card-actions .calc-json { display: none; }
+.calc-box {
+  width: min(560px, calc(100% - 32px));
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 22px 22px 18px;
+  text-align: left;
+  box-shadow: 0 30px 80px rgba(0,0,0,.5);
+}
+.calc-box h2 { font-family: var(--display); font-size: 22px; margin: 4px 0 14px; overflow-wrap: anywhere; }
+.calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+@media (max-width: 640px) { .calc-grid { grid-template-columns: 1fr; } }
 
 @media (max-width: 900px) {
   .hero, .car-card, .features, .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }

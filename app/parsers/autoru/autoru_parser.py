@@ -328,19 +328,33 @@ class AutoRuParser(BaseParser):
 
     def _parse_listing_card(self, card_info: Dict[str, Any], filters: Dict[str, Any]) -> Optional[CarListing]:
         title = (card_info.get("title") or "").strip()
+        tech_join = card_info.get("tech")
+        if isinstance(tech_join, list):
+            tech_join = " | ".join(str(x) for x in tech_join if x)
         blob = " ".join(
-            str(card_info.get(k) or "")
-            for k in ("price", "tech", "place", "text", "mileage")
+            str(x or "")
+            for x in (
+                title,
+                card_info.get("price"),
+                tech_join,
+                card_info.get("place"),
+                card_info.get("text"),
+                card_info.get("mileage"),
+            )
         )
+        blob = re.sub(r"[\s\xa0]+", " ", blob)
         brand = (filters.get("brand") or "").strip()
         model = (filters.get("model") or "").strip()
         if re.search(r"ещё\s*\d+\s*фото", title, re.I) or len(title) < 8:
             pat = re.escape(brand) if brand else r"[A-Za-zА-Яа-я]{2,}"
-            tm = re.search(rf"({pat}[^\n₽]{{0,60}}(?:19|20)\d{{2}})", blob, re.I)
+            tm = re.search(rf"({pat}[^\n₽]{{0,70}}(?:19|20)\d{{2}})", blob, re.I)
             title = (tm.group(1).strip() if tm else "") or f"{brand} {model}".strip()
-        year_m = re.search(r"\b(19\d{2}|20\d{2})\b", title) or re.search(
-            r"\b(19\d{2}|20\d{2})\s*г", blob
-        ) or re.search(r"\b(19\d{2}|20\d{2})\b", blob)
+        year_m = (
+            re.search(r",\s*(19\d{2}|20\d{2})\b", title)
+            or re.search(r"\b(19\d{2}|20\d{2})\b", title)
+            or re.search(r"\b(19\d{2}|20\d{2})\s*г", blob)
+            or re.search(r"\b(19\d{2}|20\d{2})\b", blob)
+        )
         year = int(year_m.group(1)) if year_m else 0
         prices = []
         for raw in re.findall(r"(\d[\d\s\xa0]{4,})\s*₽", blob):
@@ -351,40 +365,43 @@ class AutoRuParser(BaseParser):
         if price < 50_000:
             return None
         mileage = self._mileage_from_text(blob, year)
-        vol_m = re.search(r"(\d+[.,]\d+)\s*л", blob, re.I)
+        vol_m = re.search(r"(\d+[.,]\d+)\s*л(?!\s*\.?с)", blob, re.I)
         hp_m = re.search(r"(\d{2,4})\s*л\.?\s*с", blob, re.I)
-        trans = ""
-        if re.search(r"робот", blob, re.I):
-            trans = "robot"
-        elif re.search(r"вариатор|cvt", blob, re.I):
-            trans = "variator"
-        elif re.search(r"механик", blob, re.I):
-            trans = "manual"
-        elif re.search(r"автомат|акпп", blob, re.I):
-            trans = "automatic"
-        fuel = ""
-        if re.search(r"дизель", blob, re.I):
-            fuel = "diesel"
-        elif re.search(r"гибрид", blob, re.I):
-            fuel = "hybrid"
-        elif re.search(r"электро", blob, re.I):
-            fuel = "electric"
-        elif re.search(r"бензин", blob, re.I):
-            fuel = "petrol"
-        drive = ""
-        if re.search(r"полный", blob, re.I):
-            drive = "four_wheel"
-        elif re.search(r"передн", blob, re.I):
-            drive = "front"
-        elif re.search(r"задн", blob, re.I):
-            drive = "rear"
+        trans = self._first_match(blob, (
+            (r"робот", "robot"),
+            (r"вариатор|cvt", "variator"),
+            (r"механик", "manual"),
+            (r"автомат|акпп", "automatic"),
+        ))
+        fuel = self._first_match(blob, (
+            (r"дизель", "diesel"),
+            (r"гибрид", "hybrid"),
+            (r"электро", "electric"),
+            (r"бензин", "petrol"),
+            (r"гбо|метан|пропан", "gas"),
+        ))
+        drive = self._first_match(blob, (
+            (r"полн", "four_wheel"),
+            (r"передн", "front"),
+            (r"задн", "rear"),
+        ))
+        body = self._first_match(blob, (
+            (r"внедорожник|кроссовер", "suv"),
+            (r"седан", "sedan"),
+            (r"хэтчбек", "hatchback"),
+            (r"универсал", "wagon"),
+            (r"купе", "coupe"),
+            (r"минивэн", "minivan"),
+            (r"кабриолет", "convertible"),
+        ))
         region = re.sub(r"[\s\xa0]+", " ", (card_info.get("place") or "").strip())
         if not region:
             rm = re.search(
-                r"(Москва|Санкт-Петербург|Минск|Московская область|[А-ЯЁ][а-яё-]{3,20})",
+                r"(Москва|Санкт-Петербург|Минск|Московская область|[А-ЯЁ][а-яё-]{3,24}(?:,\s*[^|]{0,40})?)",
                 blob,
             )
-            region = re.sub(r"[\s\xa0]+", " ", (rm.group(1) if rm else ""))
+            region = re.sub(r"[\s\xa0]+", " ", (rm.group(0) if rm else ""))
+        region = re.sub(r"\b(ещё\s*\d+\s*фото|добавить в сравнение)\b", "", region, flags=re.I).strip(" ,")
         own_m = re.search(r"(\d+)\s*владел", blob, re.I)
         owners = int(own_m.group(1)) if own_m else None
         pts = ""
@@ -394,10 +411,10 @@ class AutoRuParser(BaseParser):
             pts = "оригинал"
         elif re.search(r"дубликат", blob, re.I):
             pts = "дубликат"
-        y_from = int(filters.get("year_from") or 0)
-        y_to = int(filters.get("year_to") or 9999)
-        p_to = int(filters.get("price_to") or 0)
-        p_from = int(filters.get("price_from") or 0)
+        y_from = int(filters.get("year_from") or filters.get("year_min") or 0)
+        y_to = int(filters.get("year_to") or filters.get("year_max") or 9999)
+        p_to = int(filters.get("price_to") or filters.get("price_max") or 0)
+        p_from = int(filters.get("price_from") or filters.get("price_min") or 0)
         if year and y_from and year < y_from:
             return None
         if year and y_to and year > y_to:
@@ -419,7 +436,7 @@ class AutoRuParser(BaseParser):
             price=price,
             year=year,
             mileage=mileage,
-            region=region[:80],
+            region=region[:120],
             brand=brand.capitalize(),
             model=model,
             image_url=image,
@@ -428,9 +445,17 @@ class AutoRuParser(BaseParser):
             transmission=trans,
             fuel=fuel,
             drive=drive,
+            body_type=body,
             owners=owners,
             pts=pts,
         )
+
+    @staticmethod
+    def _first_match(blob: str, pairs) -> str:
+        for pat, val in pairs:
+            if re.search(pat, blob, re.I):
+                return val
+        return ""
 
     @staticmethod
     def _mileage_from_text(blob: str, year: int = 0) -> int:
@@ -514,12 +539,19 @@ class AutoRuParser(BaseParser):
                 }
                 const priceEl = box.querySelector('[class*="Price"]');
                 const techEl = box.querySelector('[class*="TechSummary"], [class*="ListingItemTech"], ul[class*="Summary"]');
-                const placeEl = box.querySelector('[class*="Metro"], [class*="Geo"], [class*="Place"], [class*="Region"]');
+                const techBits = [];
+                if (techEl) {
+                    techEl.querySelectorAll('li, span, div').forEach(n => {
+                        const t = (n.innerText || '').trim();
+                        if (t && t.length < 80) techBits.push(t);
+                    });
+                }
+                const placeEl = box.querySelector('[class*="Metro"], [class*="Geo"], [class*="Place"], [class*="Region"], [class*="SellerName"]');
                 items.push({
                     url: href,
                     title,
                     price: (priceEl && priceEl.innerText) || text,
-                    tech: (techEl && techEl.innerText) || text,
+                    tech: techBits.length ? techBits.join(' | ') : ((techEl && techEl.innerText) || text),
                     place: (placeEl && placeEl.innerText) || '',
                     text,
                     image
@@ -649,13 +681,16 @@ class AutoRuParser(BaseParser):
                     if (match) horsepower = match[1];
                 }
                 if (line.includes('Коробка') || line.includes('трансмиссия')) {
-                    transmission = line.split(':')[1]?.trim() || line;
+                    const part = line.split(':')[1];
+                    if (part) transmission = part.trim();
                 }
                 if (line.includes('Привод')) {
-                    drive = line.split(':')[1]?.trim() || line;
+                    const part = line.split(':')[1];
+                    if (part) drive = part.trim();
                 }
                 if (line.includes('Кузов')) {
-                    body_type = line.split(':')[1]?.trim() || line;
+                    const part = line.split(':')[1];
+                    if (part) body_type = part.trim();
                 }
                 if (line.includes('Владельцев') || line.includes('владелец')) {
                     const match = line.match(/(\\d+)/);

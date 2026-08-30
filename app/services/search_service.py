@@ -59,6 +59,7 @@ def _listing_to_dict(car: CarListing) -> dict:
         "probability": car.probability_good_deal,
         "deal_pct": int(round((car.probability_good_deal or 0) * 100)),
         "liquidity": car.liquidity_score,
+        "liquidity_pct": int(round((car.liquidity_score or 0) * 100)),
         "badge_class": _badge(car.probability_good_deal),
         "owners": car.owners,
         "transmission": ru(car.transmission, TRANS),
@@ -189,8 +190,13 @@ async def _search_autoru(filters: dict, limit: int, errors: list) -> List[CarLis
         "region": filters.get("region"),
         "year_from": filters.get("year_min"),
         "year_to": filters.get("year_max"),
+        "year_min": filters.get("year_min"),
+        "year_max": filters.get("year_max"),
         "price_from": filters.get("price_min"),
         "price_to": filters.get("price_max"),
+        "price_min": filters.get("price_min"),
+        "price_max": filters.get("price_max"),
+        "mileage_max": filters.get("mileage_max"),
     }
     cars = []
     for use_proxy in (False, True):
