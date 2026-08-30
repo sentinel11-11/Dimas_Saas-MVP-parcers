@@ -82,6 +82,8 @@ class DromDetailParser:
             for k, v in dom_data.items():
                 if data.get(k) is None:
                     data[k] = v
+            if data.get("owners") is None:
+                data["owners"] = self.extract_owners(html)
 
             # normalize
             data = self.normalize(data)
@@ -131,7 +133,7 @@ class DromDetailParser:
             result["horsepower"] = car.get("horsepower")
             result["mileage"] = car.get("mileage")
             result["vin"] = car.get("vin")
-            result["owners"] = car.get("owners_count")
+            result["owners"] = self._owners_from_json(data)
             result["accidents"] = car.get("accident_count")
 
         except:
@@ -252,10 +254,61 @@ class DromDetailParser:
 
         return None
 
-    def extract_owners(self, text):
+    _OWNER_JSON_KEYS = {
+        "owners_count", "ownerscount", "owners_number", "ownersnumber",
+        "owner_count", "ownercount", "pts_owners", "ptsowners",
+    }
 
-        m = re.search(r"(\d+)\s*влад", text.lower())
-        return int(m.group(1)) if m else None
+    def _as_owners(self, value):
+        if value is None or isinstance(value, bool):
+            return None
+        if isinstance(value, (int, float)):
+            n = int(value)
+            return n if 0 <= n <= 20 else None
+        s = str(value).strip()
+        m = re.search(r"(\d+)", s)
+        if not m:
+            return None
+        n = int(m.group(1))
+        return n if 0 <= n <= 20 else None
+
+    def _owners_from_json(self, obj, depth=0):
+        if obj is None or depth > 10:
+            return None
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                kl = str(k).lower().replace("-", "_")
+                if kl in self._OWNER_JSON_KEYS or kl == "owners":
+                    n = self._as_owners(v)
+                    if n is not None:
+                        return n
+            for v in obj.values():
+                n = self._owners_from_json(v, depth + 1)
+                if n is not None:
+                    return n
+        elif isinstance(obj, list):
+            for v in obj[:80]:
+                n = self._owners_from_json(v, depth + 1)
+                if n is not None:
+                    return n
+        return None
+
+    def extract_owners(self, text):
+        if not text:
+            return None
+        t = text.lower().replace("\xa0", " ")
+        for p in (
+            r"владельц[а-яё]*\s*(?:по\s*птс)?\s*[:·]?\s*(\d+)",
+            r"количество\s+владельцев[^0-9]{0,24}(\d+)",
+            r"(\d+)\s*владел",
+            r'"owners(?:_count|count|number|_number)"\s*:\s*(\d+)',
+        ):
+            m = re.search(p, t, re.I)
+            if m:
+                n = int(m.group(1))
+                if 0 <= n <= 20:
+                    return n
+        return None
 
     def extract_vin(self, text):
 

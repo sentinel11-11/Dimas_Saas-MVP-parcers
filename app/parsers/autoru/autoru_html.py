@@ -106,8 +106,15 @@ def _cards_from_json_blob(obj: Any, out: List[Dict[str, Any]], seen: set) -> Non
                 mileage = state.get("mileage") or obj.get("mileage") or 0
                 if mileage:
                     bits.append(f"{mileage} км")
-                owners = docs.get("owners_number")
-                if owners:
+                owners = docs.get("owners_number") or docs.get("ownersNumber") or obj.get("owners_number")
+                try:
+                    owners = int(owners) if owners is not None and str(owners).strip() != "" else None
+                    if owners is not None and not (0 <= owners <= 20):
+                        owners = None
+                except (TypeError, ValueError):
+                    m = re.search(r"(\d+)", str(owners or ""))
+                    owners = int(m.group(1)) if m and 0 <= int(m.group(1)) <= 20 else None
+                if owners is not None:
                     bits.append(f"{owners} владел")
                 out.append(
                     {
@@ -119,6 +126,7 @@ def _cards_from_json_blob(obj: Any, out: List[Dict[str, Any]], seen: set) -> Non
                         "text": " ".join([title, str(price), *bits, region]),
                         "image": image,
                         "mileage": f"{mileage} км" if mileage else "",
+                        "owners": owners,
                     }
                 )
         for v in obj.values():

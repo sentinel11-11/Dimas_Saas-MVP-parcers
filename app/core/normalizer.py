@@ -1,3 +1,4 @@
+import re
 from typing import Any, Dict, Optional
 
 from app.core.geo import infer_fuel
@@ -73,6 +74,24 @@ _LABEL_ONLY = {
     "коробка", "привод", "кузов", "птс", "трансмиссия", "топливо",
     "двигатель", "мощность", "пробег", "год",
 }
+
+
+def _owners_int(value) -> Optional[int]:
+    if value is None or value is False or value == "":
+        return None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if 1 <= value <= 20 else (0 if value == 0 else None)
+    if isinstance(value, float):
+        n = int(value)
+        return n if 0 <= n <= 20 else None
+    s = str(value).strip().lower()
+    m = re.search(r"(\d+)", s)
+    if not m:
+        return None
+    n = int(m.group(1))
+    return n if 0 <= n <= 20 else None
 
 
 def _alias(value: Optional[str], mapping: Dict[str, str]) -> Optional[str]:

@@ -269,8 +269,11 @@ class AutoRuParser(BaseParser):
                 by_url = {c.get("url", "").rstrip("/"): c for c in html_cards}
                 for c in cards_data:
                     key = (c.get("url") or "").rstrip("/")
-                    if not c.get("image") and by_url.get(key, {}).get("image"):
-                        c["image"] = by_url[key]["image"]
+                    html_c = by_url.get(key) or {}
+                    if not c.get("image") and html_c.get("image"):
+                        c["image"] = html_c["image"]
+                    if c.get("owners") in (None, "") and html_c.get("owners") not in (None, ""):
+                        c["owners"] = html_c["owners"]
             if not cards_data:
                 logger.warning(f"No listings found on page title={ttl!r} url={self.page.url}")
                 return []
@@ -424,8 +427,20 @@ class AutoRuParser(BaseParser):
             )
             region = re.sub(r"[\s\xa0]+", " ", (rm.group(0) if rm else ""))
         region = re.sub(r"\b(ещё\s*\d+\s*фото|добавить в сравнение)\b", "", region, flags=re.I).strip(" ,")
-        own_m = re.search(r"(\d+)\s*владел", blob, re.I)
-        owners = int(own_m.group(1)) if own_m else None
+        owners = card_info.get("owners")
+        try:
+            owners = int(owners) if owners is not None and str(owners).strip() != "" else None
+        except (TypeError, ValueError):
+            owners = None
+        if owners is None:
+            own_m = (
+                re.search(r"(\d+)\s*владел", blob, re.I)
+                or re.search(r"владельц[а-яё]*\s*[:·]?\s*(\d+)", blob, re.I)
+                or re.search(r"owners_number[\"']?\s*[:=]\s*(\d+)", blob, re.I)
+            )
+            owners = int(own_m.group(1)) if own_m else None
+        if owners is not None and not (0 <= owners <= 20):
+            owners = None
         pts = ""
         if re.search(r"электронн", blob, re.I):
             pts = "электронный"
@@ -629,6 +644,14 @@ class AutoRuParser(BaseParser):
                 if img.startswith("//"):
                     img = "https:" + img
                 item["image"] = img
+                blob = " ".join(str(item.get(k) or "") for k in ("text", "tech", "html"))
+                own_m = re.search(r"(\d+)\s*владел", blob, re.I) or re.search(
+                    r"владельц[а-яё]*\s*[:·]?\s*(\d+)", blob, re.I
+                )
+                if own_m:
+                    n = int(own_m.group(1))
+                    if 0 <= n <= 20:
+                        item["owners"] = n
                 cards.append(item)
         except Exception as e:
             logger.error(f"Error extracting cards: {e}")
@@ -764,6 +787,10 @@ class AutoRuParser(BaseParser):
                     pts = line.split(':')[1]?.trim() || line;
                 }
             });
+            if (!owners) {
+                const om = allText.match(/(\\d+)\\s*владел/i) || allText.match(/Владельц[а-яё]*\\s*[:·]?\\s*(\\d+)/i);
+                if (om) owners = om[1];
+            }
             
             // Извлечение фотографий
             let photos = [];
