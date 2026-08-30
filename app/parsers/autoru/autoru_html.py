@@ -195,6 +195,10 @@ def attach_photos(html: str, cards: List[Dict[str, Any]]) -> List[Dict[str, Any]
             u = "https:" + u
         if "/32x32" in u or "/120x90" in u:
             continue
+        if any(x in u for x in ("marketing", "adfox", "get-verba", "banner")):
+            continue
+        if u.rstrip("/") in ("https://avatars.avto.ru", "https://avatars.mds.yandex.net"):
+            continue
         key = re.sub(r"/\d+x\d+(?:n)?/?$", "", u)
         if key in seen_p:
             continue

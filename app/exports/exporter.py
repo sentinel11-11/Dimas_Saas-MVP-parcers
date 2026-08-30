@@ -26,16 +26,25 @@ class DataExporter:
         ]
         
         try:
-            with open(filename, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=';')
+            with open(filename, "w", newline="", encoding="utf-8-sig") as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=";")
                 writer.writeheader()
-                
+
                 for car in cars:
                     if isinstance(car, dict):
-                        row = {field: car.get(field, car.get("probability") if field == "probability_good_deal" else "") for field in fieldnames}
+                        row = {field: car.get(field, "") for field in fieldnames}
                         row["probability_good_deal"] = car.get("probability", car.get("probability_good_deal", ""))
+                        row["liquidity_score"] = car.get("liquidity", car.get("liquidity_score", ""))
                     else:
                         row = {field: getattr(car, field, "") for field in fieldnames}
+                    vol = row.get("engine_volume")
+                    if vol not in (None, "", 0, "0"):
+                        try:
+                            row["engine_volume"] = str(float(vol)).replace(".", ",")
+                        except (TypeError, ValueError):
+                            row["engine_volume"] = str(vol)
+                    if row.get("owners") in (None, ""):
+                        row["owners"] = "не указано"
                     writer.writerow(row)
             
             logger.info(f"CSV exported: {filename} ({len(cars)} records)")

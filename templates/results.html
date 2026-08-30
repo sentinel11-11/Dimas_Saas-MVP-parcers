@@ -71,7 +71,7 @@
                         <div class="spec"><em>Год выпуска</em><b>{{ car.year or '—' }}</b></div>
                         <div class="spec"><em>Пробег</em><b>{{ car.mileage_fmt }} км</b></div>
                         <div class="spec"><em>Город продажи</em><b>{{ car.region or 'не указан' }}</b></div>
-                        {% if car.owners %}<div class="spec"><em>Владельцев</em><b>{{ car.owners }}</b></div>{% endif %}
+                        <div class="spec"><em>Владельцев</em><b>{% if car.owners %}{{ car.owners }}{% else %}не указано{% endif %}</b></div>
                         {% if car.engine_volume %}<div class="spec"><em>Объём двигателя</em><b>{{ car.engine_volume }} л</b></div>{% endif %}
                         {% if car.horsepower %}<div class="spec"><em>Мощность</em><b>{{ car.horsepower }} л.с.</b></div>{% endif %}
                         {% if car.transmission %}<div class="spec"><em>Коробка</em><b>{{ car.transmission }}</b></div>{% endif %}

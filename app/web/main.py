@@ -363,7 +363,7 @@ async def export_csv():
     if not cars:
         return JSONResponse({"error": "Нет результатов для экспорта"}, status_code=400)
     path = DataExporter.export_to_csv(cars)
-    return FileResponse(path, filename="cars.csv", media_type="text/csv")
+    return FileResponse(path, filename="cars.csv", media_type="text/csv; charset=utf-8")
 
 
 @app.post("/import/csv")
