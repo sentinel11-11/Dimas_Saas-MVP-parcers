@@ -143,6 +143,9 @@
             <!-- Форма поиска -->
             <div class="search-form">
                 <form action="/search" method="POST" id="searchForm">
+                    <div class="loading-overlay" id="loadingOverlay" style="display:none;position:fixed;inset:0;background:rgba(102,126,234,.95);z-index:9999;color:#fff;align-items:center;justify-content:center;flex-direction:column;">
+                        <div>Ищем объявления… Это может занять до 30 секунд</div>
+                    </div>
                     <h5 class="mb-3">Основные параметры</h5>
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
@@ -167,11 +170,11 @@
                                 <input type="checkbox" class="btn-check" id="drom" name="sources" value="drom" checked>
                                 <label class="btn btn-outline-primary" for="drom">Drom</label>
                                 
-                                <input type="checkbox" class="btn-check" id="avito" name="sources" value="avito" checked>
-                                <label class="btn btn-outline-primary" for="avito">Avito</label>
+                                <input type="checkbox" class="btn-check" id="avito" name="sources" value="avito">
+                                <label class="btn btn-outline-primary" for="avito">Avito (медленно)</label>
                                 
-                                <input type="checkbox" class="btn-check" id="autoru" name="sources" value="autoru" checked>
-                                <label class="btn btn-outline-primary" for="autoru">Auto.ru</label>
+                                <input type="checkbox" class="btn-check" id="autoru" name="sources" value="autoru">
+                                <label class="btn btn-outline-primary" for="autoru">Auto.ru (опционально)</label>
                             </div>
                         </div>
                     </div>
@@ -267,14 +270,9 @@
                         <div class="col-md-4">
                             <label for="region" class="form-label">Регион</label>
                             <select class="form-select" id="region" name="region">
-                                <option value="">Вся Россия</option>
-                                <option value="moscow">Москва</option>
-                                <option value="spb">Санкт-Петербург</option>
-                                <option value="novosibirsk">Новосибирск</option>
-                                <option value="ekaterinburg">Екатеринбург</option>
-                                <option value="kazan">Казань</option>
-                                <option value="krasnoyarsk">Красноярск</option>
-                                <option value="vladivostok">Владивосток</option>
+                                {% for r in regions %}
+                                <option value="{{ r.value }}">{{ r.label }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-4">

@@ -39,6 +39,7 @@ class CarListing(BaseModel):
     engine_volume: float = 0
     horsepower: int = 0
     transmission: str = ""
+    fuel: Optional[str] = None
     drive: Optional[str] = None
     body_type: Optional[str] = None
     owners: Optional[int] = None
@@ -47,6 +48,7 @@ class CarListing(BaseModel):
     region: str = ""
     market_score: float = 0
     market_price: float = 0
+    market_deviation: float = 0
     liquidity_score: float = 0
     probability_good_deal: float = 0
     data_confidence: float = 0

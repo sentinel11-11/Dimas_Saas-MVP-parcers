@@ -355,10 +355,18 @@
             {% endif %}
             
             <!-- Результаты -->
+            {% if sample_size %}
+            <p class="text-muted small">Оценка выгодности по {{ sample_size }} объявлениям этой выдачи, не по всему рынку РФ.</p>
+            {% endif %}
             {% if results %}
-            <div class="row">
+            <div class="mb-3 d-flex gap-2 flex-wrap">
+                <button class="btn btn-sm btn-outline-secondary" type="button" onclick="sortCards('probability')">По выгоде</button>
+                <button class="btn btn-sm btn-outline-secondary" type="button" onclick="sortCards('price')">По цене</button>
+                <button class="btn btn-sm btn-outline-secondary" type="button" onclick="sortCards('year')">По году</button>
+            </div>
+            <div class="row" id="cardsRow">
                 {% for car in results %}
-                <div class="col-12">
+                <div class="col-12 car-row" data-price="{{ car.price or 0 }}" data-year="{{ car.year or 0 }}" data-probability="{{ car.probability or 0 }}">
                     <div class="car-card {% if car.probability and car.probability >= 0.8 %}excellent{% elif car.probability and car.probability >= 0.6 %}good{% elif car.probability and car.probability >= 0.4 %}average{% else %}poor{% endif %}" 
                          style="position: relative;">
                         
@@ -396,13 +404,13 @@
                                     {% if car.transmission %}
                                     <div class="detail-item">
                                         <i class="bi bi-gear detail-icon"></i>
-                                        <span>{{ {'automatic': 'АКПП', 'manual': 'МКПП', 'robot': 'Робот', 'variator': 'Вариатор'}[car.transmission] }}</span>
+                                        <span>{{ {'automatic': 'АКПП', 'manual': 'МКПП', 'robot': 'Робот', 'variator': 'Вариатор'}.get(car.transmission, car.transmission) }}</span>
                                     </div>
                                     {% endif %}
                                     {% if car.fuel %}
                                     <div class="detail-item">
                                         <i class="bi bi-fuel-pump detail-icon"></i>
-                                        <span>{{ {'petrol': 'Бензин', 'diesel': 'Дизель', 'electric': 'Электро', 'hybrid': 'Гибрид', 'gas': 'Газ'}[car.fuel] }}</span>
+                                        <span>{{ {'petrol': 'Бензин', 'diesel': 'Дизель', 'electric': 'Электро', 'hybrid': 'Гибрид', 'gas': 'Газ'}.get(car.fuel, car.fuel) }}</span>
                                     </div>
                                     {% endif %}
                                     {% if car.market_deviation %}
@@ -540,6 +548,13 @@
             });
         }
         
+        function sortCards(key) {
+            const row = document.getElementById('cardsRow');
+            if (!row) return;
+            const items = Array.from(row.children);
+            items.sort((a, b) => Number(b.dataset[key] || 0) - Number(a.dataset[key] || 0));
+            items.forEach(el => row.appendChild(el));
+        }
         // Анимация карточек после загрузки
         setTimeout(() => {
             const cards = document.querySelectorAll('.car-card');

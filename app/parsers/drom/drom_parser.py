@@ -14,19 +14,35 @@ class DromParser(BaseParser):
 
     def __init__(self):
 
-        self.client = HTTPClient()
+        self.client = HTTPClient(min_delay=0.3, max_delay=0.8, retry_count=2)
 
     def build_url(self, filters):
 
         brand = filters.get("brand", "").lower()
-
         model = filters.get("model", "").lower()
+        region = (filters.get("region") or "").strip().lower()
 
-        return (
-            f"{self.BASE_URL}/"
-            f"{brand}/"
-            f"{model}/"
-        )
+        if region:
+            url = f"{self.BASE_URL}/{region}/{brand}/{model}/"
+        else:
+            url = f"{self.BASE_URL}/{brand}/{model}/"
+
+        params = []
+        year_min = filters.get("year_min") or filters.get("year_from")
+        year_max = filters.get("year_max") or filters.get("year_to")
+        price_min = filters.get("price_min") or filters.get("price_from")
+        price_max = filters.get("price_max") or filters.get("price_to")
+        if year_min:
+            params.append(f"minyear={int(year_min)}")
+        if year_max:
+            params.append(f"maxyear={int(year_max)}")
+        if price_min:
+            params.append(f"minprice={int(price_min)}")
+        if price_max and int(price_max) < 100000000:
+            params.append(f"maxprice={int(price_max)}")
+        if params:
+            url += "?" + "&".join(params)
+        return url
 
     def search(self, filters):
 

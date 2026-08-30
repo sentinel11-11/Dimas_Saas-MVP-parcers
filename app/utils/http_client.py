@@ -14,7 +14,7 @@ class ResponseWrapper:
 
 class HTTPClient:
 
-    def __init__(self):
+    def __init__(self, min_delay: float = 0.4, max_delay: float = 1.2, retry_count: int = 2):
 
         self.session = requests.Session()
 
@@ -29,12 +29,12 @@ class HTTPClient:
             "Connection": "keep-alive",
         }
 
-        self.min_delay = 1.5
-        self.max_delay = 4.5
+        self.min_delay = min_delay
+        self.max_delay = max_delay
 
         self.last_request_time = 0
 
-        self.retry_count = 3
+        self.retry_count = retry_count
 
 
     def _smart_sleep(self):

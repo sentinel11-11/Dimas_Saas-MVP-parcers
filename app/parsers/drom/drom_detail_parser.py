@@ -13,7 +13,7 @@ from app.utils.http_client import HTTPClient
 class DromDetailParser:
 
     def __init__(self):
-        self.client = HTTPClient()
+        self.client = HTTPClient(min_delay=0.35, max_delay=0.9, retry_count=2)
 
     async def parse_async(self, url: str):
         """Асинхронная версия парсинга."""
@@ -62,6 +62,7 @@ class DromDetailParser:
                 "brand": None,
                 "model": None,
                 "body_type": None,
+                "fuel": None,
 
                 "data_confidence": 0.5
             }
@@ -319,6 +320,20 @@ class DromDetailParser:
             parts = title_text.split()
             if len(parts) >= 2:
                 return parts[1].strip().rstrip(",")
+        return None
+
+    def extract_fuel(self, text):
+        t = text.lower()
+        if "дизель" in t:
+            return "diesel"
+        if "гибрид" in t:
+            return "hybrid"
+        if "электро" in t:
+            return "electric"
+        if "гбо" in t or "газ" in t:
+            return "gas"
+        if "бензин" in t:
+            return "petrol"
         return None
 
     def extract_body_type(self, text):

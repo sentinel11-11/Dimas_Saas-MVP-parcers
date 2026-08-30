@@ -1,3 +1,4 @@
+import os
 import sqlite3
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -6,6 +7,7 @@ from loguru import logger
 
 from app.database.models import Base, CarListingORM
 
+os.makedirs("data", exist_ok=True)
 DB_PATH = "data/cars.db"
 
 # SQLite connection for legacy compatibility
@@ -50,9 +52,12 @@ def save_listing(car):
         existing = session.query(CarListingORM).filter(CarListingORM.url == car.url).first()
         if existing:
             # Обновление существующей записи
-            for key, value in vars(listing).items():
-                if not key.startswith('_'):
-                    setattr(existing, key, value)
+            for key in (
+                "title", "price", "year", "mileage", "owners", "engine_volume",
+                "horsepower", "transmission", "drive", "body_type", "fuel_type",
+                "region", "accidents", "pts", "market_score", "final_score", "source",
+            ):
+                setattr(existing, key, getattr(listing, key))
             session.commit()
             logger.debug(f"Updated listing: {car.url}")
         else:

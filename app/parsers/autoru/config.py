@@ -17,7 +17,7 @@ class AutoRuConfig:
     """Конфигурация для парсера Auto.ru"""
     
     BASE_URL = "https://auto.ru"
-    SEARCH_URL = "https://auto.ru/cars/sale/"
+    SEARCH_URL = "https://auto.ru/cars/used/"
     
     # Прокси конфигурация (из переменных окружения)
     PROXY_LIST: List[str] = [p.strip() for p in os.getenv("AUTORU_PROXIES", "").split(",") if p.strip()] if os.getenv("AUTORU_PROXIES") else None
@@ -63,7 +63,7 @@ class AutoRuConfig:
     DEFAULT_RANDOMIZE_DELAY = True
     
     # Таймауты
-    PAGE_LOAD_TIMEOUT = 30000
+    PAGE_LOAD_TIMEOUT = 12000
     SELECTOR_WAIT_TIMEOUT = 5000
     SCROLL_DELAY = 2000
     DETAIL_PAGE_DELAY = 2000

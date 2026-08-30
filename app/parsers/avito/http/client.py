@@ -53,7 +53,9 @@ class AvitoHttpClient:
         proxies = self._get_next_proxy()
         if proxies:
             self.session.proxies.update(proxies)
-            logger.info(f"AVITO: Rotated proxy to {proxies.get('http', 'N/A')}")
+            raw = proxies.get("http", "")
+            host = raw.split("@")[-1] if "@" in raw else raw
+            logger.info(f"AVITO: Rotated proxy host {host}")
         else:
             self.session.proxies.clear()
         
@@ -69,9 +71,9 @@ class AvitoHttpClient:
                 
                 # Увеличенная задержка перед каждым запросом для обхода rate limit
                 if attempt == 0:
-                    delay = random.uniform(8, 15)  # Начальная задержка 8-15 секунд
-                else: 
-                    delay = min(avito_config.retry_delay * (attempt + 3) + random.uniform(5, 15), 45)
+                    delay = random.uniform(1.2, 2.5)
+                else:
+                    delay = min(avito_config.retry_delay + random.uniform(1, 3), 8)
                     logger.info("AVITO RETRY {}/{} after {}s", attempt+1, retries, round(delay, 2))
                 
                 time.sleep(delay)

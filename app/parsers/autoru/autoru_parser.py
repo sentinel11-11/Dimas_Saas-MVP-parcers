@@ -72,7 +72,8 @@ class AutoRuParser(BaseParser):
             # Ротация прокси через ProxyManager
             if self.use_proxy and not self.proxy_manager.is_empty():
                 self.current_proxy = self.proxy_manager.get_next_proxy()
-                logger.info(f"Using proxy: {self.current_proxy}")
+                host = self.current_proxy.split("@")[-1] if self.current_proxy else ""
+                logger.info(f"Using proxy host: {host}")
             
             # Рандомизация User-Agent через UserAgentRotator
             user_agent = self.user_agent_rotator.get_user_agent()
@@ -151,10 +152,18 @@ class AutoRuParser(BaseParser):
         url = f"{self.SEARCH_URL}"
         params = []
         
+        region_slug = {
+            "moscow": "moskva",
+            "spb": "sankt-peterburg",
+            "ekaterinburg": "ekaterinburg",
+            "novosibirsk": "novosibirsk",
+            "kazan": "kazan",
+        }.get(str(region).lower(), "russia") if region else "russia"
+
         if brand and model:
-            url = f"https://auto.ru/cars/sale/{brand}/{model}/"
+            url = f"https://auto.ru/{region_slug}/cars/{brand}/{model}/used/"
         elif brand:
-            url = f"https://auto.ru/cars/sale/{brand}/"
+            url = f"https://auto.ru/{region_slug}/cars/{brand}/used/"
         
         if region:
             params.append(f"geo={region}")
@@ -191,7 +200,7 @@ class AutoRuParser(BaseParser):
         
         try:
             # Переход на страницу поиска
-            response = await self.page.goto(url, wait_until="networkidle", timeout=AutoRuConfig.PAGE_LOAD_TIMEOUT)
+            response = await self.page.goto(url, wait_until="domcontentloaded", timeout=AutoRuConfig.PAGE_LOAD_TIMEOUT)
             
             if not response or response.status != 200:
                 logger.error(f"Failed to load page: {response.status if response else 'No response'}")
@@ -346,7 +355,7 @@ class AutoRuParser(BaseParser):
         try:
             logger.info(f"AUTO.RU DETAIL: {url}")
             
-            response = await self.page.goto(url, wait_until="networkidle", timeout=30000)
+            response = await self.page.goto(url, wait_until="domcontentloaded", timeout=12000)
             if not response or response.status != 200:
                 logger.warning(f"Failed to load detail page: {response.status if response else 'No response'}")
                 return None
