@@ -172,6 +172,25 @@ details.more summary { cursor: pointer; color: var(--amber-2); }
 .car-card img { width: 100%; height: 140px; object-fit: cover; border-radius: 14px; background: #111; }
 .price { font-size: 26px; font-family: var(--display); }
 .meta { display: flex; flex-wrap: wrap; gap: 10px; color: var(--muted); font-size: 13px; margin-top: 8px; }
+.specs {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 8px; margin-top: 12px;
+}
+.spec {
+  background: rgba(255,255,255,.04); border: 1px solid var(--line);
+  border-radius: 12px; padding: 8px 10px;
+}
+.spec em { display: block; font-style: normal; color: var(--muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.spec b { display: block; margin-top: 2px; font-size: 15px; font-weight: 700; }
+.insight {
+  margin-top: 12px; padding: 12px 14px; border-radius: 14px;
+  background: rgba(110, 168, 255, .08); border: 1px solid rgba(110,168,255,.22);
+  font-size: 15px; line-height: 1.5; color: var(--ink);
+}
+.insight.reloc { background: rgba(124, 240, 195, .07); border-color: rgba(124,240,195,.22); }
+.insight.warn { background: rgba(211, 107, 90, .1); border-color: rgba(211,107,90,.3); color: #f0c2ba; }
+.insight strong { font-size: 16px; }
+.chip.on { color: #081016; background: var(--amber); border-color: var(--amber); }
 .badge { border-radius: 999px; padding: 4px 10px; font-size: 12px; background: #1c2030; }
 .badge.drom { color: #8ec8ff; }
 .badge.avito { color: #7ad3ff; }
