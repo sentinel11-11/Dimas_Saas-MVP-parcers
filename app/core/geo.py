@@ -54,19 +54,28 @@ ALIASES = {
 def _lookup(slug: Optional[str]) -> Optional[Tuple[float, float]]:
     if not slug:
         return None
-    key = str(slug).strip().lower().replace(" ", "-")
-    key = ALIASES.get(key, key)
-    if key in COORDS:
-        return COORDS[key]
-    for s, (lat, lon) in COORDS.items():
-        if key == s or key.replace(" ", "-") == s:
-            return (lat, lon)
-        if LABELS.get(s, "").lower() == key:
-            return (lat, lon)
-    for s, (lat, lon) in COORDS.items():
-        if key in s or s in key:
-            return (lat, lon)
-    return None
+    raw = str(slug).strip()
+    first = raw.split(",")[0].strip()
+    candidates = [raw, first, first.replace("ё", "е")]
+    for cand in candidates:
+        key = cand.lower().replace(" ", "-")
+        key = ALIASES.get(key, key)
+        if key in COORDS:
+            return COORDS[key]
+        for s, label in LABELS.items():
+            if label.lower() == cand.lower():
+                return COORDS.get(s)
+    lowered = raw.lower()
+    if "беларусь" in lowered or "белоруссия" in lowered:
+        return COORDS.get("minsk")
+    best = None
+    best_len = 0
+    for s, label in LABELS.items():
+        name = label.lower()
+        if name and len(name) >= 4 and name in lowered and len(name) > best_len:
+            best = COORDS.get(s)
+            best_len = len(name)
+    return best
 
 
 def haversine_km(a: Tuple[float, float], b: Tuple[float, float]) -> float:
@@ -136,8 +145,14 @@ def relocation(
     price_l = max(30.0, min(price_l, 250.0))
     fuel_cost = round(liters * price_l)
     driver = 0
-    region_key = str(listing_region).strip().lower()
-    ferry = FERRY_CITIES.get(region_key, 0)
+    region_key = str(listing_region).strip().split(",")[0].strip().lower()
+    ferry = FERRY_CITIES.get(region_key.replace(" ", "-"), 0)
+    from_lab = listing_region.split(",")[0].strip() if listing_region else listing_region
+    for s, label in LABELS.items():
+        if label.lower() in str(listing_region).lower() and len(label) >= 4:
+            from_lab = label
+            break
+    to_lab = LABELS.get(str(buyer_city).lower(), buyer_city)
     return {
         "distance_km": dist,
         "fuel_l_100": l100,
@@ -146,8 +161,8 @@ def relocation(
         "ferry_cost": ferry,
         "total": fuel_cost + ferry,
         "same_city": False,
-        "from_label": LABELS.get(region_key, listing_region),
-        "to_label": LABELS.get(str(buyer_city).lower(), buyer_city),
+        "from_label": from_lab,
+        "to_label": to_lab,
         "fuel_price": price_l,
         "unknown": False,
     }

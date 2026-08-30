@@ -351,14 +351,20 @@ class AutoRuParser(BaseParser):
         if price < 50_000:
             return None
         mileage = 0
-        for raw in re.findall(r"(\d[\d\s\xa0]{0,8})\s*км", blob, re.I):
-            n = int(re.sub(r"\D", "", raw) or 0)
-            if year and str(n).startswith(str(year)) and len(str(n)) > 4:
-                rest = int(str(n)[4:] or 0)
-                n = rest if 0 <= rest <= 800_000 else n
-            if 0 <= n <= 800_000:
+        tys = re.search(r"(\d[\d\s\xa0,]{0,6})\s*тыс\.?\s*км", blob, re.I)
+        if tys:
+            n = int(re.sub(r"\D", "", tys.group(1)) or 0) * 1000
+            if 0 < n <= 800_000:
                 mileage = n
-                break
+        if not mileage:
+            for raw in re.findall(r"(\d[\d\s\xa0]{0,8})\s*км", blob, re.I):
+                n = int(re.sub(r"\D", "", raw) or 0)
+                if year and str(n).startswith(str(year)) and len(str(n)) > 4:
+                    rest = int(str(n)[4:] or 0)
+                    n = rest if 0 <= rest <= 800_000 else n
+                if 1 <= n <= 800_000:
+                    mileage = n
+                    break
         vol_m = re.search(r"(\d+[.,]\d+)\s*л", blob, re.I)
         hp_m = re.search(r"(\d{2,4})\s*л\.?\s*с", blob, re.I)
         trans = ""
@@ -460,11 +466,22 @@ class AutoRuParser(BaseParser):
                     title = (h && h.textContent ? h.textContent : '').trim() || title;
                 }
                 const text = (box.innerText || '').replace(/\\s+/g, ' ');
-                const img = box.querySelector('img');
                 let image = '';
-                if (img) {
-                    image = img.currentSrc || img.src || img.getAttribute('src') || img.getAttribute('data-src') || '';
-                    if (image.startsWith('//')) image = 'https:' + image;
+                const imgs = box.querySelectorAll('img');
+                for (const img of imgs) {
+                    let s = img.currentSrc || img.src || img.getAttribute('src') || img.getAttribute('data-src') || '';
+                    if (s.includes(' ')) s = s.split(' ')[0];
+                    if (s && !s.startsWith('data:') && s.length > 12) {
+                        image = s.startsWith('//') ? 'https:' + s : s;
+                        break;
+                    }
+                }
+                if (!image) {
+                    const bg = box.querySelector('[style*="background-image"]');
+                    if (bg) {
+                        const m = (bg.getAttribute('style') || '').match(/url\\(["']?([^"')]+)["']?\\)/);
+                        if (m) image = m[1].startsWith('//') ? 'https:' + m[1] : m[1];
+                    }
                 }
                 const priceEl = box.querySelector('[class*="Price"]');
                 const techEl = box.querySelector('[class*="TechSummary"], [class*="ListingItemTech"], ul[class*="Summary"]');
