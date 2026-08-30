@@ -3,596 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Результаты поиска - {{ brand }} {{ model }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .navbar {
-            background: rgba(255, 255, 255, 0.95) !important;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-        }
-        
-        .results-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 2rem;
-            margin-top: 2rem;
-            margin-bottom: 2rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-        
-        .result-header {
-            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
-            color: white;
-            padding: 1.5rem;
-            border-radius: 15px;
-            margin-bottom: 2rem;
-        }
-        
-        .car-card {
-            background: white;
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            transition: transform 0.3s, box-shadow 0.3s;
-            border-left: 5px solid transparent;
-        }
-        
-        .car-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-        }
-        
-        .car-card.excellent { border-left-color: var(--success-color); }
-        .car-card.good { border-left-color: var(--secondary-color); }
-        .car-card.average { border-left-color: var(--warning-color); }
-        .car-card.poor { border-left-color: var(--danger-color); }
-        
-        .price-tag {
-            font-size: 1.75rem;
-            font-weight: bold;
-            color: var(--primary-color);
-        }
-        
-        .probability-badge {
-            font-size: 1.2rem;
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-weight: 600;
-        }
-        
-        .car-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 10px;
-            margin-bottom: 1rem;
-            background: #f8f9fa;
-        }
-        
-        .car-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid #e9ecef;
-        }
-        
-        .detail-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .detail-icon {
-            color: var(--secondary-color);
-            font-size: 1.1rem;
-        }
-        
-        .platform-badge {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-        
-        .platform-drom { background: #3498db; color: white; }
-        .platform-avito { background: #00AAFF; color: white; }
-        .platform-autoru { background: #ffcc00; color: black; }
-        
-        .market-info {
-            background: #f8f9fa;
-            padding: 1rem;
-            border-radius: 10px;
-            margin-top: 1rem;
-        }
-        
-        .btn-back {
-            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
-            border: none;
-            padding: 0.75rem 2rem;
-            border-radius: 10px;
-            font-weight: 600;
-            transition: transform 0.2s;
-        }
-        
-        .btn-back:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            color: white;
-        }
-        
-        .loading-spinner {
-            text-align: center;
-            padding: 3rem;
-        }
-        
-        .alert-custom {
-            border-radius: 10px;
-            border: none;
-            background: rgba(231, 76, 60, 0.1);
-            color: var(--danger-color);
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-        
-        footer {
-            background: rgba(44, 62, 80, 0.95);
-            color: white;
-            padding: 2rem 0;
-            margin-top: 3rem;
-        }
-        
-        .score-indicator {
-            width: 100%;
-            height: 10px;
-            background: #e9ecef;
-            border-radius: 5px;
-            overflow: hidden;
-            margin-top: 0.5rem;
-        }
-        
-        .score-fill {
-            height: 100%;
-            transition: width 0.5s ease;
-        }
-        
-        /* Loading overlay */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(102, 126, 234, 0.95);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
-        }
-        
-        .loading-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .loading-content {
-            text-align: center;
-            color: white;
-        }
-        
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 6px solid rgba(255,255,255,0.3);
-            border-top: 6px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1.5rem;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .loading-text {
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-        
-        .loading-subtext {
-            font-size: 0.9rem;
-            opacity: 0.8;
-            margin-top: 0.5rem;
-        }
-    </style>
+    <title>{{ brand }} {{ model }} — DIMAS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/app.css">
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-content">
-            <div class="spinner"></div>
-            <div class="loading-text">Поиск выгодных предложений...</div>
-            <div class="loading-subtext" id="loadingSubtext">Анализируем объявления с выбранных площадок</div>
+    <div class="wrap">
+        <header class="nav">
+            <a class="brand" href="/"><span class="brand-mark">D</span> DIMAS</a>
+            <nav class="nav-links">
+                <a href="/">Новый поиск</a>
+                <a href="/export/csv">CSV</a>
+                <a href="/searches">Мои поиски</a>
+            </nav>
+        </header>
+
+        <p class="kicker">выдача</p>
+        <h1 style="font-size:42px;margin:6px 0 8px">{{ brand }} {{ model }}</h1>
+        <p class="lead">Найдено {{ total }} лотов{% if sample_size %}. Оценка по {{ sample_size }} объявлениям этой выборки{% endif %}.</p>
+
+        {% if errors %}
+        <div class="panel" style="margin:16px 0;border-color:#d36b5a">
+            {% for error in errors %}<div>{{ error }}</div>{% endfor %}
         </div>
+        {% endif %}
+
+        {% if filters_applied %}
+        <form class="panel" style="margin:16px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:end" method="post" action="/searches/save">
+            <input type="hidden" name="brand" value="{{ brand }}">
+            <input type="hidden" name="model" value="{{ model }}">
+            <input type="hidden" name="year_min" value="{{ filters_applied.year_min }}">
+            <input type="hidden" name="year_max" value="{{ filters_applied.year_max }}">
+            <input type="hidden" name="mileage_min" value="{{ filters_applied.mileage_min }}">
+            <input type="hidden" name="mileage_max" value="{{ filters_applied.mileage_max }}">
+            <input type="hidden" name="owners_min" value="{{ filters_applied.owners_min }}">
+            <input type="hidden" name="owners_max" value="{{ filters_applied.owners_max }}">
+            <input type="hidden" name="price_min" value="{{ filters_applied.price_min }}">
+            <input type="hidden" name="price_max" value="{{ filters_applied.price_max }}">
+            <input type="hidden" name="region" value="{{ filters_applied.region }}">
+            {% for source in sources_used %}<input type="hidden" name="sources" value="{{ source }}">{% endfor %}
+            <div style="flex:1;min-width:220px">
+                <label>Email для мониторинга</label>
+                <input name="email" type="email" placeholder="you@mail.ru">
+            </div>
+            <button class="btn" type="submit">Сохранить поиск</button>
+            <a class="btn ghost" href="/">Ещё раз</a>
+        </form>
+        {% endif %}
+
+        <div class="chips" style="margin-bottom:16px">
+            <span class="chip" onclick="sortCards('probability')">По выгоде</span>
+            <span class="chip" onclick="sortCards('price')">По цене</span>
+            <span class="chip" onclick="sortCards('year')">По году</span>
+        </div>
+
+        <div id="cardsRow">
+        {% for car in results %}
+            <article class="car-card car-row" data-price="{{ car.price or 0 }}" data-year="{{ car.year or 0 }}" data-probability="{{ car.probability or 0 }}">
+                <img src="{{ car.image_url }}" alt="" onerror="this.src='/static/images/car-placeholder.svg'">
+                <div>
+                    <span class="badge {{ car.platform }}">{{ car.platform }}</span>
+                    <h3 style="margin:8px 0 4px">{{ car.title }}</h3>
+                    <div class="price">{{ "{:,}".format(car.price or 0).replace(',', ' ') }} ₽</div>
+                    <div class="meta">
+                        <span>{{ car.year or '—' }} г.</span>
+                        <span>{{ "{:,}".format(car.mileage or 0).replace(',', ' ') }} км</span>
+                        {% if car.owners %}<span>{{ car.owners }} вл.</span>{% endif %}
+                        <span>{{ car.region or 'регион н/д' }}</span>
+                        {% if car.transmission %}<span>{{ car.transmission }}</span>{% endif %}
+                        {% if car.fuel %}<span>{{ car.fuel }}</span>{% endif %}
+                    </div>
+                    {% if car.market_price %}
+                    <div class="meta">медиана выборки {{ "{:,}".format(car.market_price|int).replace(',', ' ') }} ₽ · выгода {{ "%.0f"|format((car.probability or 0)*100) }}%</div>
+                    {% endif %}
+                </div>
+                <div>
+                    <a class="btn" href="{{ car.url }}" target="_blank" rel="noopener">Открыть</a>
+                </div>
+            </article>
+        {% else %}
+            <div class="panel">Ничего не нашли. Смягчите фильтры или оставьте только Drom.</div>
+        {% endfor %}
+        </div>
+        <footer class="footer">DIMAS</footer>
     </div>
-
-    <!-- Навигация -->
-    <nav class="navbar navbar-expand-lg navbar-light">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="/">
-                <i class="bi bi-car-front-fill me-2"></i>Car Parser MVP
-            </a>
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="/"><i class="bi bi-house me-1"></i>Главная</a>
-                <a class="nav-link" href="#"><i class="bi bi-arrow-counterclockwise me-1"></i>Новый поиск</a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Контейнер результатов -->
-    <div class="container">
-        <div class="results-container">
-            <!-- Скрытая форма для AJAX -->
-            <form id="searchForm" action="/search" method="POST" style="display:none;">
-                <input type="hidden" name="brand" value="{{ brand.lower() }}">
-                <input type="hidden" name="model" value="{{ model.lower() }}">
-                {% for source in sources_used %}
-                <input type="hidden" name="sources" value="{{ source }}">
-                {% endfor %}
-                <input type="hidden" name="limit" value="10">
-            </form>
-            
-            <!-- Заголовок -->
-            <div class="result-header">
-                <div class="row w-100">
-                    <div class="col-md-8">
-                        <h2 class="mb-1">
-                            <i class="bi bi-car-front me-2"></i>
-                            {{ brand }} {{ model }}
-                        </h2>
-                        <p class="mb-0 opacity-75">Найдено объявлений: {{ total }}</p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <a href="/export/csv" class="btn btn-light me-2">CSV</a>
-                        <a href="/" class="btn btn-light btn-back">
-                            <i class="bi bi-search me-2"></i>Новый поиск
-                        </a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Примененные фильтры -->
-            {% if filters_applied %}
-            <div class="card mb-4 border-0 shadow-sm">
-                <div class="card-body bg-light rounded">
-                    <h6 class="mb-3"><i class="bi bi-funnel me-2"></i>Примененные фильтры:</h6>
-                    <div class="row g-2">
-                        <div class="col-md-3 col-sm-6">
-                            <span class="badge bg-secondary me-1">Год:</span>
-                            <span>{{ filters_applied.year_min }}-{{ filters_applied.year_max }}</span>
-                        </div>
-                        <div class="col-md-3 col-sm-6">
-                            <span class="badge bg-secondary me-1">Пробег:</span>
-                            <span>{{ "{:,}".format(filters_applied.mileage_min or 0).replace(',', ' ') }}-{{ "{:,}".format(filters_applied.mileage_max or 0).replace(',', ' ') }} км</span>
-                        </div>
-                        <div class="col-md-3 col-sm-6">
-                            <span class="badge bg-secondary me-1">Владельцы:</span>
-                            <span>{{ filters_applied.owners_min }}-{{ filters_applied.owners_max }}</span>
-                        </div>
-                        <div class="col-md-3 col-sm-6">
-                            <span class="badge bg-secondary me-1">Цена:</span>
-                            <span>{{ "{:,}".format(filters_applied.price_min or 0).replace(',', ' ') }}-{{ "{:,}".format(filters_applied.price_max or 0).replace(',', ' ') }} ₽</span>
-                        </div>
-                        {% if filters_applied.transmission %}
-                        <div class="col-md-3 col-sm-6">
-                            <span class="badge bg-secondary me-1">КПП:</span>
-                            <span>{{ {'automatic': 'Автомат', 'manual': 'Механика', 'robot': 'Робот', 'variator': 'Вариатор'}[filters_applied.transmission] }}</span>
-                        </div>
-                        {% endif %}
-                        {% if filters_applied.fuel %}
-                        <div class="col-md-3 col-sm-6">
-                            <span class="badge bg-secondary me-1">Топливо:</span>
-                            <span>{{ {'petrol': 'Бензин', 'diesel': 'Дизель', 'electric': 'Электро', 'hybrid': 'Гибрид', 'gas': 'Газ'}[filters_applied.fuel] }}</span>
-                        </div>
-                        {% endif %}
-                        {% if filters_applied.drive %}
-                        <div class="col-md-3 col-sm-6">
-                            <span class="badge bg-secondary me-1">Привод:</span>
-                            <span>{{ {'front': 'Передний', 'rear': 'Задний', 'four_wheel': 'Полный'}[filters_applied.drive] }}</span>
-                        </div>
-                        {% endif %}
-                        {% if filters_applied.body_type %}
-                        <div class="col-md-3 col-sm-6">
-                            <span class="badge bg-secondary me-1">Кузов:</span>
-                            <span>{{ {'sedan': 'Седан', 'suv': 'Внедорожник', 'crossover': 'Кроссовер', 'hatchback': 'Хэтчбек', 'wagon': 'Универсал', 'coupe': 'Купе', 'convertible': 'Кабриолет', 'minivan': 'Минивэн'}[filters_applied.body_type] }}</span>
-                        </div>
-                        {% endif %}
-                        {% if filters_applied.region %}
-                        <div class="col-md-3 col-sm-6">
-                            <span class="badge bg-secondary me-1">Регион:</span>
-                            <span>{{ {'moscow': 'Москва', 'spb': 'Санкт-Петербург', 'novosibirsk': 'Новосибирск', 'ekaterinburg': 'Екатеринбург', 'kazan': 'Казань', 'krasnoyarsk': 'Красноярск', 'vladivostok': 'Владивосток'}[filters_applied.region] }}</span>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-            
-            <!-- Ошибки -->
-            {% if errors %}
-            <div class="alert alert-custom">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                <strong>Внимание:</strong> При парсинге возникли ошибки:
-                <ul class="mb-0 mt-2">
-                    {% for error in errors %}
-                    <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
-            
-            <!-- Результаты -->
-            {% if sample_size %}
-            <p class="text-muted small">Оценка выгодности по {{ sample_size }} объявлениям этой выдачи, не по всему рынку РФ.</p>
-            {% endif %}
-            {% if filters_applied %}
-            <form class="row g-2 mb-3" method="post" action="/searches/save">
-                <input type="hidden" name="brand" value="{{ brand }}">
-                <input type="hidden" name="model" value="{{ model }}">
-                <input type="hidden" name="year_min" value="{{ filters_applied.year_min }}">
-                <input type="hidden" name="year_max" value="{{ filters_applied.year_max }}">
-                <input type="hidden" name="mileage_min" value="{{ filters_applied.mileage_min }}">
-                <input type="hidden" name="mileage_max" value="{{ filters_applied.mileage_max }}">
-                <input type="hidden" name="owners_min" value="{{ filters_applied.owners_min }}">
-                <input type="hidden" name="owners_max" value="{{ filters_applied.owners_max }}">
-                <input type="hidden" name="price_min" value="{{ filters_applied.price_min }}">
-                <input type="hidden" name="price_max" value="{{ filters_applied.price_max }}">
-                <input type="hidden" name="region" value="{{ filters_applied.region }}">
-                {% for source in sources_used %}
-                <input type="hidden" name="sources" value="{{ source }}">
-                {% endfor %}
-                <div class="col-auto">
-                    <input class="form-control" name="email" type="email" placeholder="email для мониторинга">
-                </div>
-                <div class="col-auto">
-                    <button class="btn btn-outline-primary">Сохранить поиск (макс. 3)</button>
-                </div>
-            </form>
-            {% endif %}
-            {% if results %}
-            <div class="mb-3 d-flex gap-2 flex-wrap">
-                <button class="btn btn-sm btn-outline-secondary" type="button" onclick="sortCards('probability')">По выгоде</button>
-                <button class="btn btn-sm btn-outline-secondary" type="button" onclick="sortCards('price')">По цене</button>
-                <button class="btn btn-sm btn-outline-secondary" type="button" onclick="sortCards('year')">По году</button>
-            </div>
-            <div class="row" id="cardsRow">
-                {% for car in results %}
-                <div class="col-12 car-row" data-price="{{ car.price or 0 }}" data-year="{{ car.year or 0 }}" data-probability="{{ car.probability or 0 }}">
-                    <div class="car-card {% if car.probability and car.probability >= 0.8 %}excellent{% elif car.probability and car.probability >= 0.6 %}good{% elif car.probability and car.probability >= 0.4 %}average{% else %}poor{% endif %}" 
-                         style="position: relative;">
-                        
-                        <!-- Бейдж платформы -->
-                        <span class="platform-badge platform-{{ car.platform }}">
-                            <i class="bi bi-{% if car.platform == 'drom' %}globe{% elif car.platform == 'avito' %}chat-left-text{% else %}car-front{% endif %} me-1"></i>
-                            {{ {'drom': 'Drom', 'avito': 'Avito', 'autoru': 'Auto.ru'}[car.platform] }}
-                        </span>
-                        
-                        <div class="row">
-                            <div class="col-md-8">
-                                <img src="{{ car.image_url }}" alt="{{ car.title }}" class="car-image" onerror="this.src='/static/images/car-placeholder.svg'">
-                                <h4 class="mb-2">{{ car.title }}</h4>
-                                <div class="price-tag mb-3">{{ "{:,}".format(car.price).replace(',', ' ') }} ₽</div>
-                                
-                                <div class="car-details">
-                                    <div class="detail-item">
-                                        <i class="bi bi-calendar3 detail-icon"></i>
-                                        <span>{{ car.year or 'Н/Д' }} г.</span>
-                                    </div>
-                                    <div class="detail-item">
-                                        <i class="bi bi-speedometer2 detail-icon"></i>
-                                        <span>{{ "{:,}".format(car.mileage or 0).replace(',', ' ') }} км</span>
-                                    </div>
-                                    {% if car.owners %}
-                                    <div class="detail-item">
-                                        <i class="bi bi-people detail-icon"></i>
-                                        <span>{{ car.owners }} вл.</span>
-                                    </div>
-                                    {% endif %}
-                                    <div class="detail-item">
-                                        <i class="bi bi-geo-alt detail-icon"></i>
-                                        <span>{{ car.region or 'Н/Д' }}</span>
-                                    </div>
-                                    {% if car.transmission %}
-                                    <div class="detail-item">
-                                        <i class="bi bi-gear detail-icon"></i>
-                                        <span>{{ {'automatic': 'АКПП', 'manual': 'МКПП', 'robot': 'Робот', 'variator': 'Вариатор'}.get(car.transmission, car.transmission) }}</span>
-                                    </div>
-                                    {% endif %}
-                                    {% if car.fuel %}
-                                    <div class="detail-item">
-                                        <i class="bi bi-fuel-pump detail-icon"></i>
-                                        <span>{{ {'petrol': 'Бензин', 'diesel': 'Дизель', 'electric': 'Электро', 'hybrid': 'Гибрид', 'gas': 'Газ'}.get(car.fuel, car.fuel) }}</span>
-                                    </div>
-                                    {% endif %}
-                                    {% if car.market_deviation %}
-                                    <div class="detail-item">
-                                        <i class="bi bi-graph-up detail-icon"></i>
-                                        <span>Отклонение: {{ "%.1f"|format(car.market_deviation * 100) }}%</span>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                
-                                <!-- Информация о рынке -->
-                                {% if car.market_price %}
-                                <div class="market-info">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <small class="text-muted">Средняя рыночная цена:</small>
-                                            <div class="fw-bold">{{ "{:,}".format(car.market_price).replace(',', ' ') }} ₽</div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <small class="text-muted">Вероятность выгодной сделки:</small>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="probability-badge {{ car.badge_class }} text-white">
-                                                    {{ "%.0f"|format((car.probability or 0) * 100) }}%
-                                                </span>
-                                            </div>
-                                            {% if car.liquidity %}
-                                            <small class="text-muted d-block mt-1">
-                                                Ликвидность: {{ "%.0f"|format((car.liquidity or 0) * 100) }}%
-                                            </small>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="col-md-4 text-end d-flex flex-column justify-content-center">
-                                <a href="{{ car.url }}" target="_blank" class="btn btn-primary btn-lg mb-2">
-                                    <i class="bi bi-box-arrow-up-right me-2"></i>Перейти к объявлению
-                                </a>
-                                {% if car.probability %}
-                                <div class="mt-2">
-                                    <small class="text-muted">Рейтинг сделки</small>
-                                    <div class="score-indicator">
-                                        <div class="score-fill {{ car.badge_class }}" 
-                                             style="width: {{ (car.probability or 0) * 100 }}%"></div>
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            
-            {% else %}
-            <div class="text-center py-5">
-                <i class="bi bi-inbox display-1 text-muted"></i>
-                <h3 class="mt-3">Ничего не найдено</h3>
-                <p class="text-muted">Попробуйте изменить параметры поиска или выбрать другие источники</p>
-                <a href="/" class="btn btn-primary btn-back mt-3">
-                    <i class="bi bi-arrow-left me-2"></i>Вернуться к поиску
-                </a>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Футер -->
-    <footer>
-        <div class="container text-center">
-            <p class="mb-2">&copy; 2024 Car Parser MVP. Все права защищены.</p>
-            <p class="small text-muted">Автоматический анализ автомобильных объявлений</p>
-        </div>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Отправка формы через AJAX с показом loading overlay
-        const searchForm = document.getElementById('searchForm');
-        if (searchForm) {
-            searchForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                const loadingSubtext = document.getElementById('loadingSubtext');
-                
-                // Показываем overlay
-                loadingOverlay.classList.add('active');
-                
-                // Динамическое обновление текста загрузки
-                const loadingMessages = [
-                    'Подключаемся к площадкам...',
-                    'Парсим объявления с Drom...',
-                    'Проверяем Avito...',
-                    'Анализируем Auto.ru...',
-                    'Считаем рыночные цены...',
-                    'Оцениваем ликвидность...',
-                    'Формируем результаты...'
-                ];
-                
-                let messageIndex = 0;
-                const messageInterval = setInterval(() => {
-                    if (messageIndex < loadingMessages.length) {
-                        loadingSubtext.textContent = loadingMessages[messageIndex];
-                        messageIndex++;
-                    }
-                }, 1000);
-                
-                // Собираем данные формы
-                const formData = new FormData(this);
-                
-                // Отправляем AJAX запрос
-                fetch(this.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    clearInterval(messageInterval);
-                    // Заменяем содержимое страницы
-                    document.open();
-                    document.write(html);
-                    document.close();
-                })
-                .catch(error => {
-                    clearInterval(messageInterval);
-                    loadingOverlay.classList.remove('active');
-                    alert('Ошибка при поиске: ' + error);
-                });
-            });
-        }
-        
         function sortCards(key) {
             const row = document.getElementById('cardsRow');
-            if (!row) return;
             const items = Array.from(row.children);
             items.sort((a, b) => Number(b.dataset[key] || 0) - Number(a.dataset[key] || 0));
             items.forEach(el => row.appendChild(el));
         }
-        // Анимация карточек после загрузки
-        setTimeout(() => {
-            const cards = document.querySelectorAll('.car-card');
-            cards.forEach((card, index) => {
-                card.style.opacity = '0';
-                card.style.transform = 'translateY(20px)';
-                setTimeout(() => {
-                    card.style.transition = 'opacity 0.5s, transform 0.5s';
-                    card.style.opacity = '1';
-                    card.style.transform = 'translateY(0)';
-                }, index * 100);
-            });
-        }, 100);
     </script>
 </body>
 </html>
