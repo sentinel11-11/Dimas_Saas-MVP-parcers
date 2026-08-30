@@ -357,12 +357,13 @@ class AutoRuParser(BaseParser):
         )
         year = int(year_m.group(1)) if year_m else 0
         prices = []
-        for raw in re.findall(r"(\d[\d\s\xa0]{4,})\s*₽", blob):
+        blob_price = re.sub(r"\d[\d\s\xa0]{2,}\s*₽\s*(?:/|\s)?\s*мес", " ", blob, flags=re.I)
+        for raw in re.findall(r"(\d[\d\s\xa0]{4,})\s*₽", blob_price):
             n = int(re.sub(r"\D", "", raw) or 0)
-            if 80_000 <= n <= 80_000_000:
+            if 250_000 <= n <= 80_000_000:
                 prices.append(n)
         price = min(prices) if prices else 0
-        if price < 50_000:
+        if price < 250_000:
             logger.debug(f"AUTO.RU skip price={price} title={title[:60]!r}")
             return None
         mileage = self._mileage_from_text(blob, year)

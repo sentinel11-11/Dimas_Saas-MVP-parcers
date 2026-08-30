@@ -50,6 +50,11 @@ ALIASES = {
     "goryachiy-klyuch": "goryachiy-klyuch",
     "togliatti": "tolyatti",
     "tolyatti": "tolyatti",
+    "rasskazovka": "moscow",
+    "kommunarka": "moscow",
+    "butovo": "moscow",
+    "mitino": "moscow",
+    "kapotnya": "moscow",
 }
 
 
@@ -68,6 +73,14 @@ def _lookup(slug: Optional[str]) -> Optional[Tuple[float, float]]:
             if label.lower() == cand.lower():
                 return COORDS.get(s)
     lowered = raw.lower()
+    for hint, slug in (
+        ("мкад", "moscow"),
+        ("рассказовка", "moscow"),
+        ("коммунарка", "moscow"),
+        ("московская область", "moscow"),
+    ):
+        if hint in lowered:
+            return COORDS.get(slug)
     if "беларусь" in lowered or "белоруссия" in lowered:
         return COORDS.get("minsk")
     best = None
