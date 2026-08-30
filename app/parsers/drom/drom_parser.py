@@ -65,6 +65,9 @@ class DromParser(BaseParser):
             cards = soup.find_all("div", attrs={"data-ftid": "bulls-list_bull"})
             logger.info(f"REAL CARDS page{page}: {len(cards)}")
             if not cards:
+                title = (soup.title.string or "").strip() if soup.title else ""
+                hint = "не найдено" if "не найден" in response.text.lower() else "нет bulls-list"
+                logger.info(f"DROM EMPTY page{page}: {hint}; title={title[:80]!r}")
                 break
             for card in cards:
                 try:

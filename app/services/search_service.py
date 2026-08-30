@@ -287,9 +287,11 @@ def run_search(params: dict) -> dict:
 
     logger.info(f"TOTAL ENRICHED BEFORE FILTERS: {len(enriched)}")
     filtered = [c for c in enriched if apply_filters(c, filters)]
+    kept_urls = {(c.url or "").split("?")[0] for c in filtered}
     dropped_autoru = [
         c for c in enriched
-        if (c.platform or "").lower() in ("auto_ru", "autoru") and c not in filtered
+        if (c.platform or "").lower() in ("auto_ru", "autoru")
+        and (c.url or "").split("?")[0] not in kept_urls
     ]
     if dropped_autoru:
         sample = [(c.price, c.year, c.mileage, c.owners) for c in dropped_autoru[:8]]
@@ -317,6 +319,11 @@ def run_search(params: dict) -> dict:
         car.relocation = reloc
     filtered = score_batch(filtered)
     logger.info(f"TOTAL ENRICHED AFTER FILTERS: {len(filtered)}")
+    if not filtered:
+        errors.append(
+            "Пусто: либо по фильтрам нет лотов (для M3 2018+ до 4,5 млн это часто так), "
+            "либо Auto.ru отдал страницу без карточек. Модем вместо Wi‑Fi сам по себе ни при чём — важен IP."
+        )
 
     try:
         from app.database.db import save_listing
