@@ -190,6 +190,13 @@ details.more summary { cursor: pointer; color: var(--amber-2); }
 .insight.reloc { background: rgba(124, 240, 195, .07); border-color: rgba(124,240,195,.22); }
 .insight.warn { background: rgba(211, 107, 90, .1); border-color: rgba(211,107,90,.3); color: #f0c2ba; }
 .insight strong { font-size: 16px; }
+.benefit {
+  margin-top: 12px; padding: 14px 16px; border-radius: 16px;
+  background: linear-gradient(135deg, rgba(124,240,195,.18), rgba(110,168,255,.1));
+  border: 1px solid rgba(124,240,195,.35); font-size: 17px; line-height: 1.45;
+}
+.benefit .lbl { display:block; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+.benefit.loss { background: rgba(211,107,90,.12); border-color: rgba(211,107,90,.35); }
 .chip.on { color: #081016; background: var(--amber); border-color: var(--amber); }
 .badge { border-radius: 999px; padding: 4px 10px; font-size: 12px; background: #1c2030; }
 .badge.drom { color: #8ec8ff; }

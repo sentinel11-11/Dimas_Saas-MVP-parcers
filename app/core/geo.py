@@ -94,6 +94,7 @@ def relocation(
     engine_volume: float = 0,
     fuel: str = "",
     horsepower: int = 0,
+    fuel_price: float = None,
 ) -> dict:
     origin = _lookup(listing_region)
     dest = _lookup(buyer_city)
@@ -115,7 +116,9 @@ def relocation(
         return empty
     dist = round(haversine_km(origin, dest) * ROAD_FACTOR)
     liters = dist / 100.0 * l100
-    fuel_cost = round(liters * FUEL_RUB_PER_LITER)
+    price_l = FUEL_RUB_PER_LITER if fuel_price is None else float(fuel_price)
+    price_l = max(30.0, min(price_l, 250.0))
+    fuel_cost = round(liters * price_l)
     driver = round(dist * DRIVER_RUB_PER_KM)
     region_key = str(listing_region).strip().lower()
     ferry = FERRY_CITIES.get(region_key, 0)
@@ -129,4 +132,5 @@ def relocation(
         "same_city": False,
         "from_label": LABELS.get(region_key, listing_region),
         "to_label": LABELS.get(str(buyer_city).lower(), buyer_city),
+        "fuel_price": price_l,
     }

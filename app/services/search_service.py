@@ -291,6 +291,7 @@ def run_search(params: dict) -> dict:
     from app.core.geo import relocation
 
     buyer = filters.get("buyer_city") or ""
+    fuel_price = float(filters.get("fuel_price") or 62)
     for car in filtered:
         car.fuel = car.fuel or ""
         reloc = relocation(
@@ -299,6 +300,7 @@ def run_search(params: dict) -> dict:
             engine_volume=car.engine_volume or 0,
             fuel=car.fuel or "",
             horsepower=car.horsepower or 0,
+            fuel_price=fuel_price,
         )
         car.relocation = reloc
     filtered = score_batch(filtered)

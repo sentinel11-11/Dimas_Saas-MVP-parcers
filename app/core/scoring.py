@@ -176,9 +176,9 @@ def score_batch(cars: List[CarListing]) -> List[CarListing]:
         suspicious = fair > 0 and car.price and car.price < fair * 0.55
         if suspicious:
             deal = min(deal, 0.42)
-            note = "Цена сильно ниже когорты (год/л.с.) — проверь комплектацию и состояние"
+            note = "Цена сильно ниже похожих машин — проверьте комплектацию и состояние"
         else:
-            note = f"Справедливая цена когорты {int(fair):,} ₽ (n={len(peers)})".replace(",", " ")
+            note = f"Типичная цена похожих {int(fair):,} ₽ (сравнили {len(peers)})".replace(",", " ")
 
         car.liquidity_score = round(max(0.05, min(0.98, liquidity)), 4)
         car.probability_good_deal = round(max(0.05, min(0.97, 0.62 * deal + 0.38 * car.liquidity_score)), 4)

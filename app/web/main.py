@@ -113,6 +113,7 @@ async def search_cars(
     body_type: str = Form(default=""),
     region: str = Form(default=""),
     buyer_city: str = Form(default="moscow"),
+    fuel_price: float = Form(default=62),
 ):
     params = _form_params(
         brand=brand,
@@ -133,6 +134,7 @@ async def search_cars(
         body_type=body_type,
         region=region,
         buyer_city=buyer_city,
+        fuel_price=fuel_price,
     )
     logger.info(f"Search request: {params}")
     try:
@@ -190,6 +192,7 @@ async def create_search_job(request: Request):
         "body_type": form.get("body_type") or "",
         "region": form.get("region") or "",
         "buyer_city": form.get("buyer_city") or "moscow",
+        "fuel_price": form.get("fuel_price") or 62,
     }
     job_id = start_job(params)
     return {"job_id": job_id}

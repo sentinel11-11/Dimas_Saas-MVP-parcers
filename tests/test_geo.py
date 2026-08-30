@@ -27,3 +27,10 @@ def test_same_city_zero():
 
 def test_consumption_diesel_lower():
     assert estimate_l_per_100(2.0, "diesel") < estimate_l_per_100(2.0, "petrol")
+
+
+def test_fuel_price_scales_cost():
+    cheap = relocation("moscow", "spb", engine_volume=2.0, fuel="petrol", fuel_price=50)
+    dear = relocation("moscow", "spb", engine_volume=2.0, fuel="petrol", fuel_price=100)
+    assert dear["fuel_cost"] > cheap["fuel_cost"]
+    assert abs(dear["fuel_cost"] - cheap["fuel_cost"] * 2) < 5
