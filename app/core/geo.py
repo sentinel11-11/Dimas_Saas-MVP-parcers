@@ -109,6 +109,21 @@ def estimate_l_per_100(engine_volume: float = 0, fuel: Optional[str] = None, hor
     return round(max(5.0, min(base, 22.0)), 1)
 
 
+def place_label(raw: Optional[str]) -> str:
+    if not raw:
+        return ""
+    text = str(raw).strip()
+    first = text.split(",")[0].strip()
+    key = first.lower().replace(" ", "-").replace("ё", "е")
+    key = ALIASES.get(key, key)
+    if key in LABELS:
+        return LABELS[key]
+    for _s, label in LABELS.items():
+        if label.lower() == first.lower():
+            return label
+    return text
+
+
 def relocation(
     buyer_city: str,
     listing_region: str,
@@ -147,8 +162,8 @@ def relocation(
     driver = 0
     region_key = str(listing_region).strip().split(",")[0].strip().lower()
     ferry = FERRY_CITIES.get(region_key.replace(" ", "-"), 0)
-    from_lab = listing_region or ""
-    to_lab = LABELS.get(str(buyer_city).lower(), buyer_city)
+    from_lab = place_label(listing_region) or listing_region
+    to_lab = place_label(buyer_city) or buyer_city
     return {
         "distance_km": dist,
         "fuel_l_100": l100,
