@@ -28,6 +28,13 @@ def _cache_key(payload: dict) -> str:
     return hashlib.sha256(blob.encode()).hexdigest()
 
 
+def _fmt_money(n) -> str:
+    try:
+        return f"{int(n or 0):,}".replace(",", " ")
+    except (TypeError, ValueError):
+        return "0"
+
+
 def _listing_to_dict(car: CarListing) -> dict:
     extra = car.model_dump()
     reloc = extra.get("relocation") or {}
@@ -38,16 +45,16 @@ def _listing_to_dict(car: CarListing) -> dict:
     return {
         "title": car.title,
         "price": car.price,
-        "price_fmt": money(car.price),
+        "price_fmt": _fmt_money(car.price),
         "year": car.year,
         "mileage": car.mileage,
-        "mileage_fmt": money(car.mileage),
+        "mileage_fmt": _fmt_money(car.mileage),
         "region": city(car.region) or car.region,
         "url": car.url,
         "platform": car.platform,
         "image_url": car.image_url or "/static/images/no-car-image.png",
         "market_price": car.market_price,
-        "market_price_fmt": money(car.market_price),
+        "market_price_fmt": _fmt_money(car.market_price),
         "market_deviation": car.market_deviation,
         "probability": car.probability_good_deal,
         "deal_pct": int(round((car.probability_good_deal or 0) * 100)),
@@ -67,7 +74,7 @@ def _listing_to_dict(car: CarListing) -> dict:
         "steering": ru(extra.get("steering"), STEER),
         "relocation": reloc,
         "landed_price": landed,
-        "landed_fmt": money(landed),
+        "landed_fmt": _fmt_money(landed),
         "net_vs_market": net,
         "net_fmt": money(net),
         "scoring_note": extra.get("scoring_note") or "",
