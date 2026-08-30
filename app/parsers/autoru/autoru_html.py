@@ -20,17 +20,14 @@ PHOTO_RE = re.compile(
 
 
 def is_blocked(html: str, url: str = "", title: str = "") -> bool:
-    blob = f"{url} {title} {html[:4000]}".lower()
-    return any(
-        x in blob
-        for x in (
-            "showcaptcha",
-            "вы не робот",
-            "smartcaptcha",
-            "are you not a robot",
-            "captcha",
-        )
-    )
+    u = (url or "").lower()
+    t = (title or "").lower()
+    h = (html or "")[:2500].lower()
+    if "showcaptcha" in u or "showcaptcha" in h:
+        return True
+    if "робот" in t or "smartcaptcha" in h or "вы не робот" in h:
+        return True
+    return False
 
 
 def _photo(chunk: str) -> str:
