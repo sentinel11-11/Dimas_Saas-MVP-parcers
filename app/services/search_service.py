@@ -199,23 +199,47 @@ async def _search_autoru(filters: dict, limit: int, errors: list) -> List[CarLis
         "mileage_max": filters.get("mileage_max"),
     }
     cars = []
-    for use_proxy in (False, True):
-        parser = AutoRuParser(headless=True, use_proxy=use_proxy, proxy_list=autoru_proxy_list)
-        logger.info(f"AUTO.RU try proxy={use_proxy}")
-        try:
-            cars = await asyncio.wait_for(
-                parser.search(filters=payload, limit=min(limit, 24)),
-                timeout=70,
-            )
-        except Exception as e:
-            logger.error(f"AUTORU SEARCH ERROR proxy={use_proxy}: {e}")
+    try:
+        from app.utils.http_client import HTTPClient
+        from app.parsers.autoru.autoru_html import is_blocked, parse_listing_html
+        from app.parsers.autoru.autoru_parser import AutoRuParser as _P
+
+        brand = (payload.get("brand") or "").strip().lower()
+        model = (payload.get("model") or "").strip().lower()
+        http_url = f"https://auto.ru/cars/{brand}/{model}/used/?year_from={payload.get('year_from') or ''}&year_to={payload.get('year_to') or ''}"
+        logger.info(f"AUTO.RU HTTP try {http_url}")
+        resp = HTTPClient(min_delay=0.2, max_delay=0.5).get(http_url)
+        if resp and resp.text and not is_blocked(resp.text, resp.url or http_url):
+            html_cards = parse_listing_html(resp.text)
+            parser_tmp = _P(headless=True, use_proxy=False)
+            for card in html_cards[: min(limit, 24)]:
+                parsed = parser_tmp._parse_listing_card(card, payload)
+                if parsed:
+                    cars.append(parsed)
+            logger.info(f"AUTO.RU HTTP PARSED: {len(cars)}")
+        elif resp:
+            logger.warning("AUTO.RU HTTP blocked/captcha")
+    except Exception as e:
+        logger.warning(f"AUTO.RU HTTP skip: {e}")
+
+    if not cars:
+        for use_proxy in (True, False):
+            parser = AutoRuParser(headless=True, use_proxy=use_proxy, proxy_list=autoru_proxy_list)
+            logger.info(f"AUTO.RU try proxy={use_proxy}")
             try:
-                await parser.close()
-            except Exception:
-                pass
-            cars = []
-        if cars:
-            break
+                cars = await asyncio.wait_for(
+                    parser.search(filters=payload, limit=min(limit, 24)),
+                    timeout=35,
+                )
+            except Exception as e:
+                logger.error(f"AUTORU SEARCH ERROR proxy={use_proxy}: {e}")
+                try:
+                    await parser.close()
+                except Exception:
+                    pass
+                cars = []
+            if cars:
+                break
     if not cars:
         errors.append("Auto.ru недоступен (таймаут или блокировка)")
         return []

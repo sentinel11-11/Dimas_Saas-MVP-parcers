@@ -24,6 +24,7 @@ from .config import AutoRuConfig
 from .http.client import ProxyManager, UserAgentRotator
 from .core.parser_engine import DelayManager, SessionManager, DataCleaner
 from .models import AutoRuCardData, AutoRuDetailData
+from .autoru_html import is_blocked, parse_listing_html
 
 
 class AutoRuParser(BaseParser):
@@ -230,39 +231,38 @@ class AutoRuParser(BaseParser):
                 # всё равно пробуем вытащить карточки с того, что открылось
             else:
                 logger.info(f"STATUS {response.status}: {self.page.url}")
-            if "showcaptcha" in (self.page.url or "") or "captcha" in (self.page.url or "").lower():
-                logger.warning("AUTO.RU captcha — skip listing extract")
+            await self.page.wait_for_timeout(800)
+            try:
+                ttl = await self.page.title()
+            except Exception:
+                ttl = ""
+            page_html = ""
+            try:
+                page_html = await self.page.content()
+            except Exception:
+                page_html = ""
+            if is_blocked(page_html, self.page.url or "", ttl):
+                logger.warning(f"AUTO.RU captcha — skip url={self.page.url} title={ttl!r}")
                 return []
-            
-            # Ожидание загрузки контента
-            await self.page.wait_for_timeout(AutoRuConfig.SCROLL_DELAY)
-            
-            # Поиск работающих селекторов из конфига
+
             found_selector = None
-            for selector in AutoRuConfig.LISTING_SELECTORS:
+            for selector in AutoRuConfig.LISTING_SELECTORS[:3]:
                 try:
-                    await self.page.wait_for_selector(selector, timeout=AutoRuConfig.SELECTOR_WAIT_TIMEOUT)
+                    await self.page.wait_for_selector(selector, timeout=2500)
                     found_selector = selector
                     logger.info(f"Found listings with selector: {selector}")
                     break
                 except Exception:
                     continue
-            
-            if not found_selector:
-                try:
-                    ttl = await self.page.title()
-                except Exception:
-                    ttl = ""
-                logger.warning(f"No listings found on page title={ttl!r} url={self.page.url}")
-                cards_data = await self._extract_cards()
-                if not cards_data:
-                    return []
-            
-            # Прокрутка страницы для подгрузки контента
-            await self._scroll_page()
-            
-            # Извлечение карточек
+
+            if found_selector:
+                await self._scroll_page()
             cards_data = await self._extract_cards()
+            if not cards_data:
+                cards_data = parse_listing_html(page_html)
+            if not cards_data:
+                logger.warning(f"No listings found on page title={ttl!r} url={self.page.url}")
+                return []
             with_photo = sum(1 for c in cards_data if c.get("image"))
             logger.info(f"AUTO.RU FOUND CARDS: {len(cards_data)} with photo: {with_photo}")
 

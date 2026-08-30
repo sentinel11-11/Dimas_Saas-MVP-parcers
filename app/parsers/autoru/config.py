@@ -64,8 +64,8 @@ class AutoRuConfig:
     
     # Таймауты
     PAGE_LOAD_TIMEOUT = 35000
-    SELECTOR_WAIT_TIMEOUT = 5000
-    SCROLL_DELAY = 2000
+    SELECTOR_WAIT_TIMEOUT = 2500
+    SCROLL_DELAY = 800
     DETAIL_PAGE_DELAY = 2000
     
     @classmethod
