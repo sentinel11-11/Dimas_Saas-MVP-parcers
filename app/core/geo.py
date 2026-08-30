@@ -109,8 +109,12 @@ def relocation(
         "same_city": True,
         "from_label": listing_region,
         "to_label": buyer_city,
+        "unknown": False,
+        "fuel_price": FUEL_RUB_PER_LITER if fuel_price is None else float(fuel_price),
     }
     if not origin or not dest or not buyer_city:
+        empty["same_city"] = False
+        empty["unknown"] = True
         return empty
     if origin == dest:
         return empty
@@ -133,4 +137,5 @@ def relocation(
         "from_label": LABELS.get(region_key, listing_region),
         "to_label": LABELS.get(str(buyer_city).lower(), buyer_city),
         "fuel_price": price_l,
+        "unknown": False,
     }

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ brand }} {{ model }} — DIMAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="/static/css/app.css?v=3">
 </head>
 <body>
     <div class="wrap">
@@ -20,7 +20,7 @@
 
         <p class="kicker">выдача · сравнение похожих машин из этого поиска</p>
         <h1 style="font-size:42px;margin:6px 0 8px">{{ brand }} {{ model }}</h1>
-        <p class="lead">{{ total }} объявлений. Сравниваем машины похожие по году, мощности, коробке и приводу. Выгода — сколько вы экономите против типичной цены после доставки в ваш город.</p>
+        <p class="lead">{{ total }} объявлений. Сравниваем машины похожие по году, мощности, коробке и приводу. Выгода — сколько экономите против типичной цены уже после доставки в ваш город.</p>
 
         {% if errors %}
         <div class="panel" style="margin:16px 0;border-color:#d36b5a">
@@ -83,47 +83,40 @@
                         {% if car.steering %}<div class="spec"><em>Руль</em><b>{{ car.steering }}</b></div>{% endif %}
                         {% if car.accidents is not none %}<div class="spec"><em>ДТП в истории</em><b>{{ car.accidents }}</b></div>{% endif %}
                     </div>
+                    {% if car.net_vs_market %}
+                    <div class="benefit {% if car.net_vs_market <= 0 %}loss{% endif %}">
+                        <span class="lbl">{% if car.net_vs_market > 0 %}ваша выгода{% else %}переплата{% endif %}</span>
+                        {% if car.net_vs_market > 0 %}
+                        Вы экономите <strong>{{ car.net_fmt }} ₽</strong> против типичной цены похожих машин{% if car.relocation and not car.relocation.same_city %} уже с доставкой в ваш город{% endif %}.
+                        {% else %}
+                        Это дороже похожих на <strong>{{ car.net_fmt|replace('-','') }} ₽</strong>{% if car.relocation and not car.relocation.same_city %} даже после учёта дороги{% endif %}.
+                        {% endif %}
+                    </div>
+                    {% endif %}
                     {% if car.market_price %}
                     <div class="insight">
-                        Среди {{ car.peer_size or 'похожих' }} похожих машин типичная цена
-                        <strong>{{ car.market_price_fmt }} ₽</strong>.
-                        {% if car.market_deviation %}
-                        Этот лот
-                        {% if car.market_deviation > 0 %}дешевле{% else %}дороже{% endif %}
-                        типичной на <strong>{{ "%.0f"|format(car.market_deviation * 100)|replace('-','') }}%</strong>
-                        (ещё без учёта дороги).
-                        {% endif %}
+                        Сравнили {{ car.peer_size or 'несколько' }} похожих объявлений (год, мощность, коробка, привод).
+                        Типичная цена среди них: <strong>{{ car.market_price_fmt }} ₽</strong>.
                     </div>
                     {% endif %}
                     {% if car.suspicious %}
                     <div class="insight warn">Цена сильно ниже похожих — проверьте комплектацию, пробег и состояние по объявлению.</div>
                     {% endif %}
-                    {% if car.relocation and not car.relocation.same_city %}
+                    {% if car.relocation and car.relocation.unknown %}
+                    <div class="insight">Город продажи не распознан — дорогу не посчитали. Цена в объявлении {{ car.price_fmt }} ₽.</div>
+                    {% elif car.relocation and not car.relocation.same_city %}
                     <div class="insight reloc">
                         Доставка своим ходом {{ car.relocation.from_label }} → {{ car.relocation.to_label }}:
-                        около {{ car.relocation.distance_km }} км, расход {{ car.relocation.fuel_l_100 }} л/100 км.
+                        около {{ car.relocation.distance_km }} км, расход {{ car.relocation.fuel_l_100 }} л/100 км
+                        {% if car.relocation.fuel_price %}при {{ car.relocation.fuel_price|int }} ₽/л{% endif %}.
                         Топливо {{ "{:,}".format(car.relocation.fuel_cost).replace(',', ' ') }} ₽
                         + водитель {{ "{:,}".format(car.relocation.driver_cost).replace(',', ' ') }} ₽
                         {% if car.relocation.ferry_cost %} + паром {{ "{:,}".format(car.relocation.ferry_cost).replace(',', ' ') }} ₽{% endif %}
                         = <strong>{{ "{:,}".format(car.relocation.total).replace(',', ' ') }} ₽</strong>.
-                        <div style="margin-top:6px">
-                            Итого у вас в городе: <strong>{{ car.landed_fmt }} ₽</strong>
-                            {% if car.net_vs_market %}
-                            · относительно похожих
-                            <strong style="color:{% if car.net_vs_market > 0 %}#7dba6f{% else %}#d36b5a{% endif %}">
-                                {% if car.net_vs_market > 0 %}дешевле на {{ car.net_fmt }} ₽{% else %}дороже на {{ car.net_fmt|replace('-','') }} ₽{% endif %}
-                            </strong>
-                            {% endif %}
-                        </div>
+                        <div style="margin-top:6px">Цена у вас в городе: <strong>{{ car.landed_fmt }} ₽</strong> (объявление + дорога).</div>
                     </div>
-                    {% elif car.net_vs_market %}
-                    <div class="insight">
-                        Машина уже в вашем городе.
-                        Относительно похожих
-                        <strong style="color:{% if car.net_vs_market > 0 %}#7dba6f{% else %}#d36b5a{% endif %}">
-                            {% if car.net_vs_market > 0 %}дешевле на {{ car.net_fmt }} ₽{% else %}дороже на {{ car.net_fmt|replace('-','') }} ₽{% endif %}
-                        </strong>
-                    </div>
+                    {% elif car.relocation and car.relocation.same_city %}
+                    <div class="insight">Машина уже в вашем городе — дорогу считать не нужно.</div>
                     {% endif %}
                 </div>
                 <div>
