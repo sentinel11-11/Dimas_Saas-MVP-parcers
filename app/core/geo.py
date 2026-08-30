@@ -48,6 +48,8 @@ ALIASES = {
     "belokuriha": "belokurikha",
     "goryachiy-kluch": "goryachiy-klyuch",
     "goryachiy-klyuch": "goryachiy-klyuch",
+    "togliatti": "tolyatti",
+    "tolyatti": "tolyatti",
 }
 
 

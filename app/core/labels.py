@@ -52,8 +52,8 @@ def ru(value, mapping: dict) -> str:
 def city(slug: str) -> str:
     if not slug:
         return ""
-    key = str(slug).strip().lower()
-    return LABELS.get(key, slug)
+    from app.core.geo import place_label
+    return place_label(slug) or str(slug)
 
 
 def money(n) -> str:

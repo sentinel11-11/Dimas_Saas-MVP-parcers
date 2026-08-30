@@ -363,6 +363,7 @@ class AutoRuParser(BaseParser):
                 prices.append(n)
         price = min(prices) if prices else 0
         if price < 50_000:
+            logger.debug(f"AUTO.RU skip price={price} title={title[:60]!r}")
             return None
         mileage = self._mileage_from_text(blob, year)
         vol_m = re.search(r"(\d+[.,]\d+)\s*л(?!\s*\.?с)", blob, re.I)
@@ -416,15 +417,20 @@ class AutoRuParser(BaseParser):
         p_to = int(filters.get("price_to") or filters.get("price_max") or 0)
         p_from = int(filters.get("price_from") or filters.get("price_min") or 0)
         if year and y_from and year < y_from:
+            logger.debug(f"AUTO.RU skip year {year}<{y_from}")
             return None
         if year and y_to and year > y_to:
+            logger.debug(f"AUTO.RU skip year {year}>{y_to}")
             return None
         if p_from and price < p_from:
+            logger.debug(f"AUTO.RU skip price {price}<{p_from}")
             return None
         if p_to and price > p_to:
+            logger.debug(f"AUTO.RU skip price {price}>{p_to}")
             return None
         km_max = int(filters.get("mileage_max") or 0)
         if km_max and mileage and mileage > km_max:
+            logger.debug(f"AUTO.RU skip km {mileage}>{km_max}")
             return None
         image = card_info.get("image") or None
         if image and str(image).startswith("//"):
@@ -520,7 +526,7 @@ class AutoRuParser(BaseParser):
                     title = (h && h.textContent ? h.textContent : '').trim() || title;
                 }
                 const text = (box.innerText || '').replace(/\\s+/g, ' ');
-                const bad = (s) => !s || s.startsWith('data:') || /placeholder|stub|blank|1x1|\.svg/i.test(s);
+                const bad = (s) => !s || s.startsWith('data:') || /placeholder|stub|blank|1x1|svg/i.test(s);
                 const pickSrc = (el) => {
                     const attrs = [el.currentSrc, el.src, el.getAttribute && el.getAttribute('src'), el.getAttribute && el.getAttribute('data-src'), el.getAttribute && el.getAttribute('srcset')];
                     for (let s of attrs) {

@@ -87,9 +87,9 @@
                     <div class="benefit {% if car.net_vs_market <= 0 %}loss{% endif %}">
                         <span class="lbl">{% if car.net_vs_market > 0 %}ваша выгода{% else %}переплата{% endif %}</span>
                         {% if car.net_vs_market > 0 %}
-                        Вы экономите <strong>{{ car.net_fmt }} ₽</strong> против типичной цены похожих машин{% if car.relocation and not car.relocation.same_city %} уже с доставкой в ваш город{% endif %}.
+                        Вы экономите <strong>{{ car.net_fmt }} ₽</strong> против типичной цены похожих машин{% if car.relocation and not car.relocation.same_city and not car.relocation.unknown %} уже с доставкой в ваш город{% endif %}.
                         {% else %}
-                        Это дороже похожих на <strong>{{ car.net_fmt|replace('-','') }} ₽</strong>{% if car.relocation and not car.relocation.same_city %} даже после учёта дороги{% endif %}.
+                        Это дороже похожих на <strong>{{ car.net_fmt|replace('-','') }} ₽</strong>{% if car.relocation and not car.relocation.same_city and not car.relocation.unknown %} даже после учёта дороги{% endif %}.
                         {% endif %}
                     </div>
                     {% endif %}

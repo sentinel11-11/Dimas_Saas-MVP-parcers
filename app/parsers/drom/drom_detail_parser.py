@@ -243,12 +243,12 @@ class DromDetailParser:
 
         t = text.lower()
 
-        if "полный" in t:
-            return "AWD"
-        if "задний" in t:
-            return "RWD"
-        if "передний" in t:
-            return "FWD"
+        if "полный привод" in t or "привод полный" in t:
+            return "four_wheel"
+        if "передний привод" in t or "привод передний" in t:
+            return "front"
+        if "задний привод" in t or "привод задний" in t:
+            return "rear"
 
         return None
 
@@ -380,11 +380,19 @@ class DromDetailParser:
         return None
 
     def extract_body_type(self, text):
-        body_types = ["седан", "хэтчбек", "универсал", "внедорожник", "купе", 
-                      "кабриолет", "родстер", "пикап", "минивэн", "фургон", 
-                      "лифтбек", "тарга", "спидстер"]
+        body_types = [
+            ("внедорожник", "suv"),
+            ("кроссовер", "crossover"),
+            ("хэтчбек", "hatchback"),
+            ("универсал", "wagon"),
+            ("минивэн", "minivan"),
+            ("кабриолет", "convertible"),
+            ("лифтбек", "hatchback"),
+            ("седан", "sedan"),
+            ("купе", "coupe"),
+        ]
         t = text.lower()
-        for bt in body_types:
-            if bt in t:
-                return bt
+        for bt, code in body_types:
+            if re.search(rf"\b{bt}\b", t):
+                return code
         return None
