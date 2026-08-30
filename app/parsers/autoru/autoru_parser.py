@@ -156,8 +156,8 @@ class AutoRuParser(BaseParser):
 
     def build_url(self, filters: Dict[str, Any]) -> str:
         """Построение URL поиска с фильтрами"""
-        brand = filters.get("brand", "").lower()
-        model = filters.get("model", "").lower()
+        brand = (filters.get("brand") or "").strip().lower()
+        model = (filters.get("model") or "").strip().lower()
         region = filters.get("region", "")
         price_from = filters.get("price_from")
         price_to = filters.get("price_to")
@@ -258,34 +258,10 @@ class AutoRuParser(BaseParser):
 
             for card_info in cards_data[:limit]:
                 try:
-                    title = (card_info.get("title") or "").strip()
-                    blob = str(card_info.get("price") or "")
-                    if re.search(r"ещё\s*\d+\s*фото", title, re.I) or len(title) < 8:
-                        tm = re.search(r"(Audi[^\n₽]{0,48}(?:19|20)\d{2})", blob, re.I)
-                        title = (tm.group(1).strip() if tm else "") or f"{filters.get('brand','')} {filters.get('model','')}".strip()
-                    year_m = re.search(r"(19\d{2}|20\d{2})", title + " " + blob)
-                    pm = re.search(r"(\d[\d\s\xa0]{4,})\s*₽", blob)
-                    price = int(re.sub(r"\D", "", pm.group(1))) if pm else 0
-                    if price < 50_000:
+                    parsed = self._parse_listing_card(card_info, filters)
+                    if not parsed:
                         continue
-                    km = re.search(r"([\d\s]{2,})\s*км", blob, re.I)
-                    image = card_info.get("image") or None
-                    if image and str(image).startswith("//"):
-                        image = "https:" + image
-                    cars.append(
-                        CarListing(
-                            url=card_info.get("url") or "",
-                            title=title[:180],
-                            platform="auto_ru",
-                            price=price,
-                            year=int(year_m.group(1)) if year_m else 0,
-                            mileage=int(re.sub(r"\D", "", km.group(1))) if km else 0,
-                            region="",
-                            brand=(filters.get("brand") or "").capitalize(),
-                            model=filters.get("model") or "",
-                            image_url=image,
-                        )
-                    )
+                    cars.append(parsed)
                 except Exception as ve:
                     logger.warning(f"Listing card skip: {ve}")
             if cars:
@@ -343,6 +319,66 @@ class AutoRuParser(BaseParser):
             await self.close()
         
         return cars
+
+    def _parse_listing_card(self, card_info: Dict[str, Any], filters: Dict[str, Any]) -> Optional[CarListing]:
+        title = (card_info.get("title") or "").strip()
+        blob = str(card_info.get("price") or "")
+        brand = (filters.get("brand") or "").strip()
+        model = (filters.get("model") or "").strip()
+        if re.search(r"ещё\s*\d+\s*фото", title, re.I) or len(title) < 8:
+            pat = re.escape(brand) if brand else r"[A-Za-zА-Яа-я]{2,}"
+            tm = re.search(rf"({pat}[^\n₽]{{0,60}}(?:19|20)\d{{2}})", blob, re.I)
+            title = (tm.group(1).strip() if tm else "") or f"{brand} {model}".strip()
+        year_m = re.search(r"\b(19\d{2}|20\d{2})\b", title) or re.search(r"\b(19\d{2}|20\d{2})\b", blob)
+        year = int(year_m.group(1)) if year_m else 0
+        prices = []
+        for raw in re.findall(r"(\d[\d\s\xa0]{4,})\s*₽", blob):
+            n = int(re.sub(r"\D", "", raw) or 0)
+            if 80_000 <= n <= 80_000_000:
+                prices.append(n)
+        price = min(prices) if prices else 0
+        if price < 50_000:
+            return None
+        mileage = 0
+        for raw in re.findall(r"(\d[\d\s\xa0]{0,10})\s*км", blob, re.I):
+            n = int(re.sub(r"\D", "", raw) or 0)
+            if year and str(n).startswith(str(year)) and len(str(n)) > 4:
+                rest = int(str(n)[4:] or 0)
+                if 0 < rest <= 800_000:
+                    n = rest
+            if 1 <= n <= 800_000:
+                mileage = n
+                break
+        y_from = int(filters.get("year_from") or 0)
+        y_to = int(filters.get("year_to") or 9999)
+        p_to = int(filters.get("price_to") or 0)
+        p_from = int(filters.get("price_from") or 0)
+        if year and y_from and year < y_from:
+            return None
+        if year and y_to and year > y_to:
+            return None
+        if p_from and price < p_from:
+            return None
+        if p_to and price > p_to:
+            return None
+        km_max = int(filters.get("mileage_max") or 0)
+        if km_max and mileage and mileage > km_max:
+            return None
+        image = card_info.get("image") or None
+        if image and str(image).startswith("//"):
+            image = "https:" + image
+        return CarListing(
+            url=card_info.get("url") or "",
+            title=title[:180],
+            platform="auto_ru",
+            price=price,
+            year=year,
+            mileage=mileage,
+            region="",
+            brand=brand.capitalize(),
+            model=model,
+            image_url=image,
+        )
 
     async def _scroll_page(self):
         """Прокрутка страницы для подгрузки ленивого контента"""
