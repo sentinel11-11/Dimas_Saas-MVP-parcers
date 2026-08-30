@@ -65,6 +65,36 @@ def _form_params(**kwargs) -> dict:
     return {**kwargs, "sources": sources}
 
 
+@app.get("/img")
+async def img_proxy(u: str = ""):
+    from urllib.parse import unquote
+    from fastapi.responses import Response
+    import requests as req
+
+    url = unquote(u or "")
+    if not url.startswith("https://"):
+        return RedirectResponse("/static/images/no-car-image.png")
+    host_ok = any(x in url for x in ("avatars.mds.yandex.net", "autoru-vos", "auto.ru", "yandex.net"))
+    if not host_ok:
+        return RedirectResponse("/static/images/no-car-image.png")
+    try:
+        r = req.get(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": "https://auto.ru/",
+                "Accept": "image/avif,image/webp,image/*,*/*;q=0.8",
+            },
+            timeout=12,
+        )
+        if r.status_code >= 400 or not r.content:
+            return RedirectResponse("/static/images/no-car-image.png")
+        ctype = r.headers.get("content-type") or "image/jpeg"
+        return Response(content=r.content, media_type=ctype.split(";")[0])
+    except Exception:
+        return RedirectResponse("/static/images/no-car-image.png")
+
+
 @app.get("/health")
 async def health():
     from app.core.proxy import ProxySettings

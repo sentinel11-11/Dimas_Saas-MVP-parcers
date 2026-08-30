@@ -257,9 +257,20 @@ class AutoRuParser(BaseParser):
 
             if found_selector:
                 await self._scroll_page()
+            try:
+                page_html = await self.page.content()
+            except Exception:
+                pass
             cards_data = await self._extract_cards()
+            html_cards = parse_listing_html(page_html)
             if not cards_data:
-                cards_data = parse_listing_html(page_html)
+                cards_data = html_cards
+            elif html_cards:
+                by_url = {c.get("url", "").rstrip("/"): c for c in html_cards}
+                for c in cards_data:
+                    key = (c.get("url") or "").rstrip("/")
+                    if not c.get("image") and by_url.get(key, {}).get("image"):
+                        c["image"] = by_url[key]["image"]
             if not cards_data:
                 logger.warning(f"No listings found on page title={ttl!r} url={self.page.url}")
                 return []
@@ -366,9 +377,13 @@ class AutoRuParser(BaseParser):
             n = int(re.sub(r"\D", "", raw) or 0)
             if 250_000 <= n <= 80_000_000:
                 prices.append(n)
-        price = min(prices) if prices else 0
-        if price < 250_000:
-            logger.debug(f"AUTO.RU skip price={price} title={title[:60]!r}")
+        sale = [n for n in prices if n >= 700_000]
+        if not sale and prices:
+            hi = max(prices)
+            sale = [n for n in prices if n >= max(700_000, int(hi * 0.45))]
+        price = min(sale) if sale else 0
+        if price < 700_000:
+            logger.debug(f"AUTO.RU skip credit-like price={prices} title={title[:60]!r}")
             return None
         mileage = self._mileage_from_text(blob, year)
         vol_m = re.search(r"(\d+[.,]\d+)\s*л(?!\s*\.?с)", blob, re.I)

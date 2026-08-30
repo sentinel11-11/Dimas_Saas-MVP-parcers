@@ -28,6 +28,17 @@ def _cache_key(payload: dict) -> str:
     return hashlib.sha256(blob.encode()).hexdigest()
 
 
+def _image_src(url: Optional[str], platform: str = "") -> str:
+    raw = (url or "").strip()
+    if not raw or raw.startswith("/static/"):
+        return raw or "/static/images/no-car-image.png"
+    plat = (platform or "").lower()
+    if plat in ("auto_ru", "autoru", "auto.ru") or "autoru-vos" in raw or "avatars.mds.yandex" in raw:
+        from urllib.parse import quote
+        return "/img?u=" + quote(raw, safe="")
+    return raw
+
+
 def _fmt_money(n) -> str:
     try:
         return f"{int(n or 0):,}".replace(",", " ")
@@ -52,7 +63,7 @@ def _listing_to_dict(car: CarListing) -> dict:
         "region": city(car.region) or car.region,
         "url": car.url,
         "platform": {"auto_ru": "autoru", "auto.ru": "autoru"}.get((car.platform or "").lower(), car.platform),
-        "image_url": car.image_url or "/static/images/no-car-image.png",
+        "image_url": _image_src(car.image_url, car.platform),
         "market_price": car.market_price,
         "market_price_fmt": _fmt_money(car.market_price),
         "market_deviation": car.market_deviation,
