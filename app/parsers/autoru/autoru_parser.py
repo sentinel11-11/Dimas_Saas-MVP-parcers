@@ -248,7 +248,8 @@ class AutoRuParser(BaseParser):
                             engine=f"{car_data.get('engine_volume', 0)}L {car_data.get('horsepower', 0)}HP",
                             transmission=car_data.get('transmission', ''),
                             engine_volume=car_data.get('engine_volume', 0),
-                            horsepower=car_data.get('horsepower', 0)
+                            horsepower=car_data.get('horsepower', 0),
+                            image_url=car_data.get('image_url')
                         )
                         cars.append(car)
                         logger.debug(f"Parsed car: {car.brand} {car.model} {car.year} - {car.price}₽")
@@ -377,7 +378,9 @@ class AutoRuParser(BaseParser):
                 "body_type": data.get('body_type', ''),
                 "owners": int(data.get('owners', 0)) if data.get('owners') else None,
                 "accidents": int(data.get('accidents', 0)) if data.get('accidents') else None,
-                "pts": data.get('pts', '')
+                "pts": data.get('pts', ''),
+                "image_url": data.get('image_url'),
+                "photos": data.get('photos', [])
             }
             
             return car_data
@@ -450,10 +453,35 @@ class AutoRuParser(BaseParser):
                 }
             });
             
+            // Извлечение фотографий
+            let photos = [];
+            const imgSelectors = [
+                'img[class*="Image"], img[data-src]',
+                '.Carousel__item img',
+                '.PhotoViewer__item img',
+                '[class*="photo"] img'
+            ];
+            
+            imgSelectors.forEach(selector => {
+                const imgs = document.querySelectorAll(selector);
+                imgs.forEach(img => {
+                    let src = img.src || img.dataset?.src || img.getAttribute('data-src');
+                    if (src && !src.includes('placeholder') && !photos.includes(src)) {
+                        // Нормализация URL
+                        if (src.startsWith('//')) src = 'https:' + src;
+                        else if (src.startsWith('/')) src = 'https://auto.ru' + src;
+                        photos.push(src);
+                    }
+                });
+            });
+            
+            // Берем первую фотографию как основную
+            let image_url = photos.length > 0 ? photos[0] : null;
+            
             return {
                 title, price, year, mileage, region, brand, model,
                 engine_volume, horsepower, transmission, drive, body_type,
-                owners, accidents, pts
+                owners, accidents, pts, image_url, photos
             };
         }"""
 
