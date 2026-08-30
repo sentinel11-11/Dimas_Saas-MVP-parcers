@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
+from app.core.labels import BODY, DRIVE, FUEL, PTS, STEER, TRANS, city, money, ru
 from app.core.normalizer import DataNormalizer
 from app.core.scoring import apply_filters, dedup, score_batch
 from app.models.car_listing import CarListing
@@ -107,12 +108,12 @@ def _search_drom(filters: dict, limit: int, errors: list) -> List[CarListing]:
     parser = DromParser()
     detail = DromDetailParser()
     payload = dict(filters)
-    payload["drom_pages"] = 4
+    payload["drom_pages"] = 5
     ads = parser.search(payload) or []
     logger.info(f"DROM FOUND: {len(ads)}")
 
     cars: List[CarListing] = []
-    for ad in ads[: max(limit * 2, 20)]:
+    for ad in ads:
         car = _to_car(ad, "drom")
         if car:
             cars.append(car)
@@ -120,7 +121,7 @@ def _search_drom(filters: dict, limit: int, errors: list) -> List[CarListing]:
     pre = [c for c in cars if apply_filters(c, filters)]
     if not pre:
         pre = cars
-    top_n = pre[: min(max(limit, 24), 60)]
+    top_n = pre[: min(max(limit, 40), 80)]
 
     def enrich(car: CarListing) -> CarListing:
         try:
@@ -155,7 +156,7 @@ def _search_avito(filters: dict, limit: int, errors: list) -> List[CarListing]:
     ads = []
     # requests почти всегда 403 — сразу браузер через тот же прокси
     try:
-        ads = avito_browser.search_sync(filters, limit=min(limit, 10))
+        ads = avito_browser.search_sync(filters, limit=min(limit, 20))
     except Exception as e:
         logger.error(f"AVITO PLAYWRIGHT FAIL: {e}")
         errors.append("Avito Playwright: установите `playwright install chromium`")
@@ -175,28 +176,33 @@ async def _search_autoru(filters: dict, limit: int, errors: list) -> List[CarLis
 
     proxy_list_str = os.getenv("AUTORU_PROXIES", "")
     autoru_proxy_list = [p.strip() for p in proxy_list_str.split(",") if p.strip()] or None
-    parser = AutoRuParser(headless=True, proxy_list=autoru_proxy_list)
-    try:
-        cars = await asyncio.wait_for(
-            parser.search(
-                filters={
-                    "brand": filters.get("brand"),
-                    "model": filters.get("model"),
-                    "region": filters.get("region"),
-                    "year_from": filters.get("year_min"),
-                    "year_to": filters.get("year_max"),
-                },
-                limit=min(limit, 8),
-            ),
-            timeout=40,
-        )
-    except Exception as e:
-        logger.error(f"AUTORU SEARCH ERROR: {e}")
-        errors.append("Auto.ru недоступен (таймаут или блокировка)")
+    payload = {
+        "brand": filters.get("brand"),
+        "model": filters.get("model"),
+        "region": filters.get("region"),
+        "year_from": filters.get("year_min"),
+        "year_to": filters.get("year_max"),
+    }
+    cars = []
+    for use_proxy in (False, True):
+        parser = AutoRuParser(headless=True, use_proxy=use_proxy, proxy_list=autoru_proxy_list)
+        logger.info(f"AUTO.RU try proxy={use_proxy}")
         try:
-            await parser.close()
-        except Exception:
-            pass
+            cars = await asyncio.wait_for(
+                parser.search(filters=payload, limit=min(limit, 12)),
+                timeout=50,
+            )
+        except Exception as e:
+            logger.error(f"AUTORU SEARCH ERROR proxy={use_proxy}: {e}")
+            try:
+                await parser.close()
+            except Exception:
+                pass
+            cars = []
+        if cars:
+            break
+    if not cars:
+        errors.append("Auto.ru недоступен (таймаут или блокировка)")
         return []
     logger.info(f"AUTO.RU FOUND: {len(cars)}")
     result = []
@@ -214,7 +220,7 @@ def run_search(params: dict) -> dict:
     sources = params.get("sources") or ["drom"]
     if isinstance(sources, str):
         sources = [sources]
-    limit = max(1, min(int(params.get("limit") or 40), 80))
+    limit = max(1, min(int(params.get("limit") or 50), 100))
     filters = {
         "brand": (params.get("brand") or "").strip().lower(),
         "model": (params.get("model") or "").strip().lower(),

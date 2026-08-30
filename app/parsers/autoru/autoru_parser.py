@@ -83,9 +83,10 @@ class AutoRuParser(BaseParser):
             browser_args = AutoRuConfig.get_browser_args(self.headless)
             
             from app.core.proxy import ProxySettings
-            pw_proxy = ProxySettings.playwright_proxy()
-            if pw_proxy:
-                browser_args["proxy"] = pw_proxy
+            if self.use_proxy:
+                pw_proxy = ProxySettings.playwright_proxy(scheme="http")
+                if pw_proxy:
+                    browser_args["proxy"] = pw_proxy
             elif self.current_proxy:
                 proxy_server = self.current_proxy
                 if "://" not in proxy_server:

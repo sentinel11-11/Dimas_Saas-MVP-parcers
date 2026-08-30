@@ -1,9 +1,9 @@
-"""Avito через Playwright: requests почти всегда ловят 403."""
+"""Avito через Playwright: сначала домашний IP, затем HTTP-прокси."""
 from __future__ import annotations
 
 import asyncio
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
@@ -70,9 +70,44 @@ def _cards(raw, brand: str, model: str, limit: int) -> List[dict]:
     return ads
 
 
-async def _search(filters: Dict[str, Any], limit: int) -> List[dict]:
+async def _open(url: str, proxy: Optional[dict], brand: str, model: str, limit: int) -> List[dict]:
     from playwright.async_api import async_playwright
 
+    launch = {"headless": True, "args": ["--disable-blink-features=AutomationControlled"]}
+    label = "direct"
+    if proxy:
+        launch["proxy"] = proxy
+        label = proxy.get("server", "proxy")
+    async with async_playwright() as p:
+        browser = await p.chromium.launch(**launch)
+        try:
+            context = await browser.new_context(
+                locale="ru-RU",
+                viewport={"width": 1366, "height": 900},
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                ),
+            )
+            await context.add_init_script(
+                "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
+            )
+            page = await context.new_page()
+            resp = await page.goto(url, wait_until="domcontentloaded", timeout=35000)
+            status = resp.status if resp else 0
+            logger.info(f"AVITO PLAYWRIGHT STATUS {status} via {label}")
+            if resp is None or status in (0, 403, 429, 407):
+                return []
+            await page.wait_for_timeout(3500)
+            raw = await page.evaluate(JS_ITEMS)
+            ads = _cards(raw, brand, model, limit)
+            logger.info(f"AVITO PLAYWRIGHT FOUND: {len(ads)} via {label}")
+            return ads
+        finally:
+            await browser.close()
+
+
+async def _search(filters: Dict[str, Any], limit: int) -> List[dict]:
     brand = slug_part(filters.get("brand") or "")
     model = slug_part(filters.get("model") or "")
     region = (filters.get("region") or filters.get("target_region") or "rossiya").strip().lower()
@@ -85,47 +120,20 @@ async def _search(filters: Dict[str, Any], limit: int) -> List[dict]:
         url += f"{brand}/"
     logger.info(f"AVITO PLAYWRIGHT: {url}")
 
-    schemes = ["socks5", "http"] if ProxySettings.protocol() == "socks5" else ["http", "socks5"]
+    modes: List[Optional[dict]] = [None]
+    http_proxy = ProxySettings.playwright_proxy(scheme="http")
+    if http_proxy:
+        modes.append(http_proxy)
+
     last_error = None
-
-    for scheme in schemes:
-        launch = {"headless": True, "args": ["--disable-blink-features=AutomationControlled"]}
-        proxy = ProxySettings.playwright_proxy(scheme=scheme)
-        if proxy:
-            launch["proxy"] = proxy
-        async with async_playwright() as p:
-            browser = await p.chromium.launch(**launch)
-            try:
-                context = await browser.new_context(
-                    locale="ru-RU",
-                    viewport={"width": 1366, "height": 900},
-                    user_agent=(
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                        "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-                    ),
-                )
-                await context.add_init_script(
-                    "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
-                )
-                page = await context.new_page()
-                resp = await page.goto(url, wait_until="domcontentloaded", timeout=25000)
-                status = resp.status if resp else 0
-                logger.info(f"AVITO PLAYWRIGHT STATUS {status} via {scheme}")
-                if resp is None or status in (0, 403, 429, 407):
-                    logger.warning(f"AVITO block via {scheme}, try next protocol")
-                    continue
-                await page.wait_for_timeout(4000)
-                raw = await page.evaluate(JS_ITEMS)
-                ads = _cards(raw, brand, model, limit)
-                logger.info(f"AVITO PLAYWRIGHT FOUND: {len(ads)} via {scheme}")
-                if ads:
-                    return ads
-            except Exception as e:
-                last_error = e
-                logger.error(f"AVITO PLAYWRIGHT ERROR via {scheme}: {e}")
-            finally:
-                await browser.close()
-
+    for proxy in modes:
+        try:
+            ads = await _open(url, proxy, brand, model, limit)
+            if ads:
+                return ads
+        except Exception as e:
+            last_error = e
+            logger.error(f"AVITO PLAYWRIGHT ERROR: {e}")
     if last_error:
-        logger.error(f"AVITO all proxy protocols failed: {last_error}")
+        logger.error(f"AVITO failed: {last_error}")
     return []
