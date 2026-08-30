@@ -88,10 +88,12 @@ def _robust_median(vals: List[float]) -> float:
     return float(statistics.median(kept) if kept else m)
 
 
-def _peer_key(car: CarListing) -> Tuple[int, int]:
+def _peer_key(car: CarListing) -> Tuple:
     year_bin = ((car.year or 0) // 2) * 2
     hp_bin = int(round((car.horsepower or 0) / 50.0) * 50)
-    return year_bin, hp_bin
+    trans = (car.transmission or "").lower()[:4]
+    drive = (car.drive or "").lower()[:6]
+    return year_bin, hp_bin, trans, drive
 
 
 def _peers(car: CarListing, cars: List[CarListing]) -> List[CarListing]:

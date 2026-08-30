@@ -24,10 +24,13 @@ class DromParser(BaseParser):
         model = slug_part(filters.get("model", ""))
         region = (filters.get("region") or "").strip().lower()
 
+        page = int(filters.get("page") or 1)
         if region:
             url = f"{self.BASE_URL}/{region}/{brand}/{model}/"
         else:
             url = f"{self.BASE_URL}/{brand}/{model}/"
+        if page > 1:
+            url = url.rstrip("/") + f"/page{page}/"
 
         params = []
         year_min = filters.get("year_min") or filters.get("year_from")
@@ -47,47 +50,32 @@ class DromParser(BaseParser):
         return url
 
     def search(self, filters):
-
-        url = self.build_url(filters)
-
-        logger.info(f"DROM SEARCH: {url}")
-
-        response = self.client.get(url)
-
-        if not response:
-            return []
-
-        html = response.text
-
-        soup = BeautifulSoup(
-            html,
-            "lxml"
-        )
-
-        cards = soup.find_all(
-            "div",
-            attrs={
-                "data-ftid": "bulls-list_bull"
-            }
-        )
-
-        logger.info(f"REAL CARDS: {len(cards)}")
-
+        pages = max(1, min(int(filters.get("drom_pages") or 2), 3))
+        seen = set()
         result = []
-
-        for card in cards:
-
-            try:
-
-                ad = self.parse_card(card)
-
-                if ad:
+        for page in range(1, pages + 1):
+            payload = dict(filters)
+            payload["page"] = page
+            url = self.build_url(payload)
+            logger.info(f"DROM SEARCH: {url}")
+            response = self.client.get(url)
+            if not response:
+                break
+            soup = BeautifulSoup(response.text, "lxml")
+            cards = soup.find_all("div", attrs={"data-ftid": "bulls-list_bull"})
+            logger.info(f"REAL CARDS page{page}: {len(cards)}")
+            if not cards:
+                break
+            for card in cards:
+                try:
+                    ad = self.parse_card(card)
+                    if not ad or ad["url"] in seen:
+                        continue
+                    seen.add(ad["url"])
                     result.append(ad)
-
-            except Exception as e:
-
-                logger.error(e)
-
+                except Exception as e:
+                    logger.error(e)
+        logger.info(f"DROM TOTAL UNIQUE: {len(result)}")
         return result
 
     def parse_card(self, card):
@@ -175,6 +163,15 @@ class DromParser(BaseParser):
         if not title or not url:
             return None
 
+        region = ""
+        try:
+            from urllib.parse import urlparse
+            parts = urlparse(url).path.split("/")
+            if len(parts) > 1:
+                region = parts[1]
+        except Exception:
+            pass
+
         return {
             "title": title,
             "price": price,
@@ -182,5 +179,6 @@ class DromParser(BaseParser):
             "mileage": mileage,
             "url": url,
             "source": "drom",
-            "image_url": image_url
+            "image_url": image_url,
+            "region": region,
         }

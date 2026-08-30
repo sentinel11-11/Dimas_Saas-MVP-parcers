@@ -16,7 +16,7 @@ from app.core.normalizer import DataNormalizer
 from app.core.scoring import apply_filters, dedup, score_batch
 from app.models.car_listing import CarListing
 
-CACHE_TTL = 20 * 60
+CACHE_TTL = 5 * 60
 _cache: Dict[str, Dict[str, Any]] = {}
 JOBS: Dict[str, Dict[str, Any]] = {}
 LAST_RESULTS: Dict[str, Any] = {"results": [], "filters_applied": {}, "brand": "", "model": ""}
@@ -30,38 +30,45 @@ def _cache_key(payload: dict) -> str:
 def _listing_to_dict(car: CarListing) -> dict:
     extra = car.model_dump()
     reloc = extra.get("relocation") or {}
-    landed = (car.price or 0) + int(reloc.get("total") or 0)
+    landed = extra.get("landed_price") or ((car.price or 0) + int(reloc.get("total") or 0))
+    net = extra.get("net_vs_market")
+    if net is None:
+        net = round((car.market_price or 0) - landed)
     return {
         "title": car.title,
         "price": car.price,
+        "price_fmt": money(car.price),
         "year": car.year,
         "mileage": car.mileage,
-        "region": car.region,
+        "mileage_fmt": money(car.mileage),
+        "region": city(car.region) or car.region,
         "url": car.url,
         "platform": car.platform,
         "image_url": car.image_url or "/static/images/no-car-image.png",
         "market_price": car.market_price,
+        "market_price_fmt": money(car.market_price),
         "market_deviation": car.market_deviation,
         "probability": car.probability_good_deal,
+        "deal_pct": int(round((car.probability_good_deal or 0) * 100)),
         "liquidity": car.liquidity_score,
         "badge_class": _badge(car.probability_good_deal),
         "owners": car.owners,
-        "transmission": car.transmission,
-        "fuel": car.fuel,
-        "drive": car.drive,
-        "body_type": car.body_type,
+        "transmission": ru(car.transmission, TRANS),
+        "fuel": ru(car.fuel, FUEL),
+        "drive": ru(car.drive, DRIVE),
+        "body_type": ru(car.body_type, BODY),
         "engine_volume": car.engine_volume,
         "horsepower": car.horsepower,
-        "pts": car.pts,
+        "pts": ru(car.pts, PTS),
         "vin": extra.get("vin"),
         "color": extra.get("color"),
         "accidents": car.accidents,
-        "steering": extra.get("steering"),
+        "steering": ru(extra.get("steering"), STEER),
         "relocation": reloc,
-        "landed_price": extra.get("landed_price") or landed,
-        "net_vs_market": extra.get("net_vs_market")
-        if extra.get("net_vs_market") is not None
-        else round((car.market_price or 0) - landed),
+        "landed_price": landed,
+        "landed_fmt": money(landed),
+        "net_vs_market": net,
+        "net_fmt": money(net),
         "scoring_note": extra.get("scoring_note") or "",
         "suspicious": extra.get("suspicious") or False,
         "peer_size": extra.get("peer_size") or 0,
@@ -99,7 +106,9 @@ def _search_drom(filters: dict, limit: int, errors: list) -> List[CarListing]:
 
     parser = DromParser()
     detail = DromDetailParser()
-    ads = parser.search(filters) or []
+    payload = dict(filters)
+    payload["drom_pages"] = 2
+    ads = parser.search(payload) or []
     logger.info(f"DROM FOUND: {len(ads)}")
 
     cars: List[CarListing] = []
@@ -111,7 +120,7 @@ def _search_drom(filters: dict, limit: int, errors: list) -> List[CarListing]:
     pre = [c for c in cars if apply_filters(c, filters)]
     if not pre:
         pre = cars
-    top_n = pre[: min(limit, 12)]
+    top_n = pre[: min(max(limit, 16), 28)]
 
     def enrich(car: CarListing) -> CarListing:
         try:
@@ -126,7 +135,7 @@ def _search_drom(filters: dict, limit: int, errors: list) -> List[CarListing]:
         return car
 
     enriched: List[CarListing] = []
-    workers = min(3, len(top_n) or 1)
+    workers = min(4, len(top_n) or 1)
     with ThreadPoolExecutor(max_workers=workers) as pool:
         futs = {pool.submit(enrich, c): c for c in top_n}
         for fut in as_completed(futs):

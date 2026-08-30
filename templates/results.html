@@ -18,9 +18,9 @@
             </nav>
         </header>
 
-        <p class="kicker">выдача</p>
+        <p class="kicker">выдача · оценка по когорте этой выборки</p>
         <h1 style="font-size:42px;margin:6px 0 8px">{{ brand }} {{ model }}</h1>
-        <p class="lead">Найдено {{ total }} лотов{% if sample_size %}. Оценка по {{ sample_size }} объявлениям этой выборки{% endif %}.</p>
+        <p class="lead">{{ total }} лотов. Справедливая цена — медиана похожих (год, л.с., КПП, привод), не «рынок РФ». Перегон до вашего города уже в landed-цене.</p>
 
         {% if errors %}
         <div class="panel" style="margin:16px 0;border-color:#d36b5a">
@@ -52,7 +52,7 @@
         {% endif %}
 
         <div class="chips" style="margin-bottom:16px">
-            <span class="chip" onclick="sortCards('net')">По выгоде (после перегона)</span>
+            <span class="chip" onclick="sortCards('net')">По выгоде после перегона</span>
             <span class="chip" onclick="sortCards('probability')">По скору</span>
             <span class="chip" onclick="sortCards('price')">По цене</span>
             <span class="chip" onclick="sortCards('year')">По году</span>
@@ -64,11 +64,12 @@
                 <img src="{{ car.image_url }}" alt="" onerror="this.src='/static/images/car-placeholder.svg'">
                 <div>
                     <span class="badge {{ car.platform }}">{{ car.platform }}</span>
+                    {% if car.deal_pct %}<span class="badge">скор {{ car.deal_pct }}</span>{% endif %}
                     <h3 style="margin:8px 0 4px">{{ car.title }}</h3>
-                    <div class="price">{{ "{:,}".format(car.price or 0).replace(',', ' ') }} ₽</div>
+                    <div class="price">{{ car.price_fmt }} ₽</div>
                     <div class="meta">
                         <span>{{ car.year or '—' }} г.</span>
-                        <span>{{ "{:,}".format(car.mileage or 0).replace(',', ' ') }} км</span>
+                        <span>{{ car.mileage_fmt }} км</span>
                         {% if car.owners %}<span>{{ car.owners }} вл.</span>{% endif %}
                         <span>{{ car.region or 'регион н/д' }}</span>
                         {% if car.engine_volume %}<span>{{ car.engine_volume }} л</span>{% endif %}
@@ -79,29 +80,31 @@
                         {% if car.body_type %}<span>{{ car.body_type }}</span>{% endif %}
                         {% if car.color %}<span>{{ car.color }}</span>{% endif %}
                         {% if car.pts %}<span>ПТС {{ car.pts }}</span>{% endif %}
+                        {% if car.steering %}<span>{{ car.steering }}</span>{% endif %}
                         {% if car.accidents is not none %}<span>ДТП: {{ car.accidents }}</span>{% endif %}
-                        {% if car.vin %}<span>VIN {{ car.vin }}</span>{% endif %}
                     </div>
                     {% if car.market_price %}
-                    <div class="meta">справедливая цена когорты {{ "{:,}".format(car.market_price|int).replace(',', ' ') }} ₽
-                        {% if car.peer_size %} · n={{ car.peer_size }}{% endif %}
-                        {% if car.market_deviation %} · vs когорты {{ "%.0f"|format(car.market_deviation * 100) }}%{% endif %}
+                    <div class="meta">когорта {{ car.market_price_fmt }} ₽{% if car.peer_size %} · n={{ car.peer_size }}{% endif %}
+                        {% if car.market_deviation %} · {{ "%.0f"|format(car.market_deviation * 100) }}% к справедливой{% endif %}
                     </div>
                     {% endif %}
                     {% if car.scoring_note %}<div class="meta">{{ car.scoring_note }}</div>{% endif %}
-                    {% if car.suspicious %}<div class="meta" style="color:#d36b5a">Подозрительно дёшево относительно года/мощности</div>{% endif %}
+                    {% if car.suspicious %}<div class="meta" style="color:#d36b5a">Подозрительно дёшево — сверь комплектацию и состояние</div>{% endif %}
                     {% if car.relocation and not car.relocation.same_city %}
                     <div class="meta">перегон {{ car.relocation.from_label }} → {{ car.relocation.to_label }}:
                         ~{{ car.relocation.distance_km }} км · {{ car.relocation.fuel_l_100 }} л/100км ·
                         топливо {{ "{:,}".format(car.relocation.fuel_cost).replace(',', ' ') }} ₽ +
                         водитель {{ "{:,}".format(car.relocation.driver_cost).replace(',', ' ') }} ₽
                         {% if car.relocation.ferry_cost %} + паром {{ "{:,}".format(car.relocation.ferry_cost).replace(',', ' ') }} ₽{% endif %}
-                        =
-                        <strong>{{ "{:,}".format(car.relocation.total).replace(',', ' ') }} ₽</strong>
+                        = <strong>{{ "{:,}".format(car.relocation.total).replace(',', ' ') }} ₽</strong>
                     </div>
-                    <div class="meta">цена с перегоном {{ "{:,}".format(car.landed_price or 0).replace(',', ' ') }} ₽
-                        {% if car.net_vs_market %} · экономия к когорте {{ "{:,}".format(car.net_vs_market).replace(',', ' ') }} ₽{% endif %}
+                    <div class="meta">с перегоном {{ car.landed_fmt }} ₽
+                        {% if car.net_vs_market %} · к когорте
+                        <strong style="color:{% if car.net_vs_market > 0 %}#7dba6f{% else %}#d36b5a{% endif %}">{{ car.net_fmt }} ₽</strong>
+                        {% endif %}
                     </div>
+                    {% elif car.net_vs_market %}
+                    <div class="meta">к когорте <strong style="color:{% if car.net_vs_market > 0 %}#7dba6f{% else %}#d36b5a{% endif %}">{{ car.net_fmt }} ₽</strong></div>
                     {% endif %}
                 </div>
                 <div>
@@ -112,7 +115,7 @@
             <div class="panel">Ничего не нашли. Смягчите фильтры или оставьте только Drom.</div>
         {% endfor %}
         </div>
-        <footer class="footer">DIMAS</footer>
+        <footer class="footer">DIMAS · не оценка рынка РФ</footer>
     </div>
     <script>
         function sortCards(key) {

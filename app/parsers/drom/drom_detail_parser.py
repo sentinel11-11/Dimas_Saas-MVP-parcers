@@ -224,11 +224,11 @@ class DromDetailParser:
         t = text.lower()
 
         mapping = {
-            "автомат": "AT",
-            "акпп": "AT",
-            "робот": "AMT",
-            "вариатор": "CVT",
-            "механика": "MT"
+            "автомат": "automatic",
+            "акпп": "automatic",
+            "робот": "robot",
+            "вариатор": "variator",
+            "механика": "manual",
         }
 
         for k, v in mapping.items():
@@ -353,12 +353,12 @@ class DromDetailParser:
             return "diesel"
         if "гибрид" in t:
             return "hybrid"
-        if "электро" in t:
-            return "electric"
-        if "гбо" in t or "газ" in t:
-            return "gas"
         if "бензин" in t:
             return "petrol"
+        if "гбо" in t or "метан" in t or "пропан" in t:
+            return "gas"
+        if "электромобил" in t or "электромотор" in t:
+            return "electric"
         return None
 
     def extract_body_type(self, text):
