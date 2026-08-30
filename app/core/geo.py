@@ -147,11 +147,7 @@ def relocation(
     driver = 0
     region_key = str(listing_region).strip().split(",")[0].strip().lower()
     ferry = FERRY_CITIES.get(region_key.replace(" ", "-"), 0)
-    from_lab = listing_region.split(",")[0].strip() if listing_region else listing_region
-    for s, label in LABELS.items():
-        if label.lower() in str(listing_region).lower() and len(label) >= 4:
-            from_lab = label
-            break
+    from_lab = listing_region or ""
     to_lab = LABELS.get(str(buyer_city).lower(), buyer_city)
     return {
         "distance_km": dist,

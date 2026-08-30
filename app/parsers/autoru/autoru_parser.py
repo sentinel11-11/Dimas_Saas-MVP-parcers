@@ -350,21 +350,7 @@ class AutoRuParser(BaseParser):
         price = min(prices) if prices else 0
         if price < 50_000:
             return None
-        mileage = 0
-        tys = re.search(r"(\d[\d\s\xa0,]{0,6})\s*тыс\.?\s*км", blob, re.I)
-        if tys:
-            n = int(re.sub(r"\D", "", tys.group(1)) or 0) * 1000
-            if 0 < n <= 800_000:
-                mileage = n
-        if not mileage:
-            for raw in re.findall(r"(\d[\d\s\xa0]{0,8})\s*км", blob, re.I):
-                n = int(re.sub(r"\D", "", raw) or 0)
-                if year and str(n).startswith(str(year)) and len(str(n)) > 4:
-                    rest = int(str(n)[4:] or 0)
-                    n = rest if 0 <= rest <= 800_000 else n
-                if 1 <= n <= 800_000:
-                    mileage = n
-                    break
+        mileage = self._mileage_from_text(blob, year)
         vol_m = re.search(r"(\d+[.,]\d+)\s*л", blob, re.I)
         hp_m = re.search(r"(\d{2,4})\s*л\.?\s*с", blob, re.I)
         trans = ""
@@ -433,7 +419,41 @@ class AutoRuParser(BaseParser):
             transmission=trans,
             fuel=fuel,
             drive=drive,
+            owners=owners,
+            pts=pts,
         )
+
+    @staticmethod
+    def _mileage_from_text(blob: str, year: int = 0) -> int:
+        text = blob.replace("\xa0", " ")
+        if year:
+            text = re.sub(rf"\b{year}\b", " ", text)
+        tys = re.search(r"(\d[\d\s,]{0,6})\s*тыс\.?\s*км", text, re.I)
+        if tys:
+            n = int(re.sub(r"\D", "", tys.group(1)) or 0) * 1000
+            if 1 <= n <= 800_000:
+                return n
+        for pat in (
+            r"(\d{1,3}(?:[ \u00a0]\d{3}){1,2})\s*км",
+            r"(\d{2,6})\s*км",
+        ):
+            m = re.search(pat, text, re.I)
+            if not m:
+                continue
+            n = int(re.sub(r"\D", "", m.group(1)) or 0)
+            if year and str(n).startswith(str(year)) and len(str(n)) > 4:
+                rest = int(str(n)[4:] or 0)
+                n = rest if 1 <= rest <= 800_000 else n
+            if 1 <= n <= 800_000:
+                return n
+        glued = re.search(r"(\d{5,10})\s*км", blob.replace(" ", "").replace("\xa0", ""), re.I)
+        if glued and year:
+            raw = glued.group(1)
+            if raw.startswith(str(year)):
+                rest = int(raw[4:] or 0)
+                if 1 <= rest <= 800_000:
+                    return rest
+        return 0
 
     async def _scroll_page(self):
         """Прокрутка страницы для подгрузки ленивого контента"""
