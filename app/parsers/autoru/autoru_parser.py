@@ -378,13 +378,22 @@ class AutoRuParser(BaseParser):
             drive = "front"
         elif re.search(r"задн", blob, re.I):
             drive = "rear"
-        region = (card_info.get("place") or "").strip()
+        region = re.sub(r"[\s\xa0]+", " ", (card_info.get("place") or "").strip())
         if not region:
             rm = re.search(
-                r"(Москва|Санкт-Петербург|Московская область|[А-ЯЁ][а-яё-]{3,20})",
+                r"(Москва|Санкт-Петербург|Минск|Московская область|[А-ЯЁ][а-яё-]{3,20})",
                 blob,
             )
-            region = rm.group(1) if rm else ""
+            region = re.sub(r"[\s\xa0]+", " ", (rm.group(1) if rm else ""))
+        own_m = re.search(r"(\d+)\s*владел", blob, re.I)
+        owners = int(own_m.group(1)) if own_m else None
+        pts = ""
+        if re.search(r"электронн", blob, re.I):
+            pts = "электронный"
+        elif re.search(r"оригинал", blob, re.I):
+            pts = "оригинал"
+        elif re.search(r"дубликат", blob, re.I):
+            pts = "дубликат"
         y_from = int(filters.get("year_from") or 0)
         y_to = int(filters.get("year_to") or 9999)
         p_to = int(filters.get("price_to") or 0)
@@ -603,6 +612,18 @@ class AutoRuParser(BaseParser):
             let region = getText('[data-name="region"]') || '';
             
             const allText = document.body.innerText;
+            if (!year) {
+                const ym = allText.match(/\\b((?:19|20)\\d{2})\\s*(?:год|г\\.?)/i);
+                if (ym) year = ym[1];
+            }
+            if (!mileage) {
+                const km = allText.match(/(\\d[\\d\\s\\u00a0]{0,8})\\s*км/i);
+                if (km) mileage = km[1];
+            }
+            if (!region) {
+                const pl = document.querySelector('[class*="Metro"], [class*="SellerInfo"], [itemprop="address"]');
+                region = pl ? pl.textContent.trim() : '';
+            }
             const lines = allText.split('\\n').map(l => l.trim()).filter(l => l);
             
             let engine_volume = '', horsepower = '', transmission = '', drive = '', 

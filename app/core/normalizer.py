@@ -69,10 +69,18 @@ BODY_ALIASES = {
 }
 
 
+_LABEL_ONLY = {
+    "коробка", "привод", "кузов", "птс", "трансмиссия", "топливо",
+    "двигатель", "мощность", "пробег", "год",
+}
+
+
 def _alias(value: Optional[str], mapping: Dict[str, str]) -> Optional[str]:
     if value is None or value == "":
         return None
-    key = str(value).strip().lower()
+    key = str(value).strip().lower().split(":")[-1].strip()
+    if key in _LABEL_ONLY:
+        return None
     return mapping.get(key, key)
 
 
