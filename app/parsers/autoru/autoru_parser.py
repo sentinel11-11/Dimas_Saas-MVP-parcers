@@ -258,9 +258,20 @@ class AutoRuParser(BaseParser):
 
             for card_info in cards_data[:limit]:
                 try:
-                    title = card_info.get("title") or "auto.ru"
-                    year_m = re.search(r"(19\d{2}|20\d{2})", title)
-                    price = self._clean_price(str(card_info.get("price") or "0"))
+                    title = (card_info.get("title") or "").strip()
+                    blob = str(card_info.get("price") or "")
+                    if re.search(r"ещё\s*\d+\s*фото", title, re.I) or len(title) < 8:
+                        tm = re.search(r"(Audi[^\n₽]{0,48}(?:19|20)\d{2})", blob, re.I)
+                        title = (tm.group(1).strip() if tm else "") or f"{filters.get('brand','')} {filters.get('model','')}".strip()
+                    year_m = re.search(r"(19\d{2}|20\d{2})", title + " " + blob)
+                    pm = re.search(r"(\d[\d\s\xa0]{4,})\s*₽", blob)
+                    price = int(re.sub(r"\D", "", pm.group(1))) if pm else 0
+                    if price < 50_000:
+                        continue
+                    km = re.search(r"([\d\s]{2,})\s*км", blob, re.I)
+                    image = card_info.get("image") or None
+                    if image and str(image).startswith("//"):
+                        image = "https:" + image
                     cars.append(
                         CarListing(
                             url=card_info.get("url") or "",
@@ -268,10 +279,11 @@ class AutoRuParser(BaseParser):
                             platform="auto_ru",
                             price=price,
                             year=int(year_m.group(1)) if year_m else 0,
-                            mileage=self._clean_number(str(card_info.get("mileage") or "0")),
-                            region=card_info.get("region") or "",
+                            mileage=int(re.sub(r"\D", "", km.group(1))) if km else 0,
+                            region="",
                             brand=(filters.get("brand") or "").capitalize(),
                             model=filters.get("model") or "",
+                            image_url=image,
                         )
                     )
                 except Exception as ve:
@@ -351,41 +363,32 @@ class AutoRuParser(BaseParser):
         
         script = """() => {
             const items = [];
-            const selectors = [
-                'a[href*="/cars/sale/offer/"]',
-                'a.ListingItemTitle',
-                'div[class*="ListingItem"] a'
-            ];
-            
-            let allLinks = [];
-            selectors.forEach(selector => {
-                const links = document.querySelectorAll(selector);
-                links.forEach(link => {
-                    const href = link.href || '';
-                    if (href.includes('auto.ru') && (href.includes('/cars/') || href.includes('/offer/')) && !href.includes('#')) {
-                        const box = link.closest('[class*="ListingItem"]') || link.parentElement;
-                        const text = (box && box.innerText) ? box.innerText.replace(/\\s+/g, ' ') : (link.textContent || '');
-                        allLinks.push({
-                            url: href,
-                            title: link.textContent?.trim() || '',
-                            price: text,
-                            mileage: text,
-                            region: text
-                        });
-                    }
-                });
-            });
-            
-            // Удаление дубликатов
-            const seen = new Set();
-            allLinks.forEach(item => {
-                if (!seen.has(item.url)) {
-                    seen.add(item.url);
-                    items.push(item);
+            const cards = document.querySelectorAll('div[class*="ListingItem"], article[class*="Listing"]');
+            cards.forEach(box => {
+                const link = box.querySelector('a[class*="ListingItemTitle"], a[href*="/cars/used/sale/"]');
+                if (!link || !link.href) return;
+                const href = link.href.split('?')[0];
+                if (!href.includes('/cars/used/sale/')) return;
+                let title = (link.textContent || '').trim();
+                if (!title || /^ещё/i.test(title) || title.length < 6) {
+                    const h = box.querySelector('h3, [class*="Title"]');
+                    title = (h && h.textContent ? h.textContent : '').trim() || title;
                 }
+                const text = (box.innerText || '').replace(/\\s+/g, ' ');
+                const img = box.querySelector('img');
+                let image = '';
+                if (img) {
+                    image = img.currentSrc || img.src || img.getAttribute('src') || img.getAttribute('data-src') || '';
+                    if (image.startsWith('//')) image = 'https:' + image;
+                }
+                items.push({ url: href, title, price: text, mileage: text, image });
             });
-            
-            return items;
+            const seen = new Set();
+            return items.filter(it => {
+                if (seen.has(it.url)) return false;
+                seen.add(it.url);
+                return true;
+            });
         }"""
         
         try:
