@@ -219,12 +219,15 @@ class AutoRuParser(BaseParser):
         try:
             # Переход на страницу поиска
             response = await self.page.goto(url, wait_until="domcontentloaded", timeout=AutoRuConfig.PAGE_LOAD_TIMEOUT)
-            
-            if not response or response.status != 200:
+            if not response or response.status not in (200, 301, 302):
+                fallback = f"https://auto.ru/cars/{filters.get('brand','')}/{filters.get('model','')}/used/"
+                logger.warning(f"AUTO.RU {response.status if response else 'none'} → fallback {fallback}")
+                response = await self.page.goto(fallback, wait_until="domcontentloaded", timeout=AutoRuConfig.PAGE_LOAD_TIMEOUT)
+            if not response or response.status >= 400:
                 logger.error(f"Failed to load page: {response.status if response else 'No response'}")
-                return []
-            
-            logger.info(f"STATUS {response.status}: {url}")
+                # всё равно пробуем вытащить карточки с того, что открылось
+            else:
+                logger.info(f"STATUS {response.status}: {self.page.url}")
             
             # Ожидание загрузки контента
             await self.page.wait_for_timeout(AutoRuConfig.SCROLL_DELAY)
@@ -333,8 +336,8 @@ class AutoRuParser(BaseParser):
             selectors.forEach(selector => {
                 const links = document.querySelectorAll(selector);
                 links.forEach(link => {
-                    const href = link.href;
-                    if (href && href.includes('/cars/sale/') && !href.includes('#')) {
+                    const href = link.href || '';
+                    if (href.includes('auto.ru') && (href.includes('/cars/') || href.includes('/offer/')) && !href.includes('#')) {
                         allLinks.push({
                             url: href,
                             title: link.textContent?.trim() || ''

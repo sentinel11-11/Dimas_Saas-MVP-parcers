@@ -18,7 +18,7 @@ class AvitoParserEngine:
         path=f"/{region}/avtomobili/" + ((brand+"/"+model+"/") if brand and model else (brand+"/") if brand else "")
         return "https://www.avito.ru"+path+("?"+urlencode({"p":page}) if page>1 else "")
     def search(self,filters):
-        limit=min(int(filters.get("limit") or config.search_limit),1000); results=[]; seen=set(); max_pages=max(1,min(config.max_pages,(limit+9)//10))
+        limit=min(int(filters.get("limit") or config.search_limit),1000); results=[]; seen=set(); max_pages=1
         for page in range(1,max_pages+1):
             if len(results)>=limit: break
             url=self.build_url(filters,page); logger.info("AVITO SEARCH: {}",url); response=self.client.get(url)
@@ -33,7 +33,7 @@ class AvitoParserEngine:
                 response=self.client.get(url)
             if not response or response.status_code!=200: 
                 logger.warning("AVITO: Bad status code {}", response.status_code if response else "None")
-                continue
+                break
             if config.save_debug_html:
                 p=Path("data")/f"avito_debug_{page}.html"; p.parent.mkdir(parents=True,exist_ok=True); p.write_text(response.text,encoding="utf-8")
             soup=BeautifulSoup(response.text,"lxml"); cards=self._find_cards(soup); logger.info("AVITO CARDS page={} count={}",page,len(cards))

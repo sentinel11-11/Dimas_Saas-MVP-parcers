@@ -44,7 +44,19 @@ HTTP используется Drom/Avito (`requests`). Playwright (auto.ru) по
 - `/export/csv` — последняя выдача
 - `/import/csv` — ручной фид объявлений
 
-## Ограничения
+## Три площадки сразу
+
+1. В venv: `playwright install chromium` (обязательно для Avito и Auto.ru).
+2. `.env` с рабочим HTTP-прокси (как у тебя `user:pass@ip:1206`).
+3. На форме отметь Drom + Avito + Auto.ru.
+
+Как это устроено:
+
+- **Drom** — обычный HTTP, обычно даёт лоты.
+- **Avito** — сначала requests; при 403/0 карточек включается **Playwright** (тот же прокси). Без Chromium и живого IP Avito останется пустым.
+- **Auto.ru** — сразу Playwright. URL каталога `/cars/{brand}/{model}/used/`.
+
+Если Avito всё равно 0: датацентровый прокси часто в бане. Нужен **резидентский** IP или cookie живой сессии. Drom при этом не пропадает.
 
 - Парсинг площадок может нарушать их ToS; для продакшена нужен легальный фид.
 - Avito часто отвечает 403. Auto.ru требует Playwright и может таймаутиться.

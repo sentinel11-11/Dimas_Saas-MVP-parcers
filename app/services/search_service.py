@@ -136,6 +136,7 @@ def _search_drom(filters: dict, limit: int, errors: list) -> List[CarListing]:
 
 def _search_avito(filters: dict, limit: int, errors: list) -> List[CarListing]:
     from app.parsers.avito.avito_parser import AvitoParser
+    from app.parsers.avito import avito_browser
 
     proxy_list_str = os.getenv("AVITO_PROXIES", "")
     avito_proxy_list = [p.strip() for p in proxy_list_str.split(",") if p.strip()] or None
@@ -144,11 +145,21 @@ def _search_avito(filters: dict, limit: int, errors: list) -> List[CarListing]:
         {
             "brand": filters.get("brand"),
             "model": filters.get("model"),
-            "limit": limit,
+            "limit": min(limit, 12),
             "target_region": filters.get("region") or "rossiya",
         }
     )
+    if not ads:
+        logger.info("AVITO HTTP empty/blocked — Playwright fallback")
+        try:
+            ads = avito_browser.search_sync(filters, limit=min(limit, 10))
+        except Exception as e:
+            logger.error(f"AVITO PLAYWRIGHT FAIL: {e}")
+            errors.append("Avito: HTTP 403, браузер тоже не смог (нужен playwright install chromium и живой прокси)")
+            ads = []
     logger.info(f"AVITO FOUND: {len(ads)}")
+    if not ads:
+        errors.append("Avito не отдал объявления (антибот). Drom при этом сохраняется.")
     cars = []
     for ad in ads:
         car = _to_car(ad, "avito")
@@ -175,7 +186,7 @@ async def _search_autoru(filters: dict, limit: int, errors: list) -> List[CarLis
                 },
                 limit=min(limit, 8),
             ),
-            timeout=18,
+            timeout=40,
         )
     except Exception as e:
         logger.error(f"AUTORU SEARCH ERROR: {e}")
@@ -262,7 +273,26 @@ def run_search(params: dict) -> dict:
         filtered = enriched
         errors.append("Строгие фильтры не сработали — показана вся выборка")
     filtered = dedup(filtered)
+    from statistics import median
+    from app.core.geo import relocation
+
+    sample_prices = [c.price for c in enriched if c.price]
+    market_median = float(median(sample_prices)) if sample_prices else 0
     filtered = score_batch(filtered)
+    buyer = filters.get("buyer_city") or ""
+    for car in filtered:
+        if market_median:
+            car.market_price = market_median
+            if car.price:
+                car.market_deviation = round((market_median - car.price) / market_median, 4)
+        reloc = relocation(
+            buyer,
+            car.region,
+            engine_volume=car.engine_volume or 0,
+            fuel=car.fuel or "",
+            horsepower=car.horsepower or 0,
+        )
+        car.relocation = reloc
     logger.info(f"TOTAL ENRICHED AFTER FILTERS: {len(filtered)}")
 
     try:
