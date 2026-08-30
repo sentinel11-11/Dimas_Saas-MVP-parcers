@@ -146,6 +146,14 @@ class DromParser(BaseParser):
             if digits:
                 mileage = int(digits)
 
+        # IMAGES - извлечение фотографии
+        image_url = None
+        img_tag = card.find("img")
+        if img_tag:
+            image_url = img_tag.get("src") or img_tag.get("data-src")
+            if image_url and image_url.startswith("//"):
+                image_url = "https:" + image_url
+
         if not title or not url:
             return None
 
@@ -155,5 +163,6 @@ class DromParser(BaseParser):
             "year": year,
             "mileage": mileage,
             "url": url,
-            "source": "drom"
+            "source": "drom",
+            "image_url": image_url
         }

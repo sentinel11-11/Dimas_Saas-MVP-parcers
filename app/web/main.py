@@ -27,7 +27,7 @@ app = FastAPI(title="Car Parser MVP", description="Парсинг и анали�
 # Список всех марок автомобилей (расширенный)
 ALL_BRANDS = [
     "audi", "bmw", "chevrolet", "chrysler", "citroen", "dodge", "fiat", "ford",
-    "geely", "genesis", "gmc", "honda", "hyundai", "infiniti", "jaguar", "jeep",
+    "genesis", "gmc", "honda", "hyundai", "infiniti", "jaguar", "jeep",
     "kia", "land rover", "lexus", "mazda", "mercedes", "mini", "mitsubishi",
     "nissan", "opel", "peugeot", "porsche", "renault", "skoda", "subaru",
     "suzuki", "toyota", "volkswagen", "volvo", "lada", "gaz", "uaz",

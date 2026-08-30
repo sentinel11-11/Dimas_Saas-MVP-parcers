@@ -21,3 +21,9 @@ LINK=[
     "a[href]",
     "h3 a"
 ]
+IMAGE=[
+    "img[data-marker='item-image']",
+    "img[itemprop='image']",
+    "picture img",
+    ".Image img"
+]

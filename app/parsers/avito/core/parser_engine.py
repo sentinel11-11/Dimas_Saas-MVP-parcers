@@ -9,7 +9,7 @@ from app.parsers.avito.config import config
 from app.parsers.avito.http.client import AvitoHttpClient
 from app.parsers.avito.models import AvitoListing
 from app.parsers.avito.normalizer import digits
-from app.parsers.avito.selectors import CARD,LINK,PRICE,TITLE
+from app.parsers.avito.selectors import CARD,LINK,PRICE,TITLE,IMAGE
 class AvitoParserEngine:
     def __init__(self, client=None, proxy_list=None):
         self.client = client or AvitoHttpClient(config.request_timeout, proxy_list)
@@ -63,8 +63,26 @@ class AvitoParserEngine:
             found=node.select_one(selector)
             if found and found.get("href"):return urljoin("https://www.avito.ru",found["href"])
         return ""
+    
+    @staticmethod
+    def _first_image(node, selectors):
+        """Извлечь URL изображения"""
+        for selector in selectors:
+            found = node.select_one(selector)
+            if found:
+                img_src = found.get("src") or found.get("data-src")
+                if img_src:
+                    if img_src.startswith("//"):
+                        img_src = "https:" + img_src
+                    elif not img_src.startswith("http"):
+                        img_src = urljoin("https://www.avito.ru", img_src)
+                    return img_src
+        return None
+    
     def parse_card(self,card,filters=None):
         filters=filters or {}; title=self._first_text(card,TITLE); url=self._first_href(card,LINK)
         if not title or not url:return None
         text=card.get_text(" ",strip=True); price=digits(self._first_text(card,PRICE)); ym=re.search(r"\b(19\d{2}|20\d{2})\b",title+" "+text); mm=re.search(r"([\d\s]{3,})\s*км",text,re.I); im=re.search(r"_(\d{6,})$",url.rstrip("/").split("/")[-1])
-        return AvitoListing(url=url,title=title,price=price,year=int(ym.group(1)) if ym else None,mileage=digits(mm.group(1)) if mm else None,brand=filters.get("brand"),model=filters.get("model"),region=filters.get("region") or filters.get("target_region"),external_id=im.group(1) if im else None).to_dict()
+        image_url = self._first_image(card, IMAGE)
+        photos = [image_url] if image_url else []
+        return AvitoListing(url=url,title=title,price=price,year=int(ym.group(1)) if ym else None,mileage=digits(mm.group(1)) if mm else None,brand=filters.get("brand"),model=filters.get("model"),region=filters.get("region") or filters.get("target_region"),external_id=im.group(1) if im else None,photos=photos).to_dict()

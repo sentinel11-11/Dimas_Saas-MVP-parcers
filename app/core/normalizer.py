@@ -89,4 +89,10 @@ class DataNormalizer:
             0.5
         )
 
+        # Поддержка изображений
+        if "image_url" in ad:
+            normalized["image_url"] = ad["image_url"]
+        elif "photos" in ad and ad["photos"]:
+            normalized["image_url"] = ad["photos"][0] if isinstance(ad["photos"], list) else ad["photos"]
+
         return normalized
