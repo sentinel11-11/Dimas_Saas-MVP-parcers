@@ -41,6 +41,7 @@ class CarListing(BaseModel):
     transmission: str = ""
     drive: Optional[str] = None
     body_type: Optional[str] = None
+    fuel: Optional[str] = None
     owners: Optional[int] = None
     accidents: Optional[int] = None
     pts: Optional[str] = None

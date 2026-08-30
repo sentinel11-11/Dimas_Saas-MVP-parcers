@@ -9,7 +9,7 @@ from app.parsers.avito.config import config
 from app.parsers.avito.http.client import AvitoHttpClient
 from app.parsers.avito.models import AvitoListing
 from app.parsers.avito.normalizer import digits
-from app.parsers.avito.selectors import CARD,LINK,PRICE,TITLE,IMAGE
+from app.parsers.avito.selectors import CARD,LINK,PRICE,TITLE,IMAGE,PARAMS
 class AvitoParserEngine:
     def __init__(self, client=None, proxy_list=None):
         self.client = client or AvitoHttpClient(config.request_timeout, proxy_list)
@@ -85,4 +85,85 @@ class AvitoParserEngine:
         text=card.get_text(" ",strip=True); price=digits(self._first_text(card,PRICE)); ym=re.search(r"\b(19\d{2}|20\d{2})\b",title+" "+text); mm=re.search(r"([\d\s]{3,})\s*км",text,re.I); im=re.search(r"_(\d{6,})$",url.rstrip("/").split("/")[-1])
         image_url = self._first_image(card, IMAGE)
         photos = [image_url] if image_url else []
-        return AvitoListing(url=url,title=title,price=price,year=int(ym.group(1)) if ym else None,mileage=digits(mm.group(1)) if mm else None,brand=filters.get("brand"),model=filters.get("model"),region=filters.get("region") or filters.get("target_region"),external_id=im.group(1) if im else None,photos=photos).to_dict()
+        
+        # Извлечение параметров (топливо, коробка, привод и т.д.)
+        params_node = card.select_one(PARAMS[0]) if PARAMS else None
+        params_text = params_node.get_text(" ", strip=True).lower() if params_node else text.lower()
+        
+        # Тип топлива
+        fuel = None
+        if "бензин" in params_text: fuel = "petrol"
+        elif "дизель" in params_text: fuel = "diesel"
+        elif "электро" in params_text: fuel = "electric"
+        elif "гибрид" in params_text: fuel = "hybrid"
+        elif "газ" in params_text: fuel = "gas"
+        
+        # Коробка передач
+        transmission = None
+        if "автомат" in params_text or "акпп" in params_text: transmission = "automatic"
+        elif "механик" in params_text: transmission = "manual"
+        elif "робот" in params_text: transmission = "robot"
+        elif "вариатор" in params_text: transmission = "variator"
+        
+        # Привод
+        drive = None
+        if "полный" in params_text: drive = "four_wheel"
+        elif "задний" in params_text: drive = "rear"
+        elif "передний" in params_text: drive = "front"
+        
+        # Тип кузова
+        body_type = None
+        body_types = {"седан": "sedan", "хэтчбек": "hatchback", "универсал": "wagon", 
+                      "внедорожник": "suv", "купе": "coupe", "кабриолет": "cabriolet",
+                      "пикап": "pickup", "минивэн": "minivan", "лифтбек": "liftback"}
+        for bt_key, bt_value in body_types.items():
+            if bt_key in params_text:
+                body_type = bt_value
+                break
+        
+        # Объем двигателя
+        engine_volume = None
+        ev_match = re.search(r"(\d\.?\d?)\s*л", params_text)
+        if ev_match:
+            try:
+                engine_volume = float(ev_match.group(1).replace(",", "."))
+            except:
+                pass
+        
+        # Мощность
+        horsepower = None
+        hp_match = re.search(r"(\d+)\s*л\.?\s*с", params_text)
+        if hp_match:
+            try:
+                horsepower = int(hp_match.group(1))
+            except:
+                pass
+        
+        # Количество владельцев
+        owners = None
+        owners_match = re.search(r"(\d+)\s*влад", params_text)
+        if owners_match:
+            try:
+                owners = int(owners_match.group(1))
+            except:
+                pass
+        
+        return AvitoListing(
+            url=url,
+            title=title,
+            price=price,
+            year=int(ym.group(1)) if ym else None,
+            mileage=digits(mm.group(1)) if mm else None,
+            brand=filters.get("brand"),
+            model=filters.get("model"),
+            region=filters.get("region") or filters.get("target_region"),
+            external_id=im.group(1) if im else None,
+            photos=photos,
+            transmission=transmission,
+            fuel=fuel,
+            drive=drive,
+            body_type=body_type,
+            engine_volume=engine_volume,
+            horsepower=horsepower,
+            owners=owners
+        ).to_dict()

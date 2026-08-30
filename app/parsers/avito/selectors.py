@@ -27,3 +27,8 @@ IMAGE=[
     "picture img",
     ".Image img"
 ]
+PARAMS=[
+    "[data-marker='item-params']",
+    ".SnippetParams",
+    "div[class*='params']"
+]

@@ -376,6 +376,7 @@ class AutoRuParser(BaseParser):
                 "transmission": data.get('transmission', ''),
                 "drive": data.get('drive', ''),
                 "body_type": data.get('body_type', ''),
+                "fuel": data.get('fuel', ''),
                 "owners": int(data.get('owners', 0)) if data.get('owners') else None,
                 "accidents": int(data.get('accidents', 0)) if data.get('accidents') else None,
                 "pts": data.get('pts', ''),
@@ -422,6 +423,7 @@ class AutoRuParser(BaseParser):
             }
             
             // Парсинг характеристик из текста
+            let fuel = '';
             lines.forEach(line => {
                 if (line.includes('Объем') || line.includes('двигателя')) {
                     const match = line.match(/(\\d+\\.?\\d*)\\s?л/);
@@ -451,6 +453,15 @@ class AutoRuParser(BaseParser):
                 if (line.includes('ПТС')) {
                     pts = line.split(':')[1]?.trim() || line;
                 }
+                // Извлечение типа топлива
+                if (line.includes('Тип топлива') || line.includes('топливо')) {
+                    const fuelLine = line.toLowerCase();
+                    if (fuelLine.includes('бензин')) fuel = 'petrol';
+                    else if (fuelLine.includes('дизель')) fuel = 'diesel';
+                    else if (fuelLine.includes('электро')) fuel = 'electric';
+                    else if (fuelLine.includes('гибрид')) fuel = 'hybrid';
+                    else if (fuelLine.includes('газ')) fuel = 'gas';
+                }
             });
             
             // Извлечение фотографий
@@ -479,7 +490,7 @@ class AutoRuParser(BaseParser):
             let image_url = photos.length > 0 ? photos[0] : null;
             
             return {
-                title, price, year, mileage, region, brand, model,
+                title, price, year, mileage, region, brand, model, fuel,
                 engine_volume, horsepower, transmission, drive, body_type,
                 owners, accidents, pts, image_url, photos
             };

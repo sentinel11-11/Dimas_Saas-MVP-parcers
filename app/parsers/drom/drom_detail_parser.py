@@ -53,6 +53,7 @@ class DromDetailParser:
                 "horsepower": None,
                 "transmission": None,
                 "drive": None,
+                "fuel": None,
                 "owners": None,
                 "vin": None,
                 "accidents": None,
@@ -145,6 +146,7 @@ class DromDetailParser:
             "horsepower": self.extract_hp(text),
             "transmission": self.extract_transmission(text),
             "drive": self.extract_drive(text),
+            "fuel": self.extract_fuel(text),
             "owners": self.extract_owners(text),
             "vin": self.extract_vin(text),
             "accidents": self.extract_accidents(text),
@@ -329,4 +331,24 @@ class DromDetailParser:
         for bt in body_types:
             if bt in t:
                 return bt
+        return None
+
+    def extract_fuel(self, text):
+        """Извлечение типа топлива из текста."""
+        t = text.lower()
+        
+        fuel_mapping = {
+            "бензин": "petrol",
+            "дизель": "diesel",
+            "электро": "electric",
+            "гибрид": "hybrid",
+            "газ": "gas",
+            "пропан": "gas",
+            "метан": "gas"
+        }
+        
+        for fuel_key, fuel_value in fuel_mapping.items():
+            if fuel_key in t:
+                return fuel_value
+        
         return None

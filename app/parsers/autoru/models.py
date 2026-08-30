@@ -35,6 +35,8 @@ class AutoRuDetailData(BaseModel):
     engine_volume: Optional[float] = Field(None, description="Объем двигателя в литрах")
     horsepower: Optional[int] = Field(None, description="Мощность двигателя в л.с.")
     transmission: Optional[str] = Field(None, description="Тип КПП")
+    fuel: Optional[str] = Field(None, description="Тип топлива")
+    image_url: Optional[str] = Field(None, description="URL изображения")
     
     class Config:
         arbitrary_types_allowed = True
