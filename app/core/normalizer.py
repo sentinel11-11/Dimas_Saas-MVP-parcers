@@ -1,6 +1,17 @@
 class DataNormalizer:
 
     @staticmethod
+    def _parse_price(price_value):
+        """Парсинг цены из строки формата '2 500 000 ₽' или числа"""
+        if isinstance(price_value, (int, float)):
+            return int(price_value)
+        if not price_value or not isinstance(price_value, str):
+            return 0
+        # Удаляем все нецифровые символы кроме минус
+        digits = ''.join(c for c in str(price_value) if c.isdigit() or c == '-')
+        return int(digits) if digits else 0
+
+    @staticmethod
     def normalize(ad):
 
         normalized = {}
@@ -22,9 +33,7 @@ class DataNormalizer:
             "model"
         )
 
-        normalized["price"] = int(
-            ad.get("price", 0)
-        )
+        normalized["price"] = DataNormalizer._parse_price(ad.get("price", 0))
 
         normalized["year"] = int(
             ad.get("year", 0)
@@ -34,6 +43,8 @@ class DataNormalizer:
 
         if mileage is None:
             mileage = 0
+        elif isinstance(mileage, str):
+            mileage = DataNormalizer._parse_price(mileage)
 
         normalized["mileage"] = mileage
 

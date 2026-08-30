@@ -346,8 +346,11 @@ class MarketAnalyzer:
         """
         z = 0
 
-        # рынок
-        z += car.market_deviation * 3.5
+        # рынок - вычисляем market_deviation на лету
+        market_deviation = 0
+        if car.market_price > 0:
+            market_deviation = (car.market_price - car.price) / car.market_price
+        z += market_deviation * 3.5
 
         # ликвидность
         z += car.liquidity_score * 2.0
