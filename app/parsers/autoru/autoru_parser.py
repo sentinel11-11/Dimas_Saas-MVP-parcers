@@ -13,6 +13,7 @@
 
 import asyncio
 import random
+import re
 from typing import List, Optional, Dict, Any
 from loguru import logger
 from playwright.async_api import async_playwright, Browser, Page, BrowserContext
@@ -254,9 +255,32 @@ class AutoRuParser(BaseParser):
             # Извлечение карточек
             cards_data = await self._extract_cards()
             logger.info(f"AUTO.RU FOUND CARDS: {len(cards_data)}")
-            
-            # Парсинг деталей каждой карточки
-            for i, card_info in enumerate(cards_data[:limit]):
+
+            for card_info in cards_data[:limit]:
+                try:
+                    title = card_info.get("title") or "auto.ru"
+                    year_m = re.search(r"(19\d{2}|20\d{2})", title)
+                    price = self._clean_price(str(card_info.get("price") or "0"))
+                    cars.append(
+                        CarListing(
+                            url=card_info.get("url") or "",
+                            title=title[:180],
+                            platform="auto_ru",
+                            price=price,
+                            year=int(year_m.group(1)) if year_m else 0,
+                            mileage=self._clean_number(str(card_info.get("mileage") or "0")),
+                            region=card_info.get("region") or "",
+                            brand=(filters.get("brand") or "").capitalize(),
+                            model=filters.get("model") or "",
+                        )
+                    )
+                except Exception as ve:
+                    logger.warning(f"Listing card skip: {ve}")
+            if cars:
+                logger.info(f"AUTO.RU PARSED FROM LISTING: {len(cars)}")
+                return cars
+
+            for i, card_info in enumerate(cards_data[: min(limit, 4)]):
                 car_data = await self._parse_card_detail(card_info['url'])
                 
                 if car_data:
@@ -310,7 +334,7 @@ class AutoRuParser(BaseParser):
 
     async def _scroll_page(self):
         """Прокрутка страницы для подгрузки ленивого контента"""
-        scroll_steps = 3
+        scroll_steps = 1
         for i in range(scroll_steps):
             try:
                 await self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
@@ -339,9 +363,14 @@ class AutoRuParser(BaseParser):
                 links.forEach(link => {
                     const href = link.href || '';
                     if (href.includes('auto.ru') && (href.includes('/cars/') || href.includes('/offer/')) && !href.includes('#')) {
+                        const box = link.closest('[class*="ListingItem"]') || link.parentElement;
+                        const text = (box && box.innerText) ? box.innerText.replace(/\\s+/g, ' ') : (link.textContent || '');
                         allLinks.push({
                             url: href,
-                            title: link.textContent?.trim() || ''
+                            title: link.textContent?.trim() || '',
+                            price: text,
+                            mileage: text,
+                            region: text
                         });
                     }
                 });

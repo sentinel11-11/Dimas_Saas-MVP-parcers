@@ -196,8 +196,8 @@ async def _search_autoru(filters: dict, limit: int, errors: list) -> List[CarLis
         logger.info(f"AUTO.RU try proxy={use_proxy}")
         try:
             cars = await asyncio.wait_for(
-                parser.search(filters=payload, limit=min(limit, 12)),
-                timeout=50,
+                parser.search(filters=payload, limit=min(limit, 24)),
+                timeout=70,
             )
         except Exception as e:
             logger.error(f"AUTORU SEARCH ERROR proxy={use_proxy}: {e}")
