@@ -69,15 +69,20 @@ class AvitoHttpClient:
                 
                 # Увеличенная задержка перед каждым запросом для обхода rate limit
                 if attempt == 0:
-                    delay = random.uniform(5, 10)  # Начальная задержка 5-10 секунд
+                    delay = random.uniform(8, 15)  # Начальная задержка 8-15 секунд
                 else: 
-                    delay = min(avito_config.retry_delay * (attempt + 2) + random.uniform(5, 10), 30)
+                    delay = min(avito_config.retry_delay * (attempt + 3) + random.uniform(5, 15), 45)
                     logger.info("AVITO RETRY {}/{} after {}s", attempt+1, retries, round(delay, 2))
                 
                 time.sleep(delay)
                 
                 # Ротация User-Agent при каждой попытке
                 self.session.headers["User-Agent"] = random.choice(self.user_agents)
+                
+                # Добавляем заголовки для эмуляции реального браузера
+                self.session.headers["Sec-Ch-Ua"] = '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"'
+                self.session.headers["Sec-Ch-Ua-Mobile"] = "?0"
+                self.session.headers["Sec-Ch-Ua-Platform"] = '"Windows"'
                 
                 r=self.session.get(url,params=params,timeout=self.timeout); logger.info("AVITO HTTP {}: {}",r.status_code,r.url)
                 

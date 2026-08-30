@@ -56,6 +56,11 @@ class CarListing(BaseModel):
     search_config_applied: Optional[CarSearchConfig] = None
     deal_probability: str = "Unknown"
     
+    # Псевдонимы для обратной совместимости
+    @property
+    def owners_count(self) -> Optional[int]:
+        return self.owners
+    
     model_config = {
         "extra": "allow"
     }
