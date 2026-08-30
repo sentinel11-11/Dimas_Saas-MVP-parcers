@@ -135,31 +135,20 @@ def _search_drom(filters: dict, limit: int, errors: list) -> List[CarListing]:
 
 
 def _search_avito(filters: dict, limit: int, errors: list) -> List[CarListing]:
-    from app.parsers.avito.avito_parser import AvitoParser
     from app.parsers.avito import avito_browser
+    from app.core.proxy import ProxySettings
 
-    proxy_list_str = os.getenv("AVITO_PROXIES", "")
-    avito_proxy_list = [p.strip() for p in proxy_list_str.split(",") if p.strip()] or None
-    parser = AvitoParser(proxy_list=avito_proxy_list)
-    ads = parser.search(
-        {
-            "brand": filters.get("brand"),
-            "model": filters.get("model"),
-            "limit": min(limit, 12),
-            "target_region": filters.get("region") or "rossiya",
-        }
-    )
-    if not ads:
-        logger.info("AVITO HTTP empty/blocked — Playwright fallback")
-        try:
-            ads = avito_browser.search_sync(filters, limit=min(limit, 10))
-        except Exception as e:
-            logger.error(f"AVITO PLAYWRIGHT FAIL: {e}")
-            errors.append("Avito: HTTP 403, браузер тоже не смог (нужен playwright install chromium и живой прокси)")
-            ads = []
+    logger.info(ProxySettings.status_line())
+    ads = []
+    # requests почти всегда 403 — сразу браузер через тот же прокси
+    try:
+        ads = avito_browser.search_sync(filters, limit=min(limit, 10))
+    except Exception as e:
+        logger.error(f"AVITO PLAYWRIGHT FAIL: {e}")
+        errors.append("Avito Playwright: установите `playwright install chromium`")
     logger.info(f"AVITO FOUND: {len(ads)}")
     if not ads:
-        errors.append("Avito не отдал объявления (антибот). Drom при этом сохраняется.")
+        errors.append("Avito пуст (антибот или прокси не принят). Проверьте строку Proxy: ON при старте.")
     cars = []
     for ad in ads:
         car = _to_car(ad, "avito")

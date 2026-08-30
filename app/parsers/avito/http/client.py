@@ -13,7 +13,10 @@ class AvitoHttpResponse:
 class AvitoHttpClient:
     def __init__(self,timeout=30, proxy_list=None):
         self.timeout=timeout; self.session=requests.Session()
-        self.proxy_list = proxy_list or []
+        from app.core.proxy import ProxySettings
+        self.proxy_list = proxy_list or ProxySettings.proxy_list() or []
+        if not self.proxy_list:
+            logger.warning("AVITO: proxy list empty — запросы пойдут с вашего IP")
         self.current_proxy_index = 0
         # Ротация User-Agent для обхода блокировок
         self.user_agents = [

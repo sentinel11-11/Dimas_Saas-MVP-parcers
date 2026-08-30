@@ -68,9 +68,10 @@ async def health():
     from app.core.proxy import ProxySettings
     return {
         "status": "ok",
+        "proxy": ProxySettings.status_line(),
         "proxy_enabled": ProxySettings.enabled(),
-        "proxy_host": ProxySettings.host or None,
-        "proxy_protocol": ProxySettings.protocol,
+        "proxy_host": ProxySettings.host() or None,
+        "proxy_protocol": ProxySettings.protocol(),
     }
 
 

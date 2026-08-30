@@ -8,24 +8,30 @@
 import sys
 import os
 
-# Добавляем корневую директорию в path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import sys
+import os
+from pathlib import Path
 
+ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT))
+os.chdir(ROOT)
+
+from dotenv import load_dotenv
+load_dotenv(ROOT / ".env")
+
+from app.core.proxy import ProxySettings
 from app.web.main import app
 import uvicorn
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("🚗 Car Parser MVP - Веб-интерфейс")
+    print("DIMAS — быстрый подбор авто")
     print("=" * 60)
-    print("📍 Откройте в браузере: http://localhost:8000")
-    print("🛑 Для остановки нажмите Ctrl+C")
+    print("Браузер: http://localhost:8000")
+    print(ProxySettings.status_line())
+    print("Стоп: Ctrl+C")
     print("=" * 60)
-    
-    uvicorn.run(
-        app,
-        host="0.0.0.0",
-        port=8000,
-        reload=False,  # В production установить False
-        log_level="info"
-    )
+    if not ProxySettings.enabled():
+        print("Нет .env — Avito/auto.ru пойдут с вашего IP и почти всегда 403.")
+        print("Скопируйте .env.example в .env и пропишите прокси.")
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=False, log_level="info")
