@@ -230,6 +230,9 @@ class AutoRuParser(BaseParser):
                 # всё равно пробуем вытащить карточки с того, что открылось
             else:
                 logger.info(f"STATUS {response.status}: {self.page.url}")
+            if "showcaptcha" in (self.page.url or "") or "captcha" in (self.page.url or "").lower():
+                logger.warning("AUTO.RU captcha — skip listing extract")
+                return []
             
             # Ожидание загрузки контента
             await self.page.wait_for_timeout(AutoRuConfig.SCROLL_DELAY)
@@ -560,7 +563,7 @@ class AutoRuParser(BaseParser):
                     dump.push(norm(u));
                 });
                 const uniq = [...new Set(dump.filter(s => s && !bad(s) && s.indexOf('http') === 0))];
-                const prefer = uniq.find(s => /autoru-vos|avatars\.mds\.yandex|auto\.ru\/i.test(s));
+                const prefer = uniq.find(s => s.indexOf('autoru-vos') >= 0 || s.indexOf('yandex.net') >= 0 || s.indexOf('auto.ru') >= 0);
                 let image = prefer || uniq[0] || '';
                 const priceEl = box.querySelector('[class*="Price"]');
                 const techEl = box.querySelector('[class*="TechSummary"], [class*="ListingItemTech"], ul[class*="Summary"]');
