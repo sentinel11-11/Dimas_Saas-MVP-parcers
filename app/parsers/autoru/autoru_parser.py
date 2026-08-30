@@ -186,15 +186,15 @@ class AutoRuParser(BaseParser):
             url = f"https://auto.ru/cars/{brand}/used/"
         
         if region:
-            params.append(f"geo={region}")
+            params.append(f"geo_id={region}")
         if price_from:
-            params.append(f"price[from]={price_from}")
+            params.append(f"price_from={int(price_from)}")
         if price_to:
-            params.append(f"price[to]={price_to}")
+            params.append(f"price_to={int(price_to)}")
         if year_from:
-            params.append(f"year[from]={year_from}")
+            params.append(f"year_from={int(year_from)}")
         if year_to:
-            params.append(f"year[to]={year_to}")
+            params.append(f"year_to={int(year_to)}")
         
         if params:
             url += "?" + "&".join(params)
@@ -322,6 +322,107 @@ class AutoRuParser(BaseParser):
 
     def _parse_listing_card(self, card_info: Dict[str, Any], filters: Dict[str, Any]) -> Optional[CarListing]:
         title = (card_info.get("title") or "").strip()
+        blob = " ".join(
+            str(card_info.get(k) or "")
+            for k in ("price", "tech", "place", "text", "mileage")
+        )
+        brand = (filters.get("brand") or "").strip()
+        model = (filters.get("model") or "").strip()
+        if re.search(r"ещё\s*\d+\s*фото", title, re.I) or len(title) < 8:
+            pat = re.escape(brand) if brand else r"[A-Za-zА-Яа-я]{2,}"
+            tm = re.search(rf"({pat}[^\n₽]{{0,60}}(?:19|20)\d{{2}})", blob, re.I)
+            title = (tm.group(1).strip() if tm else "") or f"{brand} {model}".strip()
+        year_m = re.search(r"\b(19\d{2}|20\d{2})\b", title) or re.search(
+            r"\b(19\d{2}|20\d{2})\s*г", blob
+        ) or re.search(r"\b(19\d{2}|20\d{2})\b", blob)
+        year = int(year_m.group(1)) if year_m else 0
+        prices = []
+        for raw in re.findall(r"(\d[\d\s\xa0]{4,})\s*₽", blob):
+            n = int(re.sub(r"\D", "", raw) or 0)
+            if 80_000 <= n <= 80_000_000:
+                prices.append(n)
+        price = min(prices) if prices else 0
+        if price < 50_000:
+            return None
+        mileage = 0
+        for raw in re.findall(r"(\d[\d\s\xa0]{0,8})\s*км", blob, re.I):
+            n = int(re.sub(r"\D", "", raw) or 0)
+            if year and str(n).startswith(str(year)) and len(str(n)) > 4:
+                rest = int(str(n)[4:] or 0)
+                n = rest if 0 <= rest <= 800_000 else n
+            if 0 <= n <= 800_000:
+                mileage = n
+                break
+        vol_m = re.search(r"(\d+[.,]\d+)\s*л", blob, re.I)
+        hp_m = re.search(r"(\d{2,4})\s*л\.?\s*с", blob, re.I)
+        trans = ""
+        if re.search(r"робот", blob, re.I):
+            trans = "robot"
+        elif re.search(r"вариатор|cvt", blob, re.I):
+            trans = "variator"
+        elif re.search(r"механик", blob, re.I):
+            trans = "manual"
+        elif re.search(r"автомат|акпп", blob, re.I):
+            trans = "automatic"
+        fuel = ""
+        if re.search(r"дизель", blob, re.I):
+            fuel = "diesel"
+        elif re.search(r"гибрид", blob, re.I):
+            fuel = "hybrid"
+        elif re.search(r"электро", blob, re.I):
+            fuel = "electric"
+        elif re.search(r"бензин", blob, re.I):
+            fuel = "petrol"
+        drive = ""
+        if re.search(r"полный", blob, re.I):
+            drive = "four_wheel"
+        elif re.search(r"передн", blob, re.I):
+            drive = "front"
+        elif re.search(r"задн", blob, re.I):
+            drive = "rear"
+        region = (card_info.get("place") or "").strip()
+        if not region:
+            rm = re.search(
+                r"(Москва|Санкт-Петербург|Московская область|[А-ЯЁ][а-яё-]{3,20})",
+                blob,
+            )
+            region = rm.group(1) if rm else ""
+        y_from = int(filters.get("year_from") or 0)
+        y_to = int(filters.get("year_to") or 9999)
+        p_to = int(filters.get("price_to") or 0)
+        p_from = int(filters.get("price_from") or 0)
+        if year and y_from and year < y_from:
+            return None
+        if year and y_to and year > y_to:
+            return None
+        if p_from and price < p_from:
+            return None
+        if p_to and price > p_to:
+            return None
+        km_max = int(filters.get("mileage_max") or 0)
+        if km_max and mileage and mileage > km_max:
+            return None
+        image = card_info.get("image") or None
+        if image and str(image).startswith("//"):
+            image = "https:" + image
+        return CarListing(
+            url=card_info.get("url") or "",
+            title=title[:180],
+            platform="auto_ru",
+            price=price,
+            year=year,
+            mileage=mileage,
+            region=region[:80],
+            brand=brand.capitalize(),
+            model=model,
+            image_url=image,
+            engine_volume=float((vol_m.group(1) if vol_m else "0").replace(",", ".")) if vol_m else 0,
+            horsepower=int(hp_m.group(1)) if hp_m else 0,
+            transmission=trans,
+            fuel=fuel,
+            drive=drive,
+        )
+        title = (card_info.get("title") or "").strip()
         blob = str(card_info.get("price") or "")
         brand = (filters.get("brand") or "").strip()
         model = (filters.get("model") or "").strip()
@@ -417,7 +518,18 @@ class AutoRuParser(BaseParser):
                     image = img.currentSrc || img.src || img.getAttribute('src') || img.getAttribute('data-src') || '';
                     if (image.startsWith('//')) image = 'https:' + image;
                 }
-                items.push({ url: href, title, price: text, mileage: text, image });
+                const priceEl = box.querySelector('[class*="Price"]');
+                const techEl = box.querySelector('[class*="TechSummary"], [class*="ListingItemTech"], ul[class*="Summary"]');
+                const placeEl = box.querySelector('[class*="Metro"], [class*="Geo"], [class*="Place"], [class*="Region"]');
+                items.push({
+                    url: href,
+                    title,
+                    price: (priceEl && priceEl.innerText) || text,
+                    tech: (techEl && techEl.innerText) || text,
+                    place: (placeEl && placeEl.innerText) || '',
+                    text,
+                    image
+                });
             });
             const seen = new Set();
             return items.filter(it => {
