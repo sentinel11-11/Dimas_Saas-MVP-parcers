@@ -436,6 +436,13 @@ class AutoRuParser(BaseParser):
         image = card_info.get("image") or None
         if image and str(image).startswith("//"):
             image = "https:" + image
+        if image:
+            image = re.sub(
+                r"/(?:small|tiny|32x32|120x90|240x180|320x240)(?:n)?/?$",
+                "/456x342",
+                str(image),
+                flags=re.I,
+            )
         return CarListing(
             url=card_info.get("url") or "",
             title=title[:180],
@@ -527,29 +534,34 @@ class AutoRuParser(BaseParser):
                     title = (h && h.textContent ? h.textContent : '').trim() || title;
                 }
                 const text = (box.innerText || '').replace(/\\s+/g, ' ');
-                const bad = (s) => !s || s.startsWith('data:') || /placeholder|stub|blank|1x1|svg/i.test(s);
-                const pickSrc = (el) => {
-                    const attrs = [el.currentSrc, el.src, el.getAttribute && el.getAttribute('src'), el.getAttribute && el.getAttribute('data-src'), el.getAttribute && el.getAttribute('srcset')];
-                    for (let s of attrs) {
-                        if (!s) continue;
-                        s = String(s).split(',')[0].trim().split(' ')[0];
-                        if (bad(s)) continue;
-                        return s.startsWith('//') ? 'https:' + s : s;
-                    }
-                    return '';
+                const bad = (s) => !s || s.indexOf('data:') === 0 || /placeholder|stub|blank|1x1|svg|logo|icon/i.test(s);
+                const norm = (s) => {
+                    s = String(s || '').trim();
+                    if (!s) return '';
+                    s = s.split(',')[0].trim().split(' ')[0];
+                    if (s.indexOf('//') === 0) s = 'https:' + s;
+                    return s;
                 };
-                let image = '';
-                for (const img of box.querySelectorAll('img, source')) {
-                    image = pickSrc(img);
-                    if (image) break;
-                }
-                if (!image) {
-                    const bg = box.querySelector('[style*="background-image"]');
-                    if (bg) {
-                        const m = (bg.getAttribute('style') || '').match(/url\(["']?([^"')]+)["']?\)/);
-                        if (m && !bad(m[1])) image = m[1].startsWith('//') ? 'https:' + m[1] : m[1];
-                    }
-                }
+                const dump = [];
+                box.querySelectorAll('img, source').forEach(el => {
+                    ['currentSrc','src','data-src','data-original'].forEach(k => {
+                        const v = el[k] || (el.getAttribute && el.getAttribute(k));
+                        if (v) dump.push(norm(v));
+                    });
+                    const ss = (el.getAttribute && (el.getAttribute('srcset') || el.getAttribute('data-srcset'))) || '';
+                    ss.split(',').forEach(part => dump.push(norm(part)));
+                });
+                box.querySelectorAll('[style*="background"]').forEach(el => {
+                    const st = el.getAttribute('style') || '';
+                    const i = st.indexOf('url(');
+                    if (i < 0) return;
+                    let u = st.slice(i + 4).replace(/^["']/, '');
+                    u = u.split(')')[0].replace(/["']$/, '');
+                    dump.push(norm(u));
+                });
+                const uniq = [...new Set(dump.filter(s => s && !bad(s) && s.indexOf('http') === 0))];
+                const prefer = uniq.find(s => /autoru-vos|avatars\.mds\.yandex|auto\.ru\/i.test(s));
+                let image = prefer || uniq[0] || '';
                 const priceEl = box.querySelector('[class*="Price"]');
                 const techEl = box.querySelector('[class*="TechSummary"], [class*="ListingItemTech"], ul[class*="Summary"]');
                 const techBits = [];
