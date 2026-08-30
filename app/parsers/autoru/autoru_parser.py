@@ -165,18 +165,23 @@ class AutoRuParser(BaseParser):
         url = f"{self.SEARCH_URL}"
         params = []
         
-        region_slug = {
+        region_map = {
             "moscow": "moskva",
             "spb": "sankt-peterburg",
             "ekaterinburg": "ekaterinburg",
             "novosibirsk": "novosibirsk",
             "kazan": "kazan",
-        }.get(str(region).lower(), "russia") if region else "russia"
+        }
+        region_slug = region_map.get(str(region).lower()) if region else None
 
-        if brand and model:
+        if brand and model and region_slug:
             url = f"https://auto.ru/{region_slug}/cars/{brand}/{model}/used/"
-        elif brand:
+        elif brand and model:
+            url = f"https://auto.ru/cars/{brand}/{model}/used/"
+        elif brand and region_slug:
             url = f"https://auto.ru/{region_slug}/cars/{brand}/used/"
+        elif brand:
+            url = f"https://auto.ru/cars/{brand}/used/"
         
         if region:
             params.append(f"geo={region}")
