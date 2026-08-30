@@ -19,4 +19,10 @@ class AvitoConfig:
     
     # Прокси конфигурация
     proxy_list = [p.strip() for p in os.getenv("AVITO_PROXIES", "").split(",") if p.strip()] if os.getenv("AVITO_PROXIES") else None
+    if not proxy_list:
+        try:
+            from app.core.proxy import ProxySettings
+            proxy_list = ProxySettings.proxy_list() or None
+        except Exception:
+            proxy_list = None
 config = AvitoConfig()

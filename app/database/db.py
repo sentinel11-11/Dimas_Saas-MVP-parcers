@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session, sessionmaker
 from typing import List, Optional
 from loguru import logger
 
-from app.database.models import Base, CarListingORM
+from datetime import datetime
+import json
+from app.database.models import Base, CarListingORM, SavedSearchORM
 
 os.makedirs("data", exist_ok=True)
 DB_PATH = "data/cars.db"
@@ -39,6 +41,7 @@ def save_listing(car):
             transmission=car.transmission,
             drive=car.drive,
             body_type=car.body_type,
+            fuel_type=getattr(car, "fuel", None),
             region=car.region,
             accidents=car.accidents,
             pts=car.pts,
@@ -104,5 +107,80 @@ def delete_listing(url: str):
         session.rollback()
         logger.error(f"Error deleting listing: {e}")
         raise
+    finally:
+        session.close()
+
+
+MAX_SAVED_SEARCHES = 3
+
+
+def save_search(email: str, params: dict, last_min_price: int = 0, last_count: int = 0):
+    session = SessionLocal()
+    try:
+        email = (email or "").strip().lower()
+        q = session.query(SavedSearchORM)
+        if email:
+            q = q.filter(SavedSearchORM.email == email)
+        if q.count() >= MAX_SAVED_SEARCHES:
+            oldest = q.order_by(SavedSearchORM.id.asc()).first()
+            if oldest:
+                session.delete(oldest)
+        row = SavedSearchORM(
+            email=email,
+            brand=params.get("brand") or "",
+            model=params.get("model") or "",
+            params_json=json.dumps(params, ensure_ascii=False),
+            last_min_price=last_min_price,
+            last_count=last_count,
+            created_at=datetime.utcnow().isoformat(),
+        )
+        session.add(row)
+        session.commit()
+        return row.id
+    except Exception as e:
+        session.rollback()
+        logger.error(f"save_search error: {e}")
+        raise
+    finally:
+        session.close()
+
+
+def list_saved_searches(email: str = "") -> List[SavedSearchORM]:
+    session = SessionLocal()
+    try:
+        q = session.query(SavedSearchORM)
+        if email:
+            q = q.filter(SavedSearchORM.email == email.strip().lower())
+        return q.order_by(SavedSearchORM.id.desc()).all()
+    finally:
+        session.close()
+
+
+def get_saved_search(search_id: int) -> Optional[SavedSearchORM]:
+    session = SessionLocal()
+    try:
+        return session.query(SavedSearchORM).filter(SavedSearchORM.id == search_id).first()
+    finally:
+        session.close()
+
+
+def update_saved_search_stats(search_id: int, last_min_price: int, last_count: int):
+    session = SessionLocal()
+    try:
+        row = session.query(SavedSearchORM).filter(SavedSearchORM.id == search_id).first()
+        if not row:
+            return
+        row.last_min_price = last_min_price
+        row.last_count = last_count
+        session.commit()
+    finally:
+        session.close()
+
+
+def delete_saved_search(search_id: int):
+    session = SessionLocal()
+    try:
+        session.query(SavedSearchORM).filter(SavedSearchORM.id == search_id).delete()
+        session.commit()
     finally:
         session.close()

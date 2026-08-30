@@ -35,6 +35,13 @@ class HTTPClient:
         self.last_request_time = 0
 
         self.retry_count = retry_count
+        try:
+            from app.core.proxy import ProxySettings
+            proxies = ProxySettings.requests_proxies()
+            if proxies:
+                self.session.proxies.update(proxies)
+        except Exception as e:
+            logger.warning(f"Proxy init skipped: {e}")
 
 
     def _smart_sleep(self):

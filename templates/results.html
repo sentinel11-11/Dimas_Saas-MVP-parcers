@@ -277,6 +277,7 @@
                         <p class="mb-0 opacity-75">Найдено объявлений: {{ total }}</p>
                     </div>
                     <div class="col-md-4 text-end">
+                        <a href="/export/csv" class="btn btn-light me-2">CSV</a>
                         <a href="/" class="btn btn-light btn-back">
                             <i class="bi bi-search me-2"></i>Новый поиск
                         </a>
@@ -357,6 +358,30 @@
             <!-- Результаты -->
             {% if sample_size %}
             <p class="text-muted small">Оценка выгодности по {{ sample_size }} объявлениям этой выдачи, не по всему рынку РФ.</p>
+            {% endif %}
+            {% if filters_applied %}
+            <form class="row g-2 mb-3" method="post" action="/searches/save">
+                <input type="hidden" name="brand" value="{{ brand }}">
+                <input type="hidden" name="model" value="{{ model }}">
+                <input type="hidden" name="year_min" value="{{ filters_applied.year_min }}">
+                <input type="hidden" name="year_max" value="{{ filters_applied.year_max }}">
+                <input type="hidden" name="mileage_min" value="{{ filters_applied.mileage_min }}">
+                <input type="hidden" name="mileage_max" value="{{ filters_applied.mileage_max }}">
+                <input type="hidden" name="owners_min" value="{{ filters_applied.owners_min }}">
+                <input type="hidden" name="owners_max" value="{{ filters_applied.owners_max }}">
+                <input type="hidden" name="price_min" value="{{ filters_applied.price_min }}">
+                <input type="hidden" name="price_max" value="{{ filters_applied.price_max }}">
+                <input type="hidden" name="region" value="{{ filters_applied.region }}">
+                {% for source in sources_used %}
+                <input type="hidden" name="sources" value="{{ source }}">
+                {% endfor %}
+                <div class="col-auto">
+                    <input class="form-control" name="email" type="email" placeholder="email для мониторинга">
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-outline-primary">Сохранить поиск (макс. 3)</button>
+                </div>
+            </form>
             {% endif %}
             {% if results %}
             <div class="mb-3 d-flex gap-2 flex-wrap">

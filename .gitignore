@@ -65,4 +65,4 @@ node_modules/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-```
+```.env

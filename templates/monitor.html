@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Мониторинг</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="p-4">
+    <div class="container">
+        <h2>Проверка сохранённого поиска</h2>
+        {% if not report.ok %}
+            <div class="alert alert-danger">{{ report.error }}</div>
+        {% else %}
+            <p>{{ report.brand }} {{ report.model }}</p>
+            <p>Было мин. {{ report.previous_min_price }} ₽ → сейчас {{ report.current_min_price }} ₽</p>
+            <p>Более дешёвых лотов: {{ report.cheaper_count }} из {{ report.total }}</p>
+            {% if report.errors %}
+            <div class="alert alert-warning">{{ report.errors }}</div>
+            {% endif %}
+            <ul>
+                {% for car in report.cheaper %}
+                <li><a href="{{ car.url }}" target="_blank">{{ car.title }} — {{ car.price }} ₽</a></li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        <a href="/searches" class="btn btn-primary">К сохранённым</a>
+    </div>
+</body>
+</html>

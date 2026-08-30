@@ -55,3 +55,16 @@ class CarListingORM(Base):
     url = Column(Text, unique=True)
 
     source = Column(String)
+
+
+class SavedSearchORM(Base):
+    __tablename__ = "saved_searches"
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String, default="")
+    brand = Column(String)
+    model = Column(String)
+    params_json = Column(Text)
+    last_min_price = Column(Integer, default=0)
+    last_count = Column(Integer, default=0)
+    created_at = Column(String)

@@ -31,7 +31,11 @@ class DataExporter:
                 writer.writeheader()
                 
                 for car in cars:
-                    row = {field: getattr(car, field, '') for field in fieldnames}
+                    if isinstance(car, dict):
+                        row = {field: car.get(field, car.get("probability") if field == "probability_good_deal" else "") for field in fieldnames}
+                        row["probability_good_deal"] = car.get("probability", car.get("probability_good_deal", ""))
+                    else:
+                        row = {field: getattr(car, field, "") for field in fieldnames}
                     writer.writerow(row)
             
             logger.info(f"CSV exported: {filename} ({len(cars)} records)")

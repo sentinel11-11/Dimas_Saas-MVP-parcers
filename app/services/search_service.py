@@ -19,6 +19,7 @@ from app.models.car_listing import CarListing
 CACHE_TTL = 20 * 60
 _cache: Dict[str, Dict[str, Any]] = {}
 JOBS: Dict[str, Dict[str, Any]] = {}
+LAST_RESULTS: Dict[str, Any] = {"results": [], "filters_applied": {}, "brand": "", "model": ""}
 
 
 def _cache_key(payload: dict) -> str:
@@ -272,6 +273,8 @@ def run_search(params: dict) -> dict:
         "sample_size": len(filtered),
     }
     _cache[key] = {"ts": time.time(), "data": data}
+    LAST_RESULTS.clear()
+    LAST_RESULTS.update(data)
     return data
 
 

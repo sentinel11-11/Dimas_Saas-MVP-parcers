@@ -82,13 +82,26 @@ class AutoRuParser(BaseParser):
             # Аргументы для обхода детекции автоматизации из конфига
             browser_args = AutoRuConfig.get_browser_args(self.headless)
             
-            if self.current_proxy:
-                # Playwright требует формат 'http://user:pass@ip:port'
+            from app.core.proxy import ProxySettings
+            pw_proxy = ProxySettings.playwright_proxy()
+            if pw_proxy:
+                browser_args["proxy"] = pw_proxy
+            elif self.current_proxy:
                 proxy_server = self.current_proxy
-                if '://' not in proxy_server:
-                    proxy_server = f'http://{proxy_server}'
-                browser_args["proxy"] = {"server": proxy_server}
-            
+                if "://" not in proxy_server:
+                    proxy_server = f"http://{proxy_server}"
+                if "@" in proxy_server:
+                    left, host = proxy_server.split("@", 1)
+                    scheme, creds = left.split("://", 1) if "://" in left else ("http", left)
+                    user, _, password = creds.partition(":")
+                    browser_args["proxy"] = {
+                        "server": f"{scheme}://{host}",
+                        "username": user,
+                        "password": password,
+                    }
+                else:
+                    browser_args["proxy"] = {"server": proxy_server}
+
             self.browser = await playwright.chromium.launch(**browser_args)
             
             # Создание контекста с эмуляцией реального пользователя
