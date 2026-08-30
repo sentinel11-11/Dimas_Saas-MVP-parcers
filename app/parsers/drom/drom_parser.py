@@ -18,8 +18,10 @@ class DromParser(BaseParser):
 
     def build_url(self, filters):
 
-        brand = filters.get("brand", "").lower()
-        model = filters.get("model", "").lower()
+        from app.data.brands import slug_part
+
+        brand = slug_part(filters.get("brand", ""))
+        model = slug_part(filters.get("model", ""))
         region = (filters.get("region") or "").strip().lower()
 
         if region:

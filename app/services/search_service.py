@@ -28,6 +28,9 @@ def _cache_key(payload: dict) -> str:
 
 
 def _listing_to_dict(car: CarListing) -> dict:
+    extra = car.model_dump()
+    reloc = extra.get("relocation") or {}
+    landed = (car.price or 0) + int(reloc.get("total") or 0)
     return {
         "title": car.title,
         "price": car.price,
@@ -47,7 +50,17 @@ def _listing_to_dict(car: CarListing) -> dict:
         "fuel": car.fuel,
         "drive": car.drive,
         "body_type": car.body_type,
-        "scoring_note": "Оценка по текущей выборке, не рынок РФ",
+        "engine_volume": car.engine_volume,
+        "horsepower": car.horsepower,
+        "pts": car.pts,
+        "vin": extra.get("vin"),
+        "color": extra.get("color"),
+        "accidents": car.accidents,
+        "steering": extra.get("steering"),
+        "relocation": reloc,
+        "landed_price": landed,
+        "net_vs_market": round((car.market_price or 0) - landed),
+        "scoring_note": "Медиана по текущей выдаче марки/модели",
     }
 
 
@@ -205,6 +218,7 @@ def run_search(params: dict) -> dict:
         "drive": params.get("drive") or "",
         "body_type": params.get("body_type") or "",
         "region": params.get("region") or "",
+        "buyer_city": params.get("buyer_city") or "",
     }
     cache_payload = {**filters, "sources": sources, "limit": limit}
     key = _cache_key(cache_payload)

@@ -45,6 +45,9 @@ class CarListing(BaseModel):
     owners: Optional[int] = None
     accidents: Optional[int] = None
     pts: Optional[str] = None
+    vin: Optional[str] = None
+    color: Optional[str] = None
+    steering: Optional[str] = None
     region: str = ""
     market_score: float = 0
     market_price: float = 0
@@ -53,6 +56,7 @@ class CarListing(BaseModel):
     probability_good_deal: float = 0
     data_confidence: float = 0
     image_url: Optional[str] = None
+    relocation: Optional[dict] = None
     
     # Поля для отчета
     search_config_applied: Optional[CarSearchConfig] = None

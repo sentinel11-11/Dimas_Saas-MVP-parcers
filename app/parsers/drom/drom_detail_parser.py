@@ -63,6 +63,8 @@ class DromDetailParser:
                 "model": None,
                 "body_type": None,
                 "fuel": None,
+                "color": None,
+                "steering": None,
 
                 "data_confidence": 0.5
             }
@@ -154,7 +156,10 @@ class DromDetailParser:
             "region": self.extract_region(url),
             "brand": self.extract_brand(soup, text),
             "model": self.extract_model(soup, text),
-            "body_type": self.extract_body_type(text)
+            "body_type": self.extract_body_type(text),
+            "fuel": self.extract_fuel(text),
+            "color": self.extract_color(text),
+            "steering": self.extract_steering(text),
         }
 
     # =========================
@@ -320,6 +325,26 @@ class DromDetailParser:
             parts = title_text.split()
             if len(parts) >= 2:
                 return parts[1].strip().rstrip(",")
+        return None
+
+    def extract_color(self, text):
+        colors = [
+            "белый", "чёрный", "черный", "серый", "серебристый", "синий",
+            "красный", "зелёный", "зеленый", "коричневый", "бежевый",
+            "голубой", "оранжевый", "жёлтый", "желтый", "фиолетовый", "бордовый",
+        ]
+        t = text.lower()
+        for c in colors:
+            if c in t:
+                return c
+        return None
+
+    def extract_steering(self, text):
+        t = text.lower()
+        if "правый руль" in t:
+            return "right"
+        if "левый руль" in t or "левый" in t:
+            return "left"
         return None
 
     def extract_fuel(self, text):

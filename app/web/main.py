@@ -38,129 +38,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Подключение статики и шаблонов
-# Список всех марок автомобилей (расширенный)
-ALL_BRANDS = [
-    "audi", "bmw", "chevrolet", "chrysler", "citroen", "dodge", "fiat", "ford",
-    "genesis", "gmc", "honda", "hyundai", "infiniti", "jaguar", "jeep",
-    "kia", "land rover", "lexus", "mazda", "mercedes", "mini", "mitsubishi",
-    "nissan", "opel", "peugeot", "porsche", "renault", "skoda", "subaru",
-    "suzuki", "toyota", "volkswagen", "volvo", "lada", "gaz", "uaz",
-    "chery", "haval", "geely", "exeed", "tank", "omoda", "jaecoo", "kowloon",
-    "faaw", "dongfeng", "foton", "great wall", "lifan", "brilliance"
-]
+from app.data.brands import ALL_BRANDS, POPULAR_MODELS
+from app.data.geo_cities import regions_for_ui
 
-# Полный список регионов России для поиска
-ALL_REGIONS = [
-    {"value": "", "label": "Вся Россия"},
-    {"value": "moscow", "label": "Москва"},
-    {"value": "spb", "label": "Санкт-Петербург"},
-    {"value": "novosibirsk", "label": "Новосибирск"},
-    {"value": "ekaterinburg", "label": "Екатеринбург"},
-    {"value": "kazan", "label": "Казань"},
-    {"value": "krasnoyarsk", "label": "Красноярск"},
-    {"value": "vladivostok", "label": "Владивосток"},
-    {"value": "samara", "label": "Самара"},
-    {"value": "chelyabinsk", "label": "Челябинск"},
-    {"value": "rostov-na-donu", "label": "Ростов-на-Дону"},
-    {"value": "ufa", "label": "Уфа"},
-    {"value": "perm", "label": "Пермь"},
-    {"value": "volgograd", "label": "Волгоград"},
-    {"value": "voronezh", "label": "Воронеж"},
-    {"value": "saransk", "label": "Саранск"},
-    {"value": "tyumen", "label": "Тюмень"},
-    {"value": "omsk", "label": "Омск"},
-    {"value": "irkutsk", "label": "Иркутск"},
-    {"value": "khabarovsk", "label": "Хабаровск"},
-    {"value": "yuzhno-sakhalinsk", "label": "Южно-Сахалинск"},
-    {"value": "petropavlovsk-kamchatsky", "label": "Петропавловск-Камчатский"},
-    {"value": "yakutsk", "label": "Якутск"},
-    {"value": "krasnodar", "label": "Краснодар"},
-    {"value": "sochi", "label": "Сочи"},
-    {"value": "simferopol", "label": "Симферополь"},
-    {"value": "sevastopol", "label": "Севастополь"},
-    {"value": "kaliningrad", "label": "Калининград"},
-    {"value": "murmansk", "label": "Мурманск"},
-    {"value": "arkhangelsk", "label": "Архангельск"},
-    {"value": "vologda", "label": "Вологда"},
-    {"value": "nizhny-novgorod", "label": "Нижний Новгород"},
-    {"value": "saratov", "label": "Саратов"},
-    {"value": "penza", "label": "Пенза"},
-    {"value": "tolyatti", "label": "Тольятти"},
-    {"value": "izhevsk", "label": "Ижевск"},
-    {"value": "barnaul", "label": "Барнаул"},
-    {"value": "tomsk", "label": "Томск"},
-    {"value": "kemerovo", "label": "Кемерово"},
-    {"value": "novokuznetsk", "label": "Новокузнецк"},
-    {"value": "chita", "label": "Чита"},
-    {"value": "ulan-ude", "label": "Улан-Удэ"},
-    {"value": "magadan", "label": "Магадан"},
-    {"value": "blagoveshchensk", "label": "Благовещенск"},
-    {"value": "birobidzhan", "label": "Биробиджан"},
-    {"value": "gorno-altaysk", "label": "Горно-Алтайск"},
-    {"value": "abakan", "label": "Абакан"},
-    {"value": "kyzyl", "label": "Кызыл"},
-    {"value": "salekhard", "label": "Салехард"},
-    {"value": "khanty-mansiysk", "label": "Ханты-Мансийск"},
-    {"value": "naryan-mar", "label": "Нарьян-Мар"},
-    {"value": "syktyvkar", "label": "Сыктывкар"},
-    {"value": "kirov", "label": "Киров"},
-    {"value": "orel", "label": "Орел"},
-    {"value": "kursk", "label": "Курск"},
-    {"value": "belgorod", "label": "Белгород"},
-    {"value": "lipetsk", "label": "Липецк"},
-    {"value": "tambov", "label": "Тамбов"},
-    {"value": "ryazan", "label": "Рязань"},
-    {"value": "tula", "label": "Тула"},
-    {"value": "kaluga", "label": "Калуга"},
-    {"value": "smolensk", "label": "Смоленск"},
-    {"value": "tver", "label": "Тверь"},
-    {"value": "yaroslavl", "label": "Ярославль"},
-    {"value": "kostroma", "label": "Кострома"},
-    {"value": "ivanovo", "label": "Иваново"},
-    {"value": "vladimir", "label": "Владимир"},
-    {"value": "veliky-novgorod", "label": "Великий Новгород"},
-    {"value": "pskov", "label": "Псков"},
-    {"value": "petrozavodsk", "label": "Петрозаводск"},
-    {"value": "makhachkala", "label": "Махачкала"},
-    {"value": "grozny", "label": "Грозный"},
-    {"value": "nalchik", "label": "Нальчик"},
-    {"value": "vladikavkaz", "label": "Владикавказ"},
-    {"value": "cherkessk", "label": "Черкесск"},
-    {"value": "elista", "label": "Элиста"},
-    {"value": "stavropol", "label": "Ставрополь"},
-    {"value": "pyatigorsk", "label": "Пятигорск"},
-    {"value": "mineralnye-vody", "label": "Минеральные Воды"},
-    {"value": "armavir", "label": "Армавир"},
-    {"value": "novorossiysk", "label": "Новороссийск"},
-    {"value": "anapa", "label": "Анапа"},
-    {"value": "gelendzhik", "label": "Геленджик"}
-]
-
-# Популярные модели для каждой марки
-POPULAR_MODELS = {
-    "bmw": ["1 серия", "2 серия", "3 серия", "4 серия", "5 серия", "6 серия", "7 серия", "8 серия", 
-            "X1", "X2", "X3", "X4", "X5", "X6", "X7", "Z4", "i3", "i4", "iX"],
-    "mercedes": ["A-Class", "B-Class", "C-Class", "CLA", "CLS", "E-Class", "G-Class", "GLA", "GLB", 
-                 "GLC", "GLE", "GLS", "S-Class", "SL", "AMG GT"],
-    "audi": ["A1", "A3", "A4", "A5", "A6", "A7", "A8", "Q2", "Q3", "Q4", "Q5", "Q7", "Q8", "TT", "e-tron"],
-    "toyota": ["Camry", "Corolla", "RAV4", "Land Cruiser", "Highlander", "Prius", "Yaris", "Avalon"],
-    "honda": ["Accord", "Civic", "CR-V", "HR-V", "Pilot", "Odyssey", "Fit"],
-    "nissan": ["Almera", "Altima", "Juke", "Kashqai", "Leaf", "Maxima", "Murano", "Note", "Pathfinder", "Qashqai", "Terrano", "X-Trail"],
-    "volkswagen": ["Golf", "Jetta", "Passat", "Polo", "Tiguan", "Touareg", "Arteon"],
-    "ford": ["Fiesta", "Focus", "Fusion", "Kuga", "Mondeo", "Mustang", "Explorer", "F-150"],
-    "hyundai": ["Accent", "Elantra", "Genesis", "Grandeur", "i30", "Santa Fe", "Sonata", "Tucson"],
-    "kia": ["Ceed", "Cerato", "K5", "Mohave", "Optima", "Picanto", "Rio", "Sorento", "Sportage", "Stinger"],
-    "lexus": ["ES", "GS", "IS", "LS", "LX", "NX", "RX", "UX"],
-    "mazda": ["2", "3", "5", "6", "CX-3", "CX-5", "CX-7", "CX-9", "MX-5"],
-    "subaru": ["Forester", "Impreza", "Legacy", "Outback", "WRX", "XV"],
-    "mitsubishi": ["ASX", "Eclipse Cross", "L200", "Lancer", "Outlander", "Pajero"],
-    "porsche": ["718", "911", "Cayenne", "Macan", "Panamera", "Taycan"],
-    "volvo": ["S40", "S60", "S90", "V40", "V60", "V90", "XC40", "XC60", "XC90"],
-    "lada": ["Granta", "Kalina", "Priora", "Vesta", "XRAY", "Niva", "Largus"],
-    "gaz": ["Volga", "Gazelle", "Next"],
-    "uaz": ["Patriot", "Hunter", "Pickup", "Cargo"]
-}
+ALL_REGIONS = regions_for_ui()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -228,6 +109,7 @@ async def search_cars(
     drive: str = Form(default=""),
     body_type: str = Form(default=""),
     region: str = Form(default=""),
+    buyer_city: str = Form(default="moscow"),
 ):
     params = _form_params(
         brand=brand,
@@ -247,6 +129,7 @@ async def search_cars(
         drive=drive,
         body_type=body_type,
         region=region,
+        buyer_city=buyer_city,
     )
     logger.info(f"Search request: {params}")
     try:
@@ -303,6 +186,7 @@ async def create_search_job(request: Request):
         "drive": form.get("drive") or "",
         "body_type": form.get("body_type") or "",
         "region": form.get("region") or "",
+        "buyer_city": form.get("buyer_city") or "moscow",
     }
     job_id = start_job(params)
     return {"job_id": job_id}

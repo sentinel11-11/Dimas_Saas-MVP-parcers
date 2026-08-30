@@ -70,11 +70,32 @@
                         <span>{{ "{:,}".format(car.mileage or 0).replace(',', ' ') }} км</span>
                         {% if car.owners %}<span>{{ car.owners }} вл.</span>{% endif %}
                         <span>{{ car.region or 'регион н/д' }}</span>
+                        {% if car.engine_volume %}<span>{{ car.engine_volume }} л</span>{% endif %}
+                        {% if car.horsepower %}<span>{{ car.horsepower }} л.с.</span>{% endif %}
                         {% if car.transmission %}<span>{{ car.transmission }}</span>{% endif %}
                         {% if car.fuel %}<span>{{ car.fuel }}</span>{% endif %}
+                        {% if car.drive %}<span>{{ car.drive }}</span>{% endif %}
+                        {% if car.body_type %}<span>{{ car.body_type }}</span>{% endif %}
+                        {% if car.color %}<span>{{ car.color }}</span>{% endif %}
+                        {% if car.pts %}<span>ПТС {{ car.pts }}</span>{% endif %}
+                        {% if car.accidents is not none %}<span>ДТП: {{ car.accidents }}</span>{% endif %}
+                        {% if car.vin %}<span>VIN {{ car.vin }}</span>{% endif %}
                     </div>
                     {% if car.market_price %}
-                    <div class="meta">медиана выборки {{ "{:,}".format(car.market_price|int).replace(',', ' ') }} ₽ · выгода {{ "%.0f"|format((car.probability or 0)*100) }}%</div>
+                    <div class="meta">средняя по выдаче {{ "{:,}".format(car.market_price|int).replace(',', ' ') }} ₽
+                        {% if car.market_deviation %} · vs средней {{ "%.0f"|format(car.market_deviation * 100) }}%{% endif %}
+                    </div>
+                    {% endif %}
+                    {% if car.relocation and not car.relocation.same_city %}
+                    <div class="meta">перегон {{ car.relocation.from_label }} → {{ car.relocation.to_label }}:
+                        ~{{ car.relocation.distance_km }} км · {{ car.relocation.fuel_l_100 }} л/100км ·
+                        топливо {{ "{:,}".format(car.relocation.fuel_cost).replace(',', ' ') }} ₽ +
+                        водитель {{ "{:,}".format(car.relocation.driver_cost).replace(',', ' ') }} ₽ =
+                        <strong>{{ "{:,}".format(car.relocation.total).replace(',', ' ') }} ₽</strong>
+                    </div>
+                    <div class="meta">цена с перегоном {{ "{:,}".format(car.landed_price or 0).replace(',', ' ') }} ₽
+                        {% if car.net_vs_market %} · экономия к средней {{ "{:,}".format(car.net_vs_market).replace(',', ' ') }} ₽{% endif %}
+                    </div>
                     {% endif %}
                 </div>
                 <div>

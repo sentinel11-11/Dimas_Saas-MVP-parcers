@@ -35,17 +35,18 @@
                 <form action="/search" method="POST" id="searchForm">
                     <div class="grid grid-2">
                         <div>
-                            <label for="brand">Марка</label>
-                            <select id="brand" name="brand" required>
-                                <option value="">Выберите…</option>
+                            <label for="brand">Марка (любая)</label>
+                            <input id="brand" name="brand" list="brandList" value="audi" required placeholder="audi, haval, zeekr…">
+                            <datalist id="brandList">
                                 {% for brand in brands %}
-                                <option value="{{ brand }}" {% if brand == 'audi' %}selected{% endif %}>{{ brand.capitalize() }}</option>
+                                <option value="{{ brand }}"></option>
                                 {% endfor %}
-                            </select>
+                            </datalist>
                         </div>
                         <div>
-                            <label for="model">Модель</label>
-                            <input id="model" name="model" value="q3" placeholder="Q3, Camry, Rio" required>
+                            <label for="model">Модель (любая)</label>
+                            <input id="model" name="model" list="modelList" value="q3" placeholder="q3, monjaro, vesta" required>
+                            <datalist id="modelList"></datalist>
                         </div>
                     </div>
                     <div style="margin-top:12px">
@@ -56,9 +57,19 @@
                             <label class="source"><input type="checkbox" name="sources" value="autoru"> Auto.ru</label>
                         </div>
                     </div>
-                    <div class="grid grid-2" style="margin-top:12px">
+                    <div class="grid grid-3" style="margin-top:12px">
                         <div>
-                            <label for="region">Регион</label>
+                            <label for="buyer_city">Вы в городе (куда гнать)</label>
+                            <select id="buyer_city" name="buyer_city">
+                                {% for r in regions %}
+                                {% if r.value %}
+                                <option value="{{ r.value }}" {% if r.value == 'moscow' %}selected{% endif %}>{{ r.label }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label for="region">Искать объявления в</label>
                             <select id="region" name="region">
                                 {% for r in regions %}
                                 <option value="{{ r.value }}">{{ r.label }}</option>
@@ -164,27 +175,20 @@
         const popularModels = {{ models_json | safe }};
         function selectBrand(brand) {
             document.getElementById('brand').value = brand;
-            updateModelDropdown(brand);
+            fillModels(brand);
             document.getElementById('search').scrollIntoView({ behavior: 'smooth' });
         }
-        function updateModelDropdown(brand) {
-            const modelInput = document.getElementById('model');
-            const models = popularModels[brand] || [];
-            if (models.length) {
-                let sel = modelInput;
-                if (modelInput.tagName === 'INPUT') {
-                    sel = document.createElement('select');
-                    sel.id = 'model'; sel.name = 'model'; sel.required = true;
-                    modelInput.parentNode.replaceChild(sel, modelInput);
-                }
-                sel.innerHTML = '<option value="">Модель…</option>';
-                models.forEach(m => {
-                    const o = document.createElement('option');
-                    o.value = m; o.textContent = m; sel.appendChild(o);
-                });
-            }
+        function fillModels(brand) {
+            const list = document.getElementById('modelList');
+            list.innerHTML = '';
+            (popularModels[brand] || []).forEach(m => {
+                const o = document.createElement('option');
+                o.value = m;
+                list.appendChild(o);
+            });
         }
-        document.getElementById('brand').addEventListener('change', e => updateModelDropdown(e.target.value));
+        document.getElementById('brand').addEventListener('change', e => fillModels(e.target.value));
+        fillModels(document.getElementById('brand').value);
         document.getElementById('searchForm').addEventListener('submit', () => {
             document.getElementById('loadingOverlay').classList.add('on');
         });
