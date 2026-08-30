@@ -234,7 +234,7 @@ async def _search_autoru(filters: dict, limit: int, errors: list) -> List[CarLis
         logger.warning(f"AUTO.RU HTTP skip: {e}")
 
     if not cars:
-        for use_proxy in (True, False):
+        for use_proxy in (False, True):
             parser = AutoRuParser(headless=True, use_proxy=use_proxy, proxy_list=autoru_proxy_list)
             logger.info(f"AUTO.RU try proxy={use_proxy}")
             try:

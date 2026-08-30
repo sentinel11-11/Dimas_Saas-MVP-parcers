@@ -74,7 +74,7 @@ async def img_proxy(u: str = ""):
     url = unquote(u or "")
     if not url.startswith("https://"):
         return RedirectResponse("/static/images/no-car-image.png")
-    host_ok = any(x in url for x in ("avatars.mds.yandex.net", "autoru-vos", "auto.ru", "yandex.net"))
+    host_ok = any(x in url for x in ("avatars.mds.yandex.net", "avatars.avto.ru", "photo.auto.ru", "autoru-vos", "auto.ru", "yandex.net"))
     if not host_ok:
         return RedirectResponse("/static/images/no-car-image.png")
     try:

@@ -14,7 +14,7 @@ SALE_RE = re.compile(
     re.I,
 )
 PHOTO_RE = re.compile(
-    r"(?:https?:)?//[^\s\"'<>]+(?:autoru-vos|avatars\.mds\.yandex\.net)[^\s\"'<>]+",
+    r"(?:https?:)?//(?:avatars\.(?:mds\.yandex\.net|avto\.ru)|photo\.auto\.ru|[^\s\"'<>]*autoru-vos)[^\s\"'<>]+",
     re.I,
 )
 

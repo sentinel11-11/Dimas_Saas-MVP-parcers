@@ -24,7 +24,7 @@ from .config import AutoRuConfig
 from .http.client import ProxyManager, UserAgentRotator
 from .core.parser_engine import DelayManager, SessionManager, DataCleaner
 from .models import AutoRuCardData, AutoRuDetailData
-from .autoru_html import is_blocked, parse_listing_html
+from .autoru_html import attach_photos, is_blocked, parse_listing_html
 
 
 class AutoRuParser(BaseParser):
@@ -274,6 +274,7 @@ class AutoRuParser(BaseParser):
             if not cards_data:
                 logger.warning(f"No listings found on page title={ttl!r} url={self.page.url}")
                 return []
+            cards_data = attach_photos(page_html, cards_data)
             with_photo = sum(1 for c in cards_data if c.get("image"))
             logger.info(f"AUTO.RU FOUND CARDS: {len(cards_data)} with photo: {with_photo}")
 
