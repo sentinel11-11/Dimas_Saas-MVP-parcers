@@ -14,7 +14,7 @@ class ResponseWrapper:
 
 class HTTPClient:
 
-    def __init__(self, min_delay: float = 0.4, max_delay: float = 1.2, retry_count: int = 2):
+    def __init__(self, min_delay: float = 0.4, max_delay: float = 1.2, retry_count: int = 3):
 
         self.session = requests.Session()
 
@@ -22,10 +22,11 @@ class HTTPClient:
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/120.0 Safari/537.36"
+                "Chrome/124.0.0.0 Safari/537.36"
             ),
             "Accept-Language": "ru-RU,ru;q=0.9,en;q=0.8",
-            "Accept": "text/html,application/xhtml+xml",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Encoding": "gzip, deflate",
             "Connection": "keep-alive",
         }
 
@@ -35,11 +36,13 @@ class HTTPClient:
         self.last_request_time = 0
 
         self.retry_count = retry_count
+        self._proxies = {}
         try:
             from app.core.proxy import ProxySettings
             proxies = ProxySettings.requests_proxies()
             if proxies:
                 self.session.proxies.update(proxies)
+                self._proxies = proxies
         except Exception as e:
             logger.warning(f"Proxy init skipped: {e}")
 
@@ -68,11 +71,15 @@ class HTTPClient:
 
                 self._smart_sleep()
 
+                use_proxy = bool(self._proxies) and attempt < max(1, self.retry_count - 1)
+                if self._proxies and not use_proxy:
+                    logger.warning(f"HTTP fallback without proxy: {url}")
                 response = self.session.get(
                     url,
                     headers=self.headers,
                     params=params,
-                    timeout=15
+                    timeout=(12, 45),
+                    proxies=self._proxies if use_proxy else {},
                 )
 
                 self.last_request_time = time.time()
