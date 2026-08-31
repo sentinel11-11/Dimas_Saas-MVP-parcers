@@ -14,7 +14,7 @@ class DromParser(BaseParser):
 
     def __init__(self):
 
-        self.client = HTTPClient(min_delay=0.3, max_delay=0.8, retry_count=3)
+        self.client = HTTPClient(min_delay=0.3, max_delay=0.8, retry_count=2, use_proxy=False)
 
     def build_url(self, filters):
 

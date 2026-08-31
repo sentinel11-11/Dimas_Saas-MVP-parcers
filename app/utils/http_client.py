@@ -14,7 +14,7 @@ class ResponseWrapper:
 
 class HTTPClient:
 
-    def __init__(self, min_delay: float = 0.4, max_delay: float = 1.2, retry_count: int = 3):
+    def __init__(self, min_delay: float = 0.4, max_delay: float = 1.2, retry_count: int = 3, use_proxy: bool = True):
 
         self.session = requests.Session()
 
@@ -37,14 +37,15 @@ class HTTPClient:
 
         self.retry_count = retry_count
         self._proxies = {}
-        try:
-            from app.core.proxy import ProxySettings
-            proxies = ProxySettings.requests_proxies()
-            if proxies:
-                self.session.proxies.update(proxies)
-                self._proxies = proxies
-        except Exception as e:
-            logger.warning(f"Proxy init skipped: {e}")
+        if use_proxy:
+            try:
+                from app.core.proxy import ProxySettings
+                proxies = ProxySettings.requests_proxies()
+                if proxies:
+                    self.session.proxies.update(proxies)
+                    self._proxies = proxies
+            except Exception as e:
+                logger.warning(f"Proxy init skipped: {e}")
 
 
     def _smart_sleep(self):

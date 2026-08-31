@@ -13,7 +13,7 @@ from app.utils.http_client import HTTPClient
 class DromDetailParser:
 
     def __init__(self):
-        self.client = HTTPClient(min_delay=0.35, max_delay=0.9, retry_count=3)
+        self.client = HTTPClient(min_delay=0.35, max_delay=0.9, retry_count=2, use_proxy=False)
 
     async def parse_async(self, url: str):
         """Асинхронная версия парсинга."""
