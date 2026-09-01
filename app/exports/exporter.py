@@ -20,7 +20,7 @@ class DataExporter:
         fieldnames = [
             'url', 'title', 'platform', 'brand', 'model', 'price', 'year',
             'mileage', 'engine_volume', 'horsepower', 'transmission', 'drive',
-            'body_type', 'owners', 'accidents', 'pts', 'region',
+            'body_type', 'owners', 'accidents', 'pts', 'region', 'risk_flags',
             'market_score', 'market_price', 'liquidity_score', 
             'probability_good_deal', 'market_deviation'
         ]
@@ -45,6 +45,13 @@ class DataExporter:
                             row["engine_volume"] = str(vol)
                     if row.get("owners") in (None, ""):
                         row["owners"] = "не указано"
+                    flags = row.get("risk_flags")
+                    if isinstance(flags, list):
+                        row["risk_flags"] = "; ".join(
+                            (f.get("label") if isinstance(f, dict) else str(f)) for f in flags
+                        )
+                    elif flags in (None, ""):
+                        row["risk_flags"] = ""
                     writer.writerow(row)
             
             logger.info(f"CSV exported: {filename} ({len(cars)} records)")

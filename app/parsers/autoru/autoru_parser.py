@@ -497,6 +497,7 @@ class AutoRuParser(BaseParser):
             body_type=body,
             owners=owners,
             pts=pts,
+            description=(card_info.get("text") or blob)[:4000] or None,
         )
 
     @staticmethod

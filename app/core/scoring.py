@@ -6,6 +6,7 @@ import statistics
 from typing import List, Optional, Tuple
 
 from app.models.car_listing import CarListing
+from app.core.listing_signals import extract_signals
 
 LIQUID_REGIONS = {
     "moscow", "spb", "khimki", "balashikha", "podolsk", "korolev",
@@ -179,12 +180,19 @@ def score_batch(cars: List[CarListing]) -> List[CarListing]:
             elif car.mileage > med_m * 1.4:
                 liquidity -= 0.08
 
+        flags = extract_signals(car, [c.mileage for c in peers if c.mileage])
+        for fl in flags:
+            liquidity += float(fl.get("delta") or 0)
+        car.risk_flags = flags
+
         suspicious = fair > 0 and car.price and car.price < fair * 0.55
         if suspicious:
             deal = min(deal, 0.42)
             note = "Цена сильно ниже похожих машин — проверьте комплектацию и состояние"
         else:
             note = f"Типичная цена похожих {int(fair):,} ₽ (сравнили {len(peers)})".replace(",", " ")
+        if flags:
+            note = note + ". " + "; ".join(f["label"] for f in flags[:4])
 
         car.liquidity_score = round(max(0.05, min(0.98, liquidity)), 4)
         car.probability_good_deal = round(max(0.05, min(0.97, 0.62 * deal + 0.38 * car.liquidity_score)), 4)

@@ -81,8 +81,14 @@
                         {% if car.color %}<div class="spec"><em>Цвет</em><b>{{ car.color }}</b></div>{% endif %}
                         {% if car.pts %}<div class="spec"><em>ПТС</em><b>{{ car.pts }}</b></div>{% endif %}
                         {% if car.steering %}<div class="spec"><em>Руль</em><b>{{ car.steering }}</b></div>{% endif %}
-                        {% if car.accidents is not none %}<div class="spec"><em>ДТП в истории</em><b>{{ car.accidents }}</b></div>{% endif %}
+                        <div class="spec"><em>ДТП в карточке</em><b>{% if car.accidents is none %}не указано{% elif car.accidents == 0 %}в тексте: не было{% else %}{{ car.accidents }}{% endif %}</b></div>
                     </div>
+                    {% if car.risk_flags %}
+                    <div class="insight warn">
+                        По объявлению:
+                        {% for f in car.risk_flags %}{{ f.label }}{% if not loop.last %}; {% endif %}{% endfor %}
+                    </div>
+                    {% endif %}
                     {% if car.net_vs_market %}
                     <div class="benefit {% if car.net_vs_market <= 0 %}loss{% endif %}">
                         <span class="lbl">{% if car.net_vs_market > 0 %}ваша выгода{% else %}переплата{% endif %}</span>

@@ -169,6 +169,7 @@ class DataNormalizer:
             "region": ad.get("region") or "",
             "data_confidence": ad.get("data_confidence", 0.5),
             "platform": ad.get("platform") or ad.get("source") or "",
+            "description": (ad.get("description") or "")[:4000] or None,
         }
 
         if "image_url" in ad:
@@ -178,9 +179,12 @@ class DataNormalizer:
             normalized["image_url"] = photos[0] if isinstance(photos, list) else photos
 
         if normalized["owners"] is not None:
+            normalized["owners"] = _owners_int(normalized["owners"])
+        if normalized.get("accidents") is not None:
             try:
-                normalized["owners"] = int(normalized["owners"])
+                normalized["accidents"] = int(normalized["accidents"])
             except (TypeError, ValueError):
-                normalized["owners"] = None
+                m = re.search(r"(\d+)", str(normalized["accidents"]))
+                normalized["accidents"] = int(m.group(1)) if m else None
 
         return normalized

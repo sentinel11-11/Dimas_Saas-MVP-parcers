@@ -164,6 +164,7 @@ class DromDetailParser:
             "color": self.extract_color(text),
             "steering": self.extract_steering(text),
             "image_url": self.extract_image(soup),
+            "description": self.extract_description(soup),
         }
 
     # =========================
@@ -315,15 +316,35 @@ class DromDetailParser:
         m = re.search(r"\b[A-HJ-NPR-Z0-9]{17}\b", text)
         return m.group(0) if m else None
 
+    def extract_description(self, soup):
+        if not soup:
+            return None
+        for attrs in (
+            {"data-ftid": "bull_description"},
+            {"itemprop": "description"},
+        ):
+            el = soup.find(attrs=attrs)
+            if el:
+                t = el.get_text(" ", strip=True)
+                if len(t) > 50:
+                    return t[:4000]
+        meta = soup.find("meta", attrs={"name": "description"})
+        if meta and meta.get("content") and len(meta["content"]) > 50:
+            return meta["content"].strip()[:4000]
+        return None
+
     def extract_accidents(self, text):
 
-        t = text.lower()
+        t = (text or "").lower().replace("\xa0", " ")
 
-        if "дтп не было" in t:
+        if re.search(r"дтп\s*(не\s+было|нет|отсутств)", t) or "без дтп" in t:
             return 0
 
-        m = re.search(r"(\d+)\s*дтп", t)
-        return int(m.group(1)) if m else None
+        m = re.search(r"(?:дтп|авари)[^\d]{0,18}(\d+)|(\d+)\s*дтп", t)
+        if not m:
+            return None
+        n = int(m.group(1) or m.group(2))
+        return n if 0 <= n <= 20 else None
 
     def extract_pts(self, text):
 
