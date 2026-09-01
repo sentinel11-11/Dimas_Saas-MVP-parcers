@@ -383,11 +383,16 @@ class AutoRuParser(BaseParser):
                 prices.append(n)
         p_from = int(filters.get("price_from") or filters.get("price_min") or 0)
         p_to = int(filters.get("price_to") or filters.get("price_max") or 0)
-        floor = max(250_000, p_from) if p_from else 250_000
+        if p_from:
+            floor = max(250_000, p_from)
+        elif p_to and p_to < 2_000_000:
+            floor = 250_000
+        else:
+            floor = 700_000
         sale = [n for n in prices if n >= floor and (not p_to or n <= p_to)]
         if not sale and prices:
             sale = [n for n in prices if n >= floor]
-        price = min(sale) if sale else 0
+        price = max(sale) if sale else 0
         if price < floor:
             logger.debug(f"AUTO.RU skip credit-like price={prices} title={title[:60]!r}")
             return None

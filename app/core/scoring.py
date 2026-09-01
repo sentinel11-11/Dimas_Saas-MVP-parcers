@@ -253,6 +253,7 @@ def score_batch(cars: List[CarListing]) -> List[CarListing]:
 
     cars.sort(
         key=lambda x: (
+            0 if getattr(x, "suspicious", False) else 1,
             x.net_vs_market if getattr(x, "net_vs_market", None) is not None else 0,
             x.probability_good_deal or 0,
         ),
