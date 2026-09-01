@@ -141,18 +141,30 @@ def _robust_median(vals: List[float]) -> float:
     return float(statistics.median(kept) if kept else m)
 
 
+def _is_new(car: CarListing) -> bool:
+    y = car.year or 0
+    km = car.mileage if car.mileage is not None else 10**9
+    if y >= 2025:
+        return True
+    return km < 200
+
+
 def _peer_key(car: CarListing) -> Tuple:
     year_bin = ((car.year or 0) // 2) * 2
     hp_bin = int(round((car.horsepower or 0) / 40.0) * 40) if car.horsepower else 0
     vol_bin = int(round((car.engine_volume or 0) * 2)) if car.engine_volume else 0
     trans = (car.transmission or "").lower()[:4]
     drive = (car.drive or "").lower()[:6]
-    return year_bin, hp_bin, vol_bin, trans, drive
+    return _is_new(car), year_bin, hp_bin, vol_bin, trans, drive
 
 
 def _peers(car: CarListing, cars: List[CarListing]) -> List[CarListing]:
+    newbie = _is_new(car)
+    pool = [c for c in cars if c.price and _is_new(c) == newbie]
+    if not pool:
+        pool = [c for c in cars if c.price]
     key = _peer_key(car)
-    same = [c for c in cars if _peer_key(c) == key and c.price]
+    same = [c for c in pool if _peer_key(c) == key]
     if len(same) >= 3:
         return same
     y = car.year or 0
@@ -160,15 +172,15 @@ def _peers(car: CarListing, cars: List[CarListing]) -> List[CarListing]:
     vol = car.engine_volume or 0
     close = [
         c
-        for c in cars
-        if c.price
-        and abs((c.year or 0) - y) <= 2
+        for c in pool
+        if abs((c.year or 0) - y) <= 2
         and (not hp or not c.horsepower or abs(c.horsepower - hp) <= 40)
         and (not vol or not c.engine_volume or abs((c.engine_volume or 0) - vol) <= 0.3)
     ]
     if len(close) >= 2:
         return close
-    return [c for c in cars if c.price and abs((c.year or 0) - y) <= 1] or [car]
+    near = [c for c in pool if abs((c.year or 0) - y) <= 1]
+    return near or [car]
 
 
 def _mileage_factor(car: CarListing, peers: List[CarListing]) -> float:
