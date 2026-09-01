@@ -149,7 +149,21 @@ details.more summary { cursor: pointer; color: var(--amber-2); }
 .feature h3 { margin: 0 0 8px; font-family: var(--display); }
 .feature p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
 
-.footer { color: var(--muted); padding: 24px 0 40px; font-size: 13px; border-top: 1px solid var(--line); }
+.docs { padding: 8px 0 40px; max-width: 72ch; }
+.docs-title { font-family: var(--display); font-size: 32px; margin: 8px 0 12px; }
+.docs h3 { font-family: var(--display); font-size: 20px; margin: 28px 0 10px; }
+.docs p, .docs li { color: var(--muted); line-height: 1.6; font-size: 15px; }
+.docs em { color: var(--ink); font-style: normal; }
+.docs-ol { padding-left: 1.2em; }
+.formula {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 13.5px; line-height: 1.55;
+  background: rgba(255,255,255,.04); border: 1px solid var(--line);
+  border-radius: 14px; padding: 12px 14px; color: var(--amber-2);
+  overflow-x: auto;
+}
+.docs-note { margin-top: 24px; color: var(--muted); font-size: 13px; }
+.footer a { color: var(--amber-2); }
 
 .overlay {
   position: fixed; inset: 0; background: rgba(8,9,12,.9);

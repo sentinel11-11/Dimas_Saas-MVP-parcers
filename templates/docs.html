@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Документация — DIMAS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/app.css?v=7">
+</head>
+<body>
+    <div class="wrap">
+        <header class="nav">
+            <a class="brand" href="/"><span class="brand-mark">D</span> DIMAS</a>
+            <nav class="nav-links">
+                <a href="/">Поиск</a>
+                <a href="/how">Документация</a>
+                <a href="/searches">Мои поиски</a>
+            </nav>
+        </header>
+        {% include "docs_body.html" %}
+        <footer class="footer">DIMAS · оценка по текущей выдаче, не рынок РФ</footer>
+    </div>
+</body>
+</html>

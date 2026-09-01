@@ -107,6 +107,11 @@ async def health():
     }
 
 
+@app.get("/how", response_class=HTMLResponse)
+async def docs_page(request: Request):
+    return templates.TemplateResponse("docs.html", {"request": request})
+
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse(

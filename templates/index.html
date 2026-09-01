@@ -6,7 +6,7 @@
     <title>DIMAS — выгодный лот за один проход</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="stylesheet" href="/static/css/app.css?v=7">
 </head>
 <body>
     <div class="wrap">
@@ -14,7 +14,7 @@
             <a class="brand" href="/"><span class="brand-mark">D</span> DIMAS</a>
             <nav class="nav-links">
                 <a href="#search">Поиск</a>
-                <a href="#features">Как считаем</a>
+                <a href="#docs">Документация</a>
                 <a href="/searches">Мои поиски</a>
             </nav>
         </header>
@@ -161,11 +161,13 @@
             </article>
             <article class="feature">
                 <h3>Цена у вашего города</h3>
-                <p>Топливо, водитель и паром ДВ входят в landed. Сверху — экономия после дороги.</p>
+                <p>В сумму входит топливо перегона и паром ДВ. Водителя не считаем.</p>
             </article>
         </section>
 
-        <footer class="footer">DIMAS · оценка по текущей выдаче, не рынок РФ</footer>
+        {% include "docs_body.html" %}
+
+        <footer class="footer">DIMAS · оценка по текущей выдаче, не рынок РФ · <a href="/how">документация</a></footer>
     </div>
 
     <div class="overlay" id="loadingOverlay">
