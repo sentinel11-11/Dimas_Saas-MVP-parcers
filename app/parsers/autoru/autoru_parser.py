@@ -381,12 +381,14 @@ class AutoRuParser(BaseParser):
             n = int(re.sub(r"\D", "", raw) or 0)
             if 250_000 <= n <= 80_000_000:
                 prices.append(n)
-        sale = [n for n in prices if n >= 700_000]
+        p_from = int(filters.get("price_from") or filters.get("price_min") or 0)
+        p_to = int(filters.get("price_to") or filters.get("price_max") or 0)
+        floor = max(250_000, p_from) if p_from else 250_000
+        sale = [n for n in prices if n >= floor and (not p_to or n <= p_to)]
         if not sale and prices:
-            hi = max(prices)
-            sale = [n for n in prices if n >= max(700_000, int(hi * 0.45))]
+            sale = [n for n in prices if n >= floor]
         price = min(sale) if sale else 0
-        if price < 700_000:
+        if price < floor:
             logger.debug(f"AUTO.RU skip credit-like price={prices} title={title[:60]!r}")
             return None
         mileage = self._mileage_from_text(blob, year)
@@ -450,8 +452,6 @@ class AutoRuParser(BaseParser):
             pts = "дубликат"
         y_from = int(filters.get("year_from") or filters.get("year_min") or 0)
         y_to = int(filters.get("year_to") or filters.get("year_max") or 9999)
-        p_to = int(filters.get("price_to") or filters.get("price_max") or 0)
-        p_from = int(filters.get("price_from") or filters.get("price_min") or 0)
         if year and y_from and year < y_from:
             logger.debug(f"AUTO.RU skip year {year}<{y_from}")
             return None

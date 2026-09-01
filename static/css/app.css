@@ -210,14 +210,26 @@ details.more summary { cursor: pointer; color: var(--amber-2); }
 .card-actions .btn { white-space: nowrap; }
 .card-actions .calc-json { display: none; }
 .calc-box {
-  width: min(560px, calc(100% - 32px));
+  width: min(560px, calc(100% - 24px));
+  max-height: min(88vh, 720px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 24px;
   padding: 22px 22px 18px;
   text-align: left;
   box-shadow: 0 30px 80px rgba(0,0,0,.5);
+  position: relative;
 }
+.calc-x {
+  position: sticky; top: 0; float: right;
+  width: 44px; height: 44px; margin: -8px -8px 0 0;
+  border: 1px solid var(--line); border-radius: 14px;
+  background: rgba(8,10,14,.85); color: var(--ink);
+  font-size: 28px; line-height: 1; cursor: pointer; z-index: 2;
+}
+.calc-x:hover { border-color: var(--amber); }
 .calc-box h2 { font-family: var(--display); font-size: 22px; margin: 4px 0 14px; overflow-wrap: anywhere; }
 .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
 @media (max-width: 640px) { .calc-grid { grid-template-columns: 1fr; } }

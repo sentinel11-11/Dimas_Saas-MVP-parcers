@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ brand }} {{ model }} — DIMAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/app.css?v=5">
+    <link rel="stylesheet" href="/static/css/app.css?v=6">
 </head>
 <body>
     <div class="wrap">
@@ -123,6 +123,14 @@
                     {% elif car.relocation and car.relocation.same_city %}
                     <div class="insight">Машина уже в вашем городе — дорогу считать не нужно.</div>
                     {% endif %}
+                    {% if car.also_on %}
+                    <div class="insight">
+                        То же объявление ещё:
+                        {% for a in car.also_on %}
+                        <a href="{{ a.url }}" target="_blank" rel="noopener">{{ {'drom':'Drom','avito':'Avito','autoru':'Auto.ru','auto_ru':'Auto.ru'}.get(a.platform, a.platform) }}{% if a.price %} · {{ "{:,}".format(a.price).replace(",", " ") }} ₽{% endif %}</a>{% if not loop.last %}; {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="card-actions">
                     <a class="btn" href="{{ car.url }}" target="_blank" rel="noopener">Открыть</a>
@@ -153,6 +161,7 @@
     </div>
     <div class="overlay" id="calcOverlay" onclick="if(event.target===this)closeCalc()">
         <div class="calc-box" onclick="event.stopPropagation()">
+            <button type="button" class="calc-x" onclick="closeCalc()" aria-label="Закрыть">×</button>
             <p class="kicker">полный расчёт</p>
             <h2 id="calcTitle"></h2>
             <div class="calc-grid" id="calcBody"></div>
@@ -213,6 +222,9 @@
         function closeCalc() {
             document.getElementById('calcOverlay').classList.remove('on');
         }
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeCalc();
+        });
     </script>
 </body>
 </html>

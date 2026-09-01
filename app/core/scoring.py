@@ -15,16 +15,42 @@ LIQUID_REGIONS = {
 }
 
 
+def _plat(p: Optional[str]) -> str:
+    return (p or "").lower().replace(".", "_").replace("-", "_")
+
+
+def _same_cross(a: CarListing, b: CarListing) -> bool:
+    va, vb = (a.vin or "").strip().upper(), (b.vin or "").strip().upper()
+    if len(va) == 17 and va == vb:
+        return True
+    if _plat(a.platform) == _plat(b.platform):
+        return False
+    if (a.year or 0) != (b.year or 0):
+        return False
+    if (a.brand or "").lower() != (b.brand or "").lower():
+        return False
+    if (a.model or "").lower() != (b.model or "").lower():
+        return False
+    if abs((a.mileage or 0) - (b.mileage or 0)) > 2500:
+        return False
+    pa, pb = int(a.price or 0), int(b.price or 0)
+    if pa < 1 or pb < 1:
+        return False
+    if abs(pa - pb) > max(40_000, int(0.04 * min(pa, pb))):
+        return False
+    return True
+
+
 def dedup(cars: List[CarListing]) -> List[CarListing]:
     seen_urls = set()
     fingerprints = set()
-    result = []
+    uniq: List[CarListing] = []
     for car in cars:
         url = (car.url or "").split("?")[0]
         if url in seen_urls:
             continue
         fp = (
-            (car.platform or "").lower(),
+            _plat(car.platform),
             car.year or 0,
             round((car.mileage or 0) / 1500),
             round((car.price or 0) / 2000),
@@ -35,7 +61,32 @@ def dedup(cars: List[CarListing]) -> List[CarListing]:
             continue
         seen_urls.add(url)
         fingerprints.add(fp)
-        result.append(car)
+        uniq.append(car)
+
+    used = [False] * len(uniq)
+    result: List[CarListing] = []
+    for i, car in enumerate(uniq):
+        if used[i]:
+            continue
+        group = [car]
+        used[i] = True
+        for j in range(i + 1, len(uniq)):
+            if used[j]:
+                continue
+            if _same_cross(car, uniq[j]):
+                group.append(uniq[j])
+                used[j] = True
+        group.sort(key=lambda c: (c.price or 10**12, _plat(c.platform) != "drom"))
+        keep = group[0]
+        alts = []
+        for other in group[1:]:
+            alts.append({
+                "platform": other.platform,
+                "url": other.url,
+                "price": other.price,
+            })
+        keep.also_on = alts
+        result.append(keep)
     return result
 
 

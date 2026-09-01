@@ -94,6 +94,7 @@ def _listing_to_dict(car: CarListing) -> dict:
         "peer_size": extra.get("peer_size") or 0,
         "risk_flags": extra.get("risk_flags") or [],
         "description": (extra.get("description") or "")[:500],
+        "also_on": extra.get("also_on") or [],
     }
 
 
