@@ -163,6 +163,7 @@ details.more summary { cursor: pointer; color: var(--amber-2); }
   overflow-x: auto;
 }
 .docs-note { margin-top: 24px; color: var(--muted); font-size: 13px; }
+.footer { color: var(--muted); padding: 24px 0 40px; font-size: 13px; border-top: 1px solid var(--line); }
 .footer a { color: var(--amber-2); }
 
 .overlay {
@@ -250,6 +251,14 @@ details.more summary { cursor: pointer; color: var(--amber-2); }
 
 @media (max-width: 900px) {
   .hero, .car-card, .features, .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .nav-links { display: none; }
+  .nav { flex-wrap: wrap; gap: 10px; }
+  .nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 6px;
+    font-size: 13px;
+  }
+  .nav-links a { padding: 8px 11px; border-color: var(--line); background: rgba(255,255,255,.03); }
   h1 { font-size: 40px; }
 }
