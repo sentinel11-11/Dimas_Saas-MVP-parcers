@@ -21,8 +21,7 @@ class ProxyManager:
         
         # Случайный выбор прокси
         proxy = random.choice(self.proxy_list)
-        masked = proxy.split("@")[-1] if "@" in proxy else proxy
-        logger.debug(f"Selected proxy host: {masked}")
+        logger.debug(f"Selected proxy: {proxy}")
         return proxy
     
     def get_all_proxies(self) -> List[str]:

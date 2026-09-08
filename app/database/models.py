@@ -3,13 +3,25 @@ from sqlalchemy import (
     Integer,
     String,
     Float,
-    Text
+    Text,
 )
 
 from sqlalchemy.orm import declarative_base
 
 
 Base = declarative_base()
+
+
+class UserORM(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True, index=True)
+    password_hash = Column(String)
+    name = Column(String, default="")
+    is_admin = Column(Integer, default=0)
+    created_at = Column(String, default="")
+    last_login = Column(String, default="")
 
 
 class CarListingORM(Base):
@@ -62,9 +74,23 @@ class SavedSearchORM(Base):
 
     id = Column(Integer, primary_key=True)
     email = Column(String, default="")
+    user_id = Column(Integer, default=0)
     brand = Column(String)
     model = Column(String)
     params_json = Column(Text)
     last_min_price = Column(Integer, default=0)
     last_count = Column(Integer, default=0)
     created_at = Column(String)
+
+
+class SearchLogORM(Base):
+    __tablename__ = "search_logs"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, default=0)
+    email = Column(String, default="")
+    brand = Column(String, default="")
+    model = Column(String, default="")
+    sources = Column(String, default="drom")
+    total = Column(Integer, default=0)
+    created_at = Column(String, default="")

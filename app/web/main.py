@@ -1,29 +1,41 @@
-"""
-FastAPI веб-приложение для парсинга автомобилей
-"""
+"""DIMAS: лендинг, кабинет, админка."""
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request, Form
-
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import asyncio
 import json
+
+from fastapi import FastAPI, Request, Form
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, RedirectResponse
+from starlette.middleware.sessions import SessionMiddleware
 from loguru import logger
 
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, RedirectResponse
 from app.database.db import (
     init_db,
-    get_all_listings,
     save_search,
     list_saved_searches,
-    get_saved_search,
     delete_saved_search,
+    create_user,
+    find_user_by_email,
+    list_users,
+    touch_login,
+    log_search,
+    list_search_logs,
+)
+from app.web.auth import (
+    current_user,
+    login_user,
+    logout_user,
+    verify_password,
+    session_secret,
 )
 from app.services.search_service import run_search, start_job, get_job, LAST_RESULTS
 from app.services.monitor import check_saved_search
 from app.exports.exporter import DataExporter
+from app.data.brands import ALL_BRANDS, POPULAR_MODELS
+from app.data.geo_cities import regions_for_ui
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -34,28 +46,23 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(
-    title="Car Parser MVP",
-    description="Быстрый подбор автомобилей",
-    lifespan=lifespan,
-)
-
-from app.data.brands import ALL_BRANDS, POPULAR_MODELS
-from app.data.geo_cities import regions_for_ui
+app = FastAPI(title="DIMAS", description="Подбор автомобилей", lifespan=lifespan, docs_url=None, redoc_url=None)
+app.add_middleware(SessionMiddleware, secret_key=session_secret(), max_age=60 * 60 * 24 * 14, same_site="lax")
 
 ALL_REGIONS = regions_for_ui()
-
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-parsing_results: Dict[str, List[Dict[str, Any]]] = {}
+
+def _ctx(request: Request, **extra):
+    user = current_user(request)
+    data = {"request": request, "user": user, "is_admin": bool(user and user.is_admin)}
+    data.update(extra)
+    return data
 
 
-class SearchRequest(BaseModel):
-    brand: str
-    model: str
-    sources: List[str] = ["drom"]
-    limit: int = 10
+def _login_redirect(next_url: str = "/app"):
+    return RedirectResponse(f"/login?next={next_url}", status_code=303)
 
 
 def _form_params(**kwargs) -> dict:
@@ -98,80 +105,153 @@ async def img_proxy(u: str = ""):
 @app.get("/health")
 async def health():
     from app.core.proxy import ProxySettings
-    return {
-        "status": "ok",
-        "proxy": ProxySettings.status_line(),
-        "proxy_enabled": ProxySettings.enabled(),
-        "proxy_host": ProxySettings.host() or None,
-        "proxy_protocol": ProxySettings.protocol(),
-    }
+    return {"status": "ok", "proxy": ProxySettings.status_line()}
 
 
 @app.get("/how", response_class=HTMLResponse)
 async def docs_page(request: Request):
-    return templates.TemplateResponse("docs.html", {"request": request})
+    return templates.TemplateResponse("docs.html", _ctx(request))
 
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse(
-        "index.html",
-        {
-            "request": request,
-            "title": "Быстрый подбор автомобиля",
-            "brands": ALL_BRANDS,
-            "regions": ALL_REGIONS,
-            "models_json": json.dumps(POPULAR_MODELS),
-            "custom_limit_enabled": True,
-        },
-    )
+    return templates.TemplateResponse("index.html", _ctx(request))
 
 
-@app.post("/search", response_class=HTMLResponse)
-async def search_cars(
+@app.get("/register", response_class=HTMLResponse)
+async def register_get(request: Request):
+    if current_user(request):
+        return RedirectResponse("/app", status_code=303)
+    return templates.TemplateResponse("auth.html", _ctx(request, mode="register", error="", next="/app"))
+
+
+@app.post("/register")
+async def register_post(
     request: Request,
-    brand: str = Form(...),
-    model: str = Form(...),
-    sources: List[str] = Form(default=["drom"]),
-    limit: int = Form(default=50),
-    year_min: int = Form(default=2018),
-    year_max: int = Form(default=2026),
-    mileage_min: int = Form(default=0),
-    mileage_max: int = Form(default=300000),
-    owners_min: int = Form(default=1),
-    owners_max: int = Form(default=3),
-    price_min: int = Form(default=0),
-    price_max: int = Form(default=100000000),
-    transmission: str = Form(default=""),
-    fuel: str = Form(default=""),
-    drive: str = Form(default=""),
-    body_type: str = Form(default=""),
-    region: str = Form(default=""),
-    buyer_city: str = Form(default="moscow"),
-    fuel_price: float = Form(default=62),
+    email: str = Form(...),
+    password: str = Form(...),
+    name: str = Form(default=""),
+    next: str = Form(default="/app"),
 ):
-    params = _form_params(
-        brand=brand,
-        model=model,
-        sources=sources,
-        limit=limit,
-        year_min=year_min,
-        year_max=year_max,
-        mileage_min=mileage_min,
-        mileage_max=mileage_max,
-        owners_min=owners_min,
-        owners_max=owners_max,
-        price_min=price_min,
-        price_max=price_max,
-        transmission=transmission,
-        fuel=fuel,
-        drive=drive,
-        body_type=body_type,
-        region=region,
-        buyer_city=buyer_city,
-        fuel_price=fuel_price,
+    err = ""
+    email = (email or "").strip().lower()
+    if "@" not in email or "." not in email:
+        err = "Укажите нормальный email"
+    elif len(password or "") < 6:
+        err = "Пароль от 6 символов"
+    else:
+        try:
+            user = create_user(email, password, name)
+            login_user(request, user)
+            touch_login(user.id)
+            return RedirectResponse(next or "/app", status_code=303)
+        except ValueError:
+            err = "Этот email уже зарегистрирован"
+        except Exception:
+            logger.exception("register")
+            err = "Не получилось создать аккаунт"
+    return templates.TemplateResponse("auth.html", _ctx(request, mode="register", error=err, next=next))
+
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_get(request: Request, next: str = "/app"):
+    if current_user(request):
+        return RedirectResponse(next or "/app", status_code=303)
+    return templates.TemplateResponse("auth.html", _ctx(request, mode="login", error="", next=next))
+
+
+@app.post("/login")
+async def login_post(
+    request: Request,
+    email: str = Form(...),
+    password: str = Form(...),
+    next: str = Form(default="/app"),
+):
+    user = find_user_by_email(email)
+    if not user or not verify_password(password, user.password_hash):
+        return templates.TemplateResponse(
+            "auth.html",
+            _ctx(request, mode="login", error="Неверный email или пароль", next=next),
+        )
+    login_user(request, user)
+    touch_login(user.id)
+    dest = next or "/app"
+    if user.is_admin and dest in ("/app", "/"):
+        dest = "/admin"
+    return RedirectResponse(dest, status_code=303)
+
+
+@app.get("/logout")
+async def logout(request: Request):
+    logout_user(request)
+    return RedirectResponse("/", status_code=303)
+
+
+@app.get("/app", response_class=HTMLResponse)
+async def cabinet(request: Request):
+    user = current_user(request)
+    if not user:
+        return _login_redirect("/app")
+    return templates.TemplateResponse(
+        "cabinet.html",
+        _ctx(
+            request,
+            brands=ALL_BRANDS,
+            regions=ALL_REGIONS,
+            models_json=json.dumps(POPULAR_MODELS),
+            saved=list_saved_searches(user_id=user.id, email=user.email),
+        ),
     )
-    logger.info(f"Search request: {params}")
+
+
+@app.get("/admin", response_class=HTMLResponse)
+async def admin_home(request: Request):
+    user = current_user(request)
+    if not user:
+        return _login_redirect("/admin")
+    if not user.is_admin:
+        return RedirectResponse("/app", status_code=303)
+    from app.core.proxy import ProxySettings
+    return templates.TemplateResponse(
+        "admin.html",
+        _ctx(
+            request,
+            brands=ALL_BRANDS,
+            regions=ALL_REGIONS,
+            models_json=json.dumps(POPULAR_MODELS),
+            users=list_users(),
+            logs=list_search_logs(),
+            proxy_line=ProxySettings.status_line(),
+        ),
+    )
+
+
+def _search_payload(form: dict, sources: List[str]) -> dict:
+    return _form_params(
+        brand=form.get("brand"),
+        model=form.get("model"),
+        sources=sources,
+        limit=form.get("limit") or 50,
+        year_min=form.get("year_min") or 2018,
+        year_max=form.get("year_max") or 2026,
+        mileage_min=form.get("mileage_min") or 0,
+        mileage_max=form.get("mileage_max") or 300000,
+        owners_min=form.get("owners_min") or 1,
+        owners_max=form.get("owners_max") or 3,
+        price_min=form.get("price_min") or 0,
+        price_max=form.get("price_max") or 100000000,
+        transmission=form.get("transmission") or "",
+        fuel=form.get("fuel") or "",
+        drive=form.get("drive") or "",
+        body_type=form.get("body_type") or "",
+        region=form.get("region") or "",
+        buyer_city=form.get("buyer_city") or "moscow",
+        fuel_price=form.get("fuel_price") or 62,
+    )
+
+
+async def _run_and_render(request, params, user):
+    logger.info(f"Search request user={getattr(user, 'email', None)} {params}")
     try:
         data = await asyncio.to_thread(run_search, params)
     except Exception as e:
@@ -181,33 +261,75 @@ async def search_cars(
             "errors": [str(e)],
             "sources_used": params.get("sources"),
             "filters_applied": params,
-            "brand": brand,
-            "model": model,
+            "brand": params.get("brand"),
+            "model": params.get("model"),
             "total": 0,
             "sample_size": 0,
         }
-    session_key = f"{brand}_{model}"
-    parsing_results[session_key] = data.get("results") or []
+    try:
+        log_search(
+            user.id if user else 0,
+            user.email if user else "",
+            params.get("brand") or "",
+            params.get("model") or "",
+            params.get("sources") or ["drom"],
+            data.get("total") or 0,
+        )
+    except Exception:
+        pass
     return templates.TemplateResponse(
         "results.html",
-        {
-            "request": request,
-            "results": data.get("results") or [],
-            "brand": brand.capitalize(),
-            "model": model.capitalize(),
-            "total": data.get("total") or 0,
-            "errors": data.get("errors") or [],
-            "sources_used": data.get("sources_used") or [],
-            "filters_applied": data.get("filters_applied") or params,
-            "sample_size": data.get("sample_size") or 0,
-        },
+        _ctx(
+            request,
+            results=data.get("results") or [],
+            brand=(params.get("brand") or "").capitalize(),
+            model=(params.get("model") or "").capitalize(),
+            total=data.get("total") or 0,
+            errors=data.get("errors") or [],
+            sources_used=data.get("sources_used") or [],
+            filters_applied=data.get("filters_applied") or params,
+            sample_size=data.get("sample_size") or 0,
+        ),
     )
+
+
+@app.post("/search", response_class=HTMLResponse)
+async def search_cars(request: Request):
+    user = current_user(request)
+    if not user:
+        return _login_redirect("/app")
+    form = await request.form()
+    data = {k: form.get(k) for k in form.keys()}
+    sources = ["drom"]
+    if user.is_admin:
+        picked = form.getlist("sources")
+        if picked:
+            sources = list(picked)
+    params = _search_payload(data, sources)
+    return await _run_and_render(request, params, user)
+
+
+@app.post("/admin/search", response_class=HTMLResponse)
+async def admin_search(request: Request):
+    user = current_user(request)
+    if not user or not user.is_admin:
+        return _login_redirect("/admin")
+    form = await request.form()
+    data = {k: form.get(k) for k in form.keys()}
+    sources = form.getlist("sources") or ["drom"]
+    params = _search_payload(data, list(sources))
+    return await _run_and_render(request, params, user)
 
 
 @app.post("/api/search/jobs")
 async def create_search_job(request: Request):
+    user = current_user(request)
+    if not user:
+        return JSONResponse({"error": "auth"}, status_code=401)
     form = await request.form()
-    sources = form.getlist("sources") or ["drom"]
+    sources = ["drom"]
+    if user.is_admin:
+        sources = form.getlist("sources") or ["drom"]
     params = {
         "brand": form.get("brand"),
         "model": form.get("model"),
@@ -241,180 +363,66 @@ async def job_status(job_id: str):
     return job
 
 
-@app.get("/search/wait/{job_id}", response_class=HTMLResponse)
-async def search_wait(request: Request, job_id: str):
-    return templates.TemplateResponse(
-        "wait.html",
-        {"request": request, "job_id": job_id},
-    )
-
-
-def get_badge_class(probability: float) -> str:
-    if probability >= 0.8:
-        return "bg-success"
-    elif probability >= 0.6:
-        return "bg-primary"
-    elif probability >= 0.4:
-        return "bg-warning"
-    return "bg-danger"
-
-
-@app.get("/results/{brand}/{model}", response_class=HTMLResponse)
-async def view_results(request: Request, brand: str, model: str):
-    session_key = f"{brand}_{model}"
-    results = parsing_results.get(session_key, [])
-    if not results:
-        try:
-            db_listings = get_all_listings()
-            for listing in db_listings:
-                results.append(
-                    {
-                        "title": listing.title,
-                        "price": listing.price,
-                        "year": listing.year,
-                        "mileage": listing.mileage,
-                        "region": listing.region,
-                        "url": listing.url,
-                        "platform": listing.source,
-                        "market_price": listing.market_score,
-                        "market_deviation": 0,
-                        "probability": listing.final_score,
-                        "liquidity": 0.5,
-                        "badge_class": get_badge_class(listing.final_score or 0),
-                        "fuel": listing.fuel_type,
-                    }
-                )
-        except Exception as e:
-            logger.error(f"DB LOAD ERROR: {e}")
-    return templates.TemplateResponse(
-        "results.html",
-        {
-            "request": request,
-            "results": results,
-            "brand": brand.capitalize(),
-            "model": model.capitalize(),
-            "total": len(results),
-            "errors": [],
-            "sources_used": [],
-            "sample_size": len(results),
-        },
-    )
-
-
 @app.post("/searches/save")
-async def searches_save(
-    email: str = Form(default=""),
-    brand: str = Form(...),
-    model: str = Form(...),
-    year_min: int = Form(default=2018),
-    year_max: int = Form(default=2026),
-    mileage_min: int = Form(default=0),
-    mileage_max: int = Form(default=300000),
-    owners_min: int = Form(default=1),
-    owners_max: int = Form(default=3),
-    price_min: int = Form(default=0),
-    price_max: int = Form(default=100000000),
-    region: str = Form(default=""),
-    sources: List[str] = Form(default=["drom"]),
-):
+async def searches_save(request: Request):
+    user = current_user(request)
+    if not user:
+        return _login_redirect("/app")
+    form = await request.form()
     params = _form_params(
-        brand=brand,
-        model=model,
-        sources=sources,
-        year_min=year_min,
-        year_max=year_max,
-        mileage_min=mileage_min,
-        mileage_max=mileage_max,
-        owners_min=owners_min,
-        owners_max=owners_max,
-        price_min=price_min,
-        price_max=price_max,
-        region=region,
+        brand=form.get("brand"),
+        model=form.get("model"),
+        sources=["drom"],
+        year_min=form.get("year_min") or 2018,
+        year_max=form.get("year_max") or 2026,
+        mileage_min=form.get("mileage_min") or 0,
+        mileage_max=form.get("mileage_max") or 300000,
+        owners_min=form.get("owners_min") or 1,
+        owners_max=form.get("owners_max") or 3,
+        price_min=form.get("price_min") or 0,
+        price_max=form.get("price_max") or 100000000,
+        region=form.get("region") or "",
         limit=20,
     )
     prices = [r.get("price") or 0 for r in (LAST_RESULTS.get("results") or [])]
     min_price = min([p for p in prices if p], default=0)
-    save_search(email, params, last_min_price=min_price, last_count=len(prices))
-    return RedirectResponse(f"/searches?email={email}", status_code=303)
+    save_search(user.email, params, last_min_price=min_price, last_count=len(prices), user_id=user.id)
+    return RedirectResponse("/searches", status_code=303)
 
 
 @app.get("/searches", response_class=HTMLResponse)
-async def searches_page(request: Request, email: str = ""):
-    rows = list_saved_searches(email)
-    return templates.TemplateResponse(
-        "saved.html",
-        {"request": request, "searches": rows, "email": email},
-    )
+async def searches_page(request: Request):
+    user = current_user(request)
+    if not user:
+        return _login_redirect("/searches")
+    rows = list_saved_searches(email=user.email, user_id=user.id)
+    return templates.TemplateResponse("saved.html", _ctx(request, searches=rows, email=user.email))
 
 
 @app.post("/searches/{search_id}/delete")
-async def searches_delete(search_id: int, email: str = Form(default="")):
+async def searches_delete(request: Request, search_id: int):
+    user = current_user(request)
+    if not user:
+        return _login_redirect("/searches")
     delete_saved_search(search_id)
-    return RedirectResponse(f"/searches?email={email}", status_code=303)
+    return RedirectResponse("/searches", status_code=303)
 
 
 @app.post("/searches/{search_id}/check")
 async def searches_check(request: Request, search_id: int):
+    user = current_user(request)
+    if not user:
+        return _login_redirect("/searches")
     report = await asyncio.to_thread(check_saved_search, search_id)
-    return templates.TemplateResponse(
-        "monitor.html",
-        {"request": request, "report": report},
-    )
+    return templates.TemplateResponse("monitor.html", _ctx(request, report=report))
 
 
 @app.get("/export/csv")
-async def export_csv():
+async def export_csv(request: Request):
+    if not current_user(request):
+        return JSONResponse({"error": "auth"}, status_code=401)
     cars = LAST_RESULTS.get("results") or []
     if not cars:
         return JSONResponse({"error": "Нет результатов для экспорта"}, status_code=400)
     path = DataExporter.export_to_csv(cars)
     return FileResponse(path, filename="cars.csv", media_type="text/csv; charset=utf-8")
-
-
-@app.post("/import/csv")
-async def import_csv(request: Request):
-    form = await request.form()
-    upload = form.get("file")
-    if not upload:
-        return JSONResponse({"error": "Файл не передан"}, status_code=400)
-    raw = await upload.read()
-    import csv
-    import io
-    from types import SimpleNamespace
-    from app.database.db import save_listing
-
-    text = raw.decode("utf-8-sig", errors="replace")
-    reader = csv.DictReader(io.StringIO(text), delimiter=";")
-    count = 0
-    for row in reader:
-        obj = SimpleNamespace(
-            title=row.get("title") or "import",
-            price=int(row.get("price") or 0),
-            year=int(row.get("year") or 0),
-            mileage=int(row.get("mileage") or 0),
-            owners=int(row.get("owners") or 0) if row.get("owners") else None,
-            engine_volume=float(row.get("engine_volume") or 0),
-            horsepower=int(row.get("horsepower") or 0),
-            transmission=row.get("transmission") or "",
-            drive=row.get("drive"),
-            body_type=row.get("body_type"),
-            fuel=row.get("fuel") or row.get("fuel_type"),
-            region=row.get("region") or "",
-            accidents=None,
-            pts=None,
-            market_score=0,
-            probability_good_deal=0,
-            url=row.get("url") or f"import://{count}",
-            platform=row.get("platform") or "csv",
-        )
-        try:
-            save_listing(obj)
-            count += 1
-        except Exception as e:
-            logger.error(f"CSV import row error: {e}")
-    return {"imported": count}
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)

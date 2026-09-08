@@ -13,10 +13,7 @@ class AvitoHttpResponse:
 class AvitoHttpClient:
     def __init__(self,timeout=30, proxy_list=None):
         self.timeout=timeout; self.session=requests.Session()
-        from app.core.proxy import ProxySettings
-        self.proxy_list = proxy_list or ProxySettings.proxy_list() or []
-        if not self.proxy_list:
-            logger.warning("AVITO: proxy list empty — запросы пойдут с вашего IP")
+        self.proxy_list = proxy_list or []
         self.current_proxy_index = 0
         # Ротация User-Agent для обхода блокировок
         self.user_agents = [
@@ -56,9 +53,7 @@ class AvitoHttpClient:
         proxies = self._get_next_proxy()
         if proxies:
             self.session.proxies.update(proxies)
-            raw = proxies.get("http", "")
-            host = raw.split("@")[-1] if "@" in raw else raw
-            logger.info(f"AVITO: Rotated proxy host {host}")
+            logger.info(f"AVITO: Rotated proxy to {proxies.get('http', 'N/A')}")
         else:
             self.session.proxies.clear()
         
@@ -74,9 +69,9 @@ class AvitoHttpClient:
                 
                 # Увеличенная задержка перед каждым запросом для обхода rate limit
                 if attempt == 0:
-                    delay = random.uniform(1.2, 2.5)
-                else:
-                    delay = min(avito_config.retry_delay + random.uniform(1, 3), 8)
+                    delay = random.uniform(8, 15)  # Начальная задержка 8-15 секунд
+                else: 
+                    delay = min(avito_config.retry_delay * (attempt + 3) + random.uniform(5, 15), 45)
                     logger.info("AVITO RETRY {}/{} after {}s", attempt+1, retries, round(delay, 2))
                 
                 time.sleep(delay)

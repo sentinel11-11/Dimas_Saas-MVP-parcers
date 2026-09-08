@@ -58,6 +58,8 @@ img { max-width: 100%; }
   padding: 8px 12px; border-radius: 999px; border: 1px solid transparent;
 }
 .nav-links a:hover { color: var(--ink); border-color: var(--line); background: rgba(255,255,255,.04); }
+.cta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.hero-cab { align-items: start; }
 
 .hero {
   display: grid; grid-template-columns: 1.05fr 1fr; gap: 40px;

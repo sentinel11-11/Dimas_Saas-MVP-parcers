@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if mode == 'register' %}Регистрация{% else %}Вход{% endif %} — DIMAS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/app.css?v=10">
+</head>
+<body>
+    <div class="wrap">
+        {% include "_nav.html" %}
+        <section class="auth-wrap">
+            <div class="panel search-card" style="max-width:440px;margin:40px auto">
+                <p class="kicker">{% if mode == 'register' %}новый аккаунт{% else %}личный кабинет{% endif %}</p>
+                <h2>{% if mode == 'register' %}Регистрация{% else %}Вход{% endif %}</h2>
+                {% if error %}<div class="insight warn" style="margin:12px 0">{{ error }}</div>{% endif %}
+                <form method="post" action="{% if mode == 'register' %}/register{% else %}/login{% endif %}">
+                    <input type="hidden" name="next" value="{{ next or '/app' }}">
+                    {% if mode == 'register' %}
+                    <div style="margin-bottom:12px"><label>Имя</label><input name="name" placeholder="как к вам обращаться"></div>
+                    {% endif %}
+                    <div style="margin-bottom:12px"><label>Email</label><input name="email" type="email" required autocomplete="email"></div>
+                    <div style="margin-bottom:16px"><label>Пароль</label><input name="password" type="password" required minlength="6" autocomplete="{% if mode == 'register' %}new-password{% else %}current-password{% endif %}"></div>
+                    <button class="btn full" type="submit">{% if mode == 'register' %}Создать аккаунт{% else %}Войти{% endif %}</button>
+                </form>
+                <p class="lead" style="margin-top:16px">
+                    {% if mode == 'register' %}
+                    Уже есть аккаунт? <a href="/login">Войти</a>
+                    {% else %}
+                    Нет аккаунта? <a href="/register">Регистрация</a>
+                    {% endif %}
+                </p>
+            </div>
+        </section>
+    </div>
+</body>
+</html>

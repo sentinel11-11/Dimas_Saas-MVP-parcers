@@ -1,0 +1,109 @@
+<div class="grid grid-2">
+    <div>
+        <label for="brand">Марка</label>
+        <input id="brand" name="brand" list="brandList" value="audi" required placeholder="bmw, haval, zeekr">
+        <datalist id="brandList">
+            {% for brand in brands %}
+            <option value="{{ brand }}"></option>
+            {% endfor %}
+        </datalist>
+    </div>
+    <div>
+        <label for="model">Модель</label>
+        <input id="model" name="model" list="modelList" value="q3" placeholder="m3, monjaro, vesta" required>
+        <datalist id="modelList"></datalist>
+    </div>
+</div>
+{% if show_sources %}
+<div style="margin-top:12px">
+    <label>Источники (только админ / тест)</label>
+    <div class="sources">
+        <label class="source"><input type="checkbox" name="sources" value="drom" checked> Drom</label>
+        <label class="source"><input type="checkbox" name="sources" value="avito"> Avito</label>
+        <label class="source"><input type="checkbox" name="sources" value="autoru"> Auto.ru</label>
+    </div>
+</div>
+{% endif %}
+<div class="grid grid-4" style="margin-top:12px">
+    <div>
+        <label for="buyer_city">Вы в городе</label>
+        <select id="buyer_city" name="buyer_city">
+            {% for r in regions %}
+            {% if r.value %}
+            <option value="{{ r.value }}" {% if r.value == 'moscow' %}selected{% endif %}>{{ r.label }}</option>
+            {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="region">Искать в</label>
+        <select id="region" name="region">
+            {% for r in regions %}
+            <option value="{{ r.value }}">{{ r.label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="limit">Сколько лотов</label>
+        <input type="number" id="limit" name="limit" value="50" min="1" max="100">
+    </div>
+    <div>
+        <label for="fuel_price">Литр топлива, ₽</label>
+        <input type="number" id="fuel_price" name="fuel_price" value="62" min="30" max="250" step="1">
+    </div>
+</div>
+<details class="more">
+    <summary>Год, пробег, цена и техника</summary>
+    <div class="grid grid-4" style="margin-top:12px">
+        <div><label>Год от</label><input type="number" name="year_min" value="2018"></div>
+        <div><label>Год до</label><input type="number" name="year_max" value="2026"></div>
+        <div><label>Пробег от</label><input type="number" name="mileage_min" value="0"></div>
+        <div><label>Пробег до</label><input type="number" name="mileage_max" value="300000"></div>
+        <div><label>Владельцев от</label><input type="number" name="owners_min" value="1"></div>
+        <div><label>Владельцев до</label><input type="number" name="owners_max" value="3"></div>
+        <div><label>Цена от</label><input type="number" name="price_min" value="0"></div>
+        <div><label>Цена до</label><input type="number" name="price_max" value="100000000"></div>
+        <div>
+            <label>КПП</label>
+            <select name="transmission">
+                <option value="">Любая</option>
+                <option value="automatic">Автомат</option>
+                <option value="manual">Механика</option>
+                <option value="robot">Робот</option>
+                <option value="variator">Вариатор</option>
+            </select>
+        </div>
+        <div>
+            <label>Топливо</label>
+            <select name="fuel">
+                <option value="">Любое</option>
+                <option value="petrol">Бензин</option>
+                <option value="diesel">Дизель</option>
+                <option value="electric">Электро</option>
+                <option value="hybrid">Гибрид</option>
+                <option value="gas">Газ</option>
+            </select>
+        </div>
+        <div>
+            <label>Привод</label>
+            <select name="drive">
+                <option value="">Любой</option>
+                <option value="front">Передний</option>
+                <option value="rear">Задний</option>
+                <option value="four_wheel">Полный</option>
+            </select>
+        </div>
+        <div>
+            <label>Кузов</label>
+            <select name="body_type">
+                <option value="">Любой</option>
+                <option value="sedan">Седан</option>
+                <option value="suv">Внедорожник</option>
+                <option value="crossover">Кроссовер</option>
+                <option value="hatchback">Хэтчбек</option>
+                <option value="wagon">Универсал</option>
+                <option value="coupe">Купе</option>
+            </select>
+        </div>
+    </div>
+</details>

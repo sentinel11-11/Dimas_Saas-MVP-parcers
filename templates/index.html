@@ -3,199 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIMAS — выгодный лот за один проход</title>
+    <title>DIMAS — выгодный автомобиль за один проход</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/app.css?v=8">
+    <link rel="stylesheet" href="/static/css/app.css?v=10">
 </head>
 <body>
     <div class="wrap">
-        <header class="nav">
-            <a class="brand" href="/"><span class="brand-mark">D</span> DIMAS</a>
-            <nav class="nav-links">
-                <a href="#search">Поиск</a>
-                <a href="/how">Документация</a>
-                <a href="/searches">Мои поиски</a>
-            </nav>
-        </header>
-
+        {% include "_nav.html" %}
         <section class="hero">
             <div>
                 <div class="kicker">подбор автомобиля</div>
                 <h1>Найдите выгодный автомобиль</h1>
-                <p class="lead">Собираем объявления, сравниваем похожие машины и показываем, сколько выйдет с доставкой в ваш город.</p>
+                <p class="lead">Сравниваем похожие машины из поиска и считаем, сколько выйдет с топливом до вашего города. Поиск — в личном кабинете.</p>
+                <div class="cta-row">
+                    {% if user %}
+                    <a class="btn" href="/app">Открыть кабинет</a>
+                    {% else %}
+                    <a class="btn" href="/register">Создать аккаунт</a>
+                    <a class="btn ghost" href="/login">Войти</a>
+                    {% endif %}
+                </div>
                 <div class="stats">
                     <div class="stat"><b>выгода</b><span>дешевле похожих</span></div>
-                    <div class="stat"><b>доставка</b><span>перегон в город</span></div>
+                    <div class="stat"><b>доставка</b><span>топливо перегона</span></div>
                     <div class="stat"><b>Drom</b><span>основной источник</span></div>
                 </div>
             </div>
-            <div class="panel search-card" id="search">
-                <h2>Собрать выдачу</h2>
-                <form action="/search" method="POST" id="searchForm">
-                    <div class="grid grid-2">
-                        <div>
-                            <label for="brand">Марка</label>
-                            <input id="brand" name="brand" list="brandList" value="audi" required placeholder="bmw, haval, zeekr">
-                            <datalist id="brandList">
-                                {% for brand in brands %}
-                                <option value="{{ brand }}"></option>
-                                {% endfor %}
-                            </datalist>
-                        </div>
-                        <div>
-                            <label for="model">Модель</label>
-                            <input id="model" name="model" list="modelList" value="q3" placeholder="m3, monjaro, vesta" required>
-                            <datalist id="modelList"></datalist>
-                        </div>
-                    </div>
-                    <div style="margin-top:12px">
-                        <label>Источники</label>
-                        <div class="sources">
-                            <label class="source"><input type="checkbox" name="sources" value="drom" checked> Drom</label>
-                            <label class="source"><input type="checkbox" name="sources" value="avito"> Avito</label>
-                            <label class="source"><input type="checkbox" name="sources" value="autoru"> Auto.ru</label>
-                        </div>
-                    </div>
-                    <div class="grid grid-4" style="margin-top:12px">
-                        <div>
-                            <label for="buyer_city">Вы в городе</label>
-                            <select id="buyer_city" name="buyer_city">
-                                {% for r in regions %}
-                                {% if r.value %}
-                                <option value="{{ r.value }}" {% if r.value == 'moscow' %}selected{% endif %}>{{ r.label }}</option>
-                                {% endif %}
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div>
-                            <label for="region">Искать в</label>
-                            <select id="region" name="region">
-                                {% for r in regions %}
-                                <option value="{{ r.value }}">{{ r.label }}</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div>
-                            <label for="limit">Сколько лотов</label>
-                            <input type="number" id="limit" name="limit" value="50" min="1" max="100">
-                        </div>
-                        <div>
-                            <label for="fuel_price">Литр топлива, ₽</label>
-                            <input type="number" id="fuel_price" name="fuel_price" value="62" min="30" max="250" step="1">
-                        </div>
-                    </div>
-                    <details class="more">
-                        <summary>Год, пробег, цена и техника</summary>
-                        <div class="grid grid-4" style="margin-top:12px">
-                            <div><label>Год от</label><input type="number" name="year_min" value="2018"></div>
-                            <div><label>Год до</label><input type="number" name="year_max" value="2026"></div>
-                            <div><label>Пробег от</label><input type="number" name="mileage_min" value="0"></div>
-                            <div><label>Пробег до</label><input type="number" name="mileage_max" value="300000"></div>
-                            <div><label>Владельцев от</label><input type="number" name="owners_min" value="1"></div>
-                            <div><label>Владельцев до</label><input type="number" name="owners_max" value="3"></div>
-                            <div><label>Цена от</label><input type="number" name="price_min" value="0"></div>
-                            <div><label>Цена до</label><input type="number" name="price_max" value="100000000"></div>
-                            <div>
-                                <label>КПП</label>
-                                <select name="transmission">
-                                    <option value="">Любая</option>
-                                    <option value="automatic">Автомат</option>
-                                    <option value="manual">Механика</option>
-                                    <option value="robot">Робот</option>
-                                    <option value="variator">Вариатор</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>Топливо</label>
-                                <select name="fuel">
-                                    <option value="">Любое</option>
-                                    <option value="petrol">Бензин</option>
-                                    <option value="diesel">Дизель</option>
-                                    <option value="electric">Электро</option>
-                                    <option value="hybrid">Гибрид</option>
-                                    <option value="gas">Газ</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>Привод</label>
-                                <select name="drive">
-                                    <option value="">Любой</option>
-                                    <option value="front">Передний</option>
-                                    <option value="rear">Задний</option>
-                                    <option value="four_wheel">Полный</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label>Кузов</label>
-                                <select name="body_type">
-                                    <option value="">Любой</option>
-                                    <option value="sedan">Седан</option>
-                                    <option value="suv">Внедорожник</option>
-                                    <option value="crossover">Кроссовер</option>
-                                    <option value="hatchback">Хэтчбек</option>
-                                    <option value="wagon">Универсал</option>
-                                    <option value="coupe">Купе</option>
-                                </select>
-                            </div>
-                        </div>
-                    </details>
-                    <button class="btn full" type="submit" style="margin-top:16px">Подобрать автомобили</button>
-                </form>
-                <div class="chips">
-                    {% for brand in brands[:8] %}
-                    <span class="chip" onclick="selectBrand('{{ brand }}')">{{ brand.capitalize() }}</span>
-                    {% endfor %}
-                </div>
+            <div class="panel">
+                <h2>Как это работает</h2>
+                <p class="lead" style="max-width:none">Регистрируетесь, задаёте марку и фильтры — собираем объявления, сравниваем внутри выдачи, показываем экономию после дороги. Avito и Auto.ru доступны только в админке для тестов: антибот часто режет выдачу.</p>
             </div>
         </section>
-
         <section class="features" id="features">
             <article class="feature">
-                <h3>Широкая выборка</h3>
-                <p>Большая выборка объявлений, чтобы сравнение было честным, а не по десятку случайных машин.</p>
+                <h3>Кабинет</h3>
+                <p>Поиск только после входа. Площадку выбирать не нужно — ищем на Drom.</p>
             </article>
             <article class="feature">
                 <h3>Сравнение внутри класса</h3>
-                <p>2021 и 2025, механика и автомат не мешаются в одну «среднюю по рынку».</p>
+                <p>Новые 2025–26 и б/у считаются отдельно. Механика не мешается с автоматом.</p>
             </article>
             <article class="feature">
                 <h3>Цена у вашего города</h3>
                 <p>В сумму входит топливо перегона и паром ДВ. Водителя не считаем.</p>
             </article>
         </section>
-
         <footer class="footer">DIMAS · сравнение похожих машин в текущем поиске</footer>
     </div>
-
-    <div class="overlay" id="loadingOverlay">
-        <div class="overlay-box">
-            <div class="spinner"></div>
-            <div id="loadingText">Ищем объявления. Обычно около минуты</div>
-        </div>
-    </div>
-
-    <script>
-        const popularModels = {{ models_json | safe }};
-        function selectBrand(brand) {
-            document.getElementById('brand').value = brand;
-            fillModels(brand);
-            document.getElementById('search').scrollIntoView({ behavior: 'smooth' });
-        }
-        function fillModels(brand) {
-            const list = document.getElementById('modelList');
-            list.innerHTML = '';
-            (popularModels[brand] || []).forEach(m => {
-                const o = document.createElement('option');
-                o.value = m;
-                list.appendChild(o);
-            });
-        }
-        document.getElementById('brand').addEventListener('change', e => fillModels(e.target.value));
-        fillModels(document.getElementById('brand').value);
-        document.getElementById('searchForm').addEventListener('submit', () => {
-            document.getElementById('loadingOverlay').classList.add('on');
-        });
-    </script>
 </body>
 </html>

@@ -14,7 +14,7 @@ class ResponseWrapper:
 
 class HTTPClient:
 
-    def __init__(self, min_delay: float = 0.4, max_delay: float = 1.2, retry_count: int = 3, use_proxy: bool = True):
+    def __init__(self):
 
         self.session = requests.Session()
 
@@ -22,30 +22,19 @@ class HTTPClient:
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                 "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0.0.0 Safari/537.36"
+                "Chrome/120.0 Safari/537.36"
             ),
             "Accept-Language": "ru-RU,ru;q=0.9,en;q=0.8",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Encoding": "gzip, deflate",
+            "Accept": "text/html,application/xhtml+xml",
             "Connection": "keep-alive",
         }
 
-        self.min_delay = min_delay
-        self.max_delay = max_delay
+        self.min_delay = 1.5
+        self.max_delay = 4.5
 
         self.last_request_time = 0
 
-        self.retry_count = retry_count
-        self._proxies = {}
-        if use_proxy:
-            try:
-                from app.core.proxy import ProxySettings
-                proxies = ProxySettings.requests_proxies()
-                if proxies:
-                    self.session.proxies.update(proxies)
-                    self._proxies = proxies
-            except Exception as e:
-                logger.warning(f"Proxy init skipped: {e}")
+        self.retry_count = 3
 
 
     def _smart_sleep(self):
@@ -72,15 +61,11 @@ class HTTPClient:
 
                 self._smart_sleep()
 
-                use_proxy = bool(self._proxies) and attempt < max(1, self.retry_count - 1)
-                if self._proxies and not use_proxy:
-                    logger.warning(f"HTTP fallback without proxy: {url}")
                 response = self.session.get(
                     url,
                     headers=self.headers,
                     params=params,
-                    timeout=(12, 45),
-                    proxies=self._proxies if use_proxy else {},
+                    timeout=15
                 )
 
                 self.last_request_time = time.time()

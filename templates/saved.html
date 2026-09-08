@@ -5,20 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мои поиски — DIMAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/app.css?v=8">
+    <link rel="stylesheet" href="/static/css/app.css?v=10">
 </head>
 <body>
     <div class="wrap">
-        <header class="nav">
-            <a class="brand" href="/"><span class="brand-mark">D</span> DIMAS</a>
-            <a class="btn ghost" href="/">К поиску</a>
-        </header>
+        {% include "_nav.html" %}
         <p class="kicker">мониторинг</p>
         <h1 style="font-size:40px">Сохранённые поиски</h1>
-        <form class="panel" method="get" style="display:flex;gap:10px;align-items:end;margin:18px 0">
-            <div style="flex:1"><label>Email</label><input name="email" value="{{ email }}" placeholder="you@mail.ru"></div>
-            <button class="btn" type="submit">Показать</button>
-        </form>
         {% for s in searches %}
         <div class="panel" style="margin-bottom:10px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap">
             <div>
@@ -27,18 +20,13 @@
             </div>
             <div style="display:flex;gap:8px">
                 <form method="post" action="/searches/{{ s.id }}/check"><button class="btn" type="submit">Проверить дешевле</button></form>
-                <form method="post" action="/searches/{{ s.id }}/delete"><input type="hidden" name="email" value="{{ email }}"><button class="btn ghost" type="submit">Удалить</button></form>
+                <form method="post" action="/searches/{{ s.id }}/delete"><button class="btn ghost" type="submit">Удалить</button></form>
             </div>
         </div>
         {% else %}
         <p class="lead">Пока пусто — сохраните поиск с экрана выдачи.</p>
         {% endfor %}
-        <form class="panel" action="/import/csv" method="post" enctype="multipart/form-data" style="margin-top:20px">
-            <label>Импорт CSV (;)</label>
-            <input type="file" name="file" accept=".csv">
-            <button class="btn" style="margin-top:10px" type="submit">Загрузить фид</button>
-        </form>
-        <footer class="footer">до 3 поисков на email</footer>
+        <footer class="footer">до 3 поисков на аккаунт</footer>
     </div>
 </body>
 </html>

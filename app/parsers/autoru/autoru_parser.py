@@ -157,25 +157,27 @@ class AutoRuParser(BaseParser):
 
     def build_url(self, filters: Dict[str, Any]) -> str:
         """Построение URL поиска с фильтрами"""
-        brand = (filters.get("brand") or "").strip().lower()
-        model = (filters.get("model") or "").strip().lower()
+        brand = self._brand_slug(filters.get("brand") or "")
+        model = self._model_slug(filters.get("model") or "")
         region = filters.get("region", "")
-        price_from = filters.get("price_from")
-        price_to = filters.get("price_to")
-        year_from = filters.get("year_from")
-        year_to = filters.get("year_to")
-        
+        price_from = filters.get("price_from") or filters.get("price_min")
+        price_to = filters.get("price_to") or filters.get("price_max")
+        year_from = filters.get("year_from") or filters.get("year_min")
+        year_to = filters.get("year_to") or filters.get("year_max")
+
         url = f"{self.SEARCH_URL}"
         params = []
-        
+
         region_map = {
             "moscow": "moskva",
             "spb": "sankt-peterburg",
             "ekaterinburg": "ekaterinburg",
             "novosibirsk": "novosibirsk",
             "kazan": "kazan",
+            "krasnodar": "krasnodar",
+            "vladivostok": "vladivostok",
         }
-        region_slug = region_map.get(str(region).lower()) if region else None
+        region_slug = region_map.get(str(region).lower().strip()) if region else None
 
         if brand and model and region_slug:
             url = f"https://auto.ru/{region_slug}/cars/{brand}/{model}/used/"
@@ -185,12 +187,10 @@ class AutoRuParser(BaseParser):
             url = f"https://auto.ru/{region_slug}/cars/{brand}/used/"
         elif brand:
             url = f"https://auto.ru/cars/{brand}/used/"
-        
-        if region:
-            params.append(f"geo_id={region}")
+
         if price_from:
             params.append(f"price_from={int(price_from)}")
-        if price_to:
+        if price_to and int(price_to) < 100_000_000:
             params.append(f"price_to={int(price_to)}")
         if year_from:
             params.append(f"year_from={int(year_from)}")
@@ -201,6 +201,29 @@ class AutoRuParser(BaseParser):
             url += "?" + "&".join(params)
         
         return url
+
+    @staticmethod
+    def _brand_slug(raw: str) -> str:
+        v = (raw or "").strip().lower().replace(" ", "-")
+        aliases = {
+            "mercedes": "mercedes",
+            "mercedes-benz": "mercedes",
+            "vw": "volkswagen",
+            "бмв": "bmw",
+            "lada": "vaz",
+            "ваз": "vaz",
+            "great-wall": "great_wall",
+            "land-rover": "land_rover",
+            "alfa-romeo": "alfa_romeo",
+        }
+        return aliases.get(v, v.replace(" ", "_"))
+
+    @staticmethod
+    def _model_slug(raw: str) -> str:
+        v = (raw or "").strip().lower()
+        v = v.replace(" серия", "").replace("series", "").strip()
+        v = v.replace(" ", "_").replace("-", "_")
+        return v
 
     async def search(self, filters: Dict[str, Any], limit: int = 10) -> List[CarListing]:
         """

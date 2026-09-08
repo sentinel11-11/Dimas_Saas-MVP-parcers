@@ -1,0 +1,16 @@
+<header class="nav">
+    <a class="brand" href="/"><span class="brand-mark">D</span> DIMAS</a>
+    <nav class="nav-links">
+        {% if user %}
+        <a href="/app">Кабинет</a>
+        <a href="/searches">Мои поиски</a>
+        {% if is_admin %}<a href="/admin">Админка</a>{% endif %}
+        <a href="/how">Документация</a>
+        <a href="/logout">Выйти</a>
+        {% else %}
+        <a href="/how">Документация</a>
+        <a href="/login">Войти</a>
+        <a href="/register">Регистрация</a>
+        {% endif %}
+    </nav>
+</header>

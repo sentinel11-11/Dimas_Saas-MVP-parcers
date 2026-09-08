@@ -20,38 +20,18 @@ class DataExporter:
         fieldnames = [
             'url', 'title', 'platform', 'brand', 'model', 'price', 'year',
             'mileage', 'engine_volume', 'horsepower', 'transmission', 'drive',
-            'body_type', 'owners', 'accidents', 'pts', 'region', 'risk_flags',
+            'body_type', 'owners', 'accidents', 'pts', 'region',
             'market_score', 'market_price', 'liquidity_score', 
             'probability_good_deal', 'market_deviation'
         ]
         
         try:
-            with open(filename, "w", newline="", encoding="utf-8-sig") as f:
-                writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=";")
+            with open(filename, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=';')
                 writer.writeheader()
-
+                
                 for car in cars:
-                    if isinstance(car, dict):
-                        row = {field: car.get(field, "") for field in fieldnames}
-                        row["probability_good_deal"] = car.get("probability", car.get("probability_good_deal", ""))
-                        row["liquidity_score"] = car.get("liquidity", car.get("liquidity_score", ""))
-                    else:
-                        row = {field: getattr(car, field, "") for field in fieldnames}
-                    vol = row.get("engine_volume")
-                    if vol not in (None, "", 0, "0"):
-                        try:
-                            row["engine_volume"] = str(float(vol)).replace(".", ",")
-                        except (TypeError, ValueError):
-                            row["engine_volume"] = str(vol)
-                    if row.get("owners") in (None, ""):
-                        row["owners"] = "не указано"
-                    flags = row.get("risk_flags")
-                    if isinstance(flags, list):
-                        row["risk_flags"] = "; ".join(
-                            (f.get("label") if isinstance(f, dict) else str(f)) for f in flags
-                        )
-                    elif flags in (None, ""):
-                        row["risk_flags"] = ""
+                    row = {field: getattr(car, field, '') for field in fieldnames}
                     writer.writerow(row)
             
             logger.info(f"CSV exported: {filename} ({len(cars)} records)")

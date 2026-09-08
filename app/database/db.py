@@ -7,7 +7,9 @@ from loguru import logger
 
 from datetime import datetime
 import json
-from app.database.models import Base, CarListingORM, SavedSearchORM
+from sqlalchemy import text
+
+from app.database.models import Base, CarListingORM, SavedSearchORM, UserORM, SearchLogORM
 
 os.makedirs("data", exist_ok=True)
 DB_PATH = "data/cars.db"
@@ -20,10 +22,141 @@ engine = create_engine(f"sqlite:///{DB_PATH}", echo=False, connect_args={"check_
 SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
 
+def _migrate():
+    with engine.connect() as conn:
+        try:
+            cols = [r[1] for r in conn.execute(text("PRAGMA table_info(saved_searches)"))]
+            if cols and "user_id" not in cols:
+                conn.execute(text("ALTER TABLE saved_searches ADD COLUMN user_id INTEGER DEFAULT 0"))
+                conn.commit()
+        except Exception as e:
+            logger.warning(f"migrate skip: {e}")
+
+
+def seed_admin():
+    import os
+    from datetime import datetime
+    from app.web.auth import hash_password
+
+    email = (os.getenv("ADMIN_EMAIL") or "admin@dimas.local").strip().lower()
+    password = os.getenv("ADMIN_PASSWORD") or "dimas-admin"
+    session = SessionLocal()
+    try:
+        existing = session.query(UserORM).filter(UserORM.email == email).first()
+        if existing:
+            if not existing.is_admin:
+                existing.is_admin = 1
+                session.commit()
+            return
+        if session.query(UserORM).filter(UserORM.is_admin == 1).first():
+            return
+        user = UserORM(
+            email=email,
+            password_hash=hash_password(password),
+            name="Админ",
+            is_admin=1,
+            created_at=datetime.utcnow().isoformat(),
+        )
+        session.add(user)
+        session.commit()
+        logger.info(f"Seeded admin {email}")
+    except Exception as e:
+        session.rollback()
+        logger.error(f"seed_admin: {e}")
+    finally:
+        session.close()
+
+
 def init_db():
-    """Инициализация базы данных через SQLAlchemy"""
     Base.metadata.create_all(bind=engine)
+    _migrate()
+    seed_admin()
     logger.info("Database initialized with SQLAlchemy")
+
+
+def create_user(email: str, password: str, name: str = "") -> UserORM:
+    from datetime import datetime
+    from app.web.auth import hash_password
+
+    session = SessionLocal()
+    try:
+        email = email.strip().lower()
+        if session.query(UserORM).filter(UserORM.email == email).first():
+            raise ValueError("email_taken")
+        user = UserORM(
+            email=email,
+            password_hash=hash_password(password),
+            name=(name or "").strip()[:80],
+            is_admin=0,
+            created_at=datetime.utcnow().isoformat(),
+        )
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        return user
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def find_user_by_email(email: str) -> Optional[UserORM]:
+    session = SessionLocal()
+    try:
+        return session.query(UserORM).filter(UserORM.email == (email or "").strip().lower()).first()
+    finally:
+        session.close()
+
+
+def list_users(limit: int = 100) -> List[UserORM]:
+    session = SessionLocal()
+    try:
+        return session.query(UserORM).order_by(UserORM.id.desc()).limit(limit).all()
+    finally:
+        session.close()
+
+
+def touch_login(user_id: int):
+    from datetime import datetime
+    session = SessionLocal()
+    try:
+        row = session.query(UserORM).filter(UserORM.id == user_id).first()
+        if row:
+            row.last_login = datetime.utcnow().isoformat()
+            session.commit()
+    finally:
+        session.close()
+
+
+def log_search(user_id: int, email: str, brand: str, model: str, sources, total: int):
+    from datetime import datetime
+    session = SessionLocal()
+    try:
+        src = ",".join(sources) if isinstance(sources, list) else str(sources or "drom")
+        session.add(SearchLogORM(
+            user_id=user_id or 0,
+            email=email or "",
+            brand=brand or "",
+            model=model or "",
+            sources=src,
+            total=int(total or 0),
+            created_at=datetime.utcnow().isoformat(),
+        ))
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        logger.error(f"log_search: {e}")
+    finally:
+        session.close()
+
+
+def list_search_logs(limit: int = 40) -> List[SearchLogORM]:
+    session = SessionLocal()
+    try:
+        return session.query(SearchLogORM).order_by(SearchLogORM.id.desc()).limit(limit).all()
+    finally:
+        session.close()
 
 
 def save_listing(car):
@@ -114,12 +247,14 @@ def delete_listing(url: str):
 MAX_SAVED_SEARCHES = 3
 
 
-def save_search(email: str, params: dict, last_min_price: int = 0, last_count: int = 0):
+def save_search(email: str, params: dict, last_min_price: int = 0, last_count: int = 0, user_id: int = 0):
     session = SessionLocal()
     try:
         email = (email or "").strip().lower()
         q = session.query(SavedSearchORM)
-        if email:
+        if user_id:
+            q = q.filter(SavedSearchORM.user_id == user_id)
+        elif email:
             q = q.filter(SavedSearchORM.email == email)
         if q.count() >= MAX_SAVED_SEARCHES:
             oldest = q.order_by(SavedSearchORM.id.asc()).first()
@@ -127,6 +262,7 @@ def save_search(email: str, params: dict, last_min_price: int = 0, last_count: i
                 session.delete(oldest)
         row = SavedSearchORM(
             email=email,
+            user_id=user_id or 0,
             brand=params.get("brand") or "",
             model=params.get("model") or "",
             params_json=json.dumps(params, ensure_ascii=False),
@@ -145,11 +281,13 @@ def save_search(email: str, params: dict, last_min_price: int = 0, last_count: i
         session.close()
 
 
-def list_saved_searches(email: str = "") -> List[SavedSearchORM]:
+def list_saved_searches(email: str = "", user_id: int = 0) -> List[SavedSearchORM]:
     session = SessionLocal()
     try:
         q = session.query(SavedSearchORM)
-        if email:
+        if user_id:
+            q = q.filter(SavedSearchORM.user_id == user_id)
+        elif email:
             q = q.filter(SavedSearchORM.email == email.strip().lower())
         return q.order_by(SavedSearchORM.id.desc()).all()
     finally:

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кабинет — DIMAS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/app.css?v=10">
+</head>
+<body>
+    <div class="wrap">
+        {% include "_nav.html" %}
+        <section class="hero hero-cab">
+            <div>
+                <div class="kicker">личный кабинет</div>
+                <h1>Поиск</h1>
+                <p class="lead">{{ user.email }}{% if user.name %} · {{ user.name }}{% endif %}. Источник — Drom. Avito и Auto.ru здесь нет.</p>
+            </div>
+            <div class="panel search-card" id="search">
+                <h2>Собрать выдачу</h2>
+                <form action="/search" method="POST" id="searchForm">
+                    {% set show_sources = false %}
+                    {% include "_search_fields.html" %}
+                    <button class="btn full" type="submit" style="margin-top:16px">Подобрать автомобили</button>
+                </form>
+            </div>
+        </section>
+        {% if saved %}
+        <section style="padding-bottom:40px">
+            <h2 class="docs-title" style="font-size:22px">Сохранённые поиски</h2>
+            {% for s in saved %}
+            <div class="panel" style="margin-bottom:10px">{{ s.brand }} {{ s.model }} · мин. {{ s.last_min_price }} ₽</div>
+            {% endfor %}
+        </section>
+        {% endif %}
+        <footer class="footer">DIMAS · сравнение похожих машин в текущем поиске</footer>
+    </div>
+    <div class="overlay" id="loadingOverlay">
+        <div class="overlay-box">
+            <div class="spinner"></div>
+            <div id="loadingText">Ищем объявления. Обычно около минуты</div>
+        </div>
+    </div>
+    <script>
+        const popularModels = {{ models_json | safe }};
+        function fillModels(brand) {
+            const list = document.getElementById('modelList');
+            list.innerHTML = '';
+            (popularModels[brand] || []).forEach(m => {
+                const o = document.createElement('option');
+                o.value = m;
+                list.appendChild(o);
+            });
+        }
+        document.getElementById('brand').addEventListener('change', e => fillModels(e.target.value));
+        fillModels(document.getElementById('brand').value);
+        document.getElementById('searchForm').addEventListener('submit', () => {
+            document.getElementById('loadingOverlay').classList.add('on');
+        });
+    </script>
+</body>
+</html>

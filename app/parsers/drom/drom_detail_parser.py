@@ -13,7 +13,7 @@ from app.utils.http_client import HTTPClient
 class DromDetailParser:
 
     def __init__(self):
-        self.client = HTTPClient(min_delay=0.35, max_delay=0.9, retry_count=2, use_proxy=False)
+        self.client = HTTPClient()
 
     async def parse_async(self, url: str):
         """Асинхронная версия парсинга."""
@@ -62,10 +62,6 @@ class DromDetailParser:
                 "brand": None,
                 "model": None,
                 "body_type": None,
-                "fuel": None,
-                "color": None,
-                "steering": None,
-                "image_url": None,
 
                 "data_confidence": 0.5
             }
@@ -82,8 +78,6 @@ class DromDetailParser:
             for k, v in dom_data.items():
                 if data.get(k) is None:
                     data[k] = v
-            if data.get("owners") is None:
-                data["owners"] = self.extract_owners(html)
 
             # normalize
             data = self.normalize(data)
@@ -133,7 +127,7 @@ class DromDetailParser:
             result["horsepower"] = car.get("horsepower")
             result["mileage"] = car.get("mileage")
             result["vin"] = car.get("vin")
-            result["owners"] = self._owners_from_json(data)
+            result["owners"] = car.get("owners_count")
             result["accidents"] = car.get("accident_count")
 
         except:
@@ -159,12 +153,7 @@ class DromDetailParser:
             "region": self.extract_region(url),
             "brand": self.extract_brand(soup, text),
             "model": self.extract_model(soup, text),
-            "body_type": self.extract_body_type(text),
-            "fuel": self.extract_fuel(text),
-            "color": self.extract_color(text),
-            "steering": self.extract_steering(text),
-            "image_url": self.extract_image(soup),
-            "description": self.extract_description(soup),
+            "body_type": self.extract_body_type(text)
         }
 
     # =========================
@@ -229,11 +218,11 @@ class DromDetailParser:
         t = text.lower()
 
         mapping = {
-            "автомат": "automatic",
-            "акпп": "automatic",
-            "робот": "robot",
-            "вариатор": "variator",
-            "механика": "manual",
+            "автомат": "AT",
+            "акпп": "AT",
+            "робот": "AMT",
+            "вариатор": "CVT",
+            "механика": "MT"
         }
 
         for k, v in mapping.items():
@@ -246,105 +235,34 @@ class DromDetailParser:
 
         t = text.lower()
 
-        if "полный привод" in t or "привод полный" in t:
-            return "four_wheel"
-        if "передний привод" in t or "привод передний" in t:
-            return "front"
-        if "задний привод" in t or "привод задний" in t:
-            return "rear"
+        if "полный" in t:
+            return "AWD"
+        if "задний" in t:
+            return "RWD"
+        if "передний" in t:
+            return "FWD"
 
-        return None
-
-    _OWNER_JSON_KEYS = {
-        "owners_count", "ownerscount", "owners_number", "ownersnumber",
-        "owner_count", "ownercount", "pts_owners", "ptsowners",
-    }
-
-    def _as_owners(self, value):
-        if value is None or isinstance(value, bool):
-            return None
-        if isinstance(value, (int, float)):
-            n = int(value)
-            return n if 0 <= n <= 20 else None
-        s = str(value).strip()
-        m = re.search(r"(\d+)", s)
-        if not m:
-            return None
-        n = int(m.group(1))
-        return n if 0 <= n <= 20 else None
-
-    def _owners_from_json(self, obj, depth=0):
-        if obj is None or depth > 10:
-            return None
-        if isinstance(obj, dict):
-            for k, v in obj.items():
-                kl = str(k).lower().replace("-", "_")
-                if kl in self._OWNER_JSON_KEYS or kl == "owners":
-                    n = self._as_owners(v)
-                    if n is not None:
-                        return n
-            for v in obj.values():
-                n = self._owners_from_json(v, depth + 1)
-                if n is not None:
-                    return n
-        elif isinstance(obj, list):
-            for v in obj[:80]:
-                n = self._owners_from_json(v, depth + 1)
-                if n is not None:
-                    return n
         return None
 
     def extract_owners(self, text):
-        if not text:
-            return None
-        t = text.lower().replace("\xa0", " ")
-        for p in (
-            r"владельц[а-яё]*\s*(?:по\s*птс)?\s*[:·]?\s*(\d+)",
-            r"количество\s+владельцев[^0-9]{0,24}(\d+)",
-            r"(\d+)\s*владел",
-            r'"owners(?:_count|count|number|_number)"\s*:\s*(\d+)',
-        ):
-            m = re.search(p, t, re.I)
-            if m:
-                n = int(m.group(1))
-                if 0 <= n <= 20:
-                    return n
-        return None
+
+        m = re.search(r"(\d+)\s*влад", text.lower())
+        return int(m.group(1)) if m else None
 
     def extract_vin(self, text):
 
         m = re.search(r"\b[A-HJ-NPR-Z0-9]{17}\b", text)
         return m.group(0) if m else None
 
-    def extract_description(self, soup):
-        if not soup:
-            return None
-        for attrs in (
-            {"data-ftid": "bull_description"},
-            {"itemprop": "description"},
-        ):
-            el = soup.find(attrs=attrs)
-            if el:
-                t = el.get_text(" ", strip=True)
-                if len(t) > 50:
-                    return t[:4000]
-        meta = soup.find("meta", attrs={"name": "description"})
-        if meta and meta.get("content") and len(meta["content"]) > 50:
-            return meta["content"].strip()[:4000]
-        return None
-
     def extract_accidents(self, text):
 
-        t = (text or "").lower().replace("\xa0", " ")
+        t = text.lower()
 
-        if re.search(r"дтп\s*(не\s+было|нет|отсутств)", t) or "без дтп" in t:
+        if "дтп не было" in t:
             return 0
 
-        m = re.search(r"(?:дтп|авари)[^\d]{0,18}(\d+)|(\d+)\s*дтп", t)
-        if not m:
-            return None
-        n = int(m.group(1) or m.group(2))
-        return n if 0 <= n <= 20 else None
+        m = re.search(r"(\d+)\s*дтп", t)
+        return int(m.group(1)) if m else None
 
     def extract_pts(self, text):
 
@@ -403,70 +321,12 @@ class DromDetailParser:
                 return parts[1].strip().rstrip(",")
         return None
 
-    def extract_color(self, text):
-        colors = [
-            "белый", "чёрный", "черный", "серый", "серебристый", "синий",
-            "красный", "зелёный", "зеленый", "коричневый", "бежевый",
-            "голубой", "оранжевый", "жёлтый", "желтый", "фиолетовый", "бордовый",
-        ]
-        t = text.lower()
-        for c in colors:
-            if c in t:
-                return c
-        return None
-
-    def extract_steering(self, text):
-        t = text.lower()
-        if "правый руль" in t:
-            return "right"
-        if "левый руль" in t or "левый" in t:
-            return "left"
-        return None
-
-    def extract_fuel(self, text):
-        t = text.lower()
-        if "дизель" in t:
-            return "diesel"
-        if "гибрид" in t:
-            return "hybrid"
-        if "бензин" in t:
-            return "petrol"
-        if "гбо" in t or "метан" in t or "пропан" in t:
-            return "gas"
-        if "электромобил" in t or "электромотор" in t:
-            return "electric"
-        return None
-
-    def extract_image(self, soup):
-        og = soup.find("meta", attrs={"property": "og:image"})
-        if og and og.get("content"):
-            s = og["content"]
-            if s.startswith("//"):
-                s = "https:" + s
-            return s
-        img = soup.find("img", src=True)
-        if img:
-            s = img.get("src") or ""
-            if s.startswith("//"):
-                s = "https:" + s
-            if s.startswith("http") and "data:" not in s:
-                return s
-        return None
-
     def extract_body_type(self, text):
-        body_types = [
-            ("внедорожник", "suv"),
-            ("кроссовер", "crossover"),
-            ("хэтчбек", "hatchback"),
-            ("универсал", "wagon"),
-            ("минивэн", "minivan"),
-            ("кабриолет", "convertible"),
-            ("лифтбек", "hatchback"),
-            ("седан", "sedan"),
-            ("купе", "coupe"),
-        ]
+        body_types = ["седан", "хэтчбек", "универсал", "внедорожник", "купе", 
+                      "кабриолет", "родстер", "пикап", "минивэн", "фургон", 
+                      "лифтбек", "тарга", "спидстер"]
         t = text.lower()
-        for bt, code in body_types:
-            if re.search(rf"\b{bt}\b", t):
-                return code
+        for bt in body_types:
+            if bt in t:
+                return bt
         return None

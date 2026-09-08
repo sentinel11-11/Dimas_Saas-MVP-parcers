@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админка — DIMAS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/app.css?v=10">
+</head>
+<body>
+    <div class="wrap">
+        {% include "_nav.html" %}
+        <p class="kicker">админ</p>
+        <h1 style="font-size:40px;margin:8px 0 6px">Тест парсеров</h1>
+        <p class="lead">{{ proxy_line }}. Здесь можно включить Avito и Auto.ru. В кабинете пользователя всегда только Drom.</p>
+        <div class="panel search-card" id="search" style="margin:20px 0">
+            <h2>Пробный поиск</h2>
+            <form action="/admin/search" method="POST" id="searchForm">
+                {% set show_sources = true %}
+                {% include "_search_fields.html" %}
+                <button class="btn full" type="submit" style="margin-top:16px">Запустить тест</button>
+            </form>
+        </div>
+        <div class="grid grid-2" style="margin-bottom:40px">
+            <div class="panel">
+                <h2>Пользователи</h2>
+                {% for u in users %}
+                <div class="meta" style="margin:8px 0">{{ u.email }} {% if u.is_admin %}· админ{% endif %} · вход {{ u.last_login or '—' }}</div>
+                {% else %}
+                <p class="lead">Пока никого</p>
+                {% endfor %}
+            </div>
+            <div class="panel">
+                <h2>Последние поиски</h2>
+                {% for l in logs %}
+                <div class="meta" style="margin:8px 0">{{ l.email or '—' }} · {{ l.brand }} {{ l.model }} · {{ l.sources }} · {{ l.total }} лотов</div>
+                {% else %}
+                <p class="lead">Пусто</p>
+                {% endfor %}
+            </div>
+        </div>
+        <footer class="footer">DIMAS admin</footer>
+    </div>
+    <div class="overlay" id="loadingOverlay">
+        <div class="overlay-box">
+            <div class="spinner"></div>
+            <div>Тестовый поиск…</div>
+        </div>
+    </div>
+    <script>
+        const popularModels = {{ models_json | safe }};
+        function fillModels(brand) {
+            const list = document.getElementById('modelList');
+            list.innerHTML = '';
+            (popularModels[brand] || []).forEach(m => {
+                const o = document.createElement('option');
+                o.value = m;
+                list.appendChild(o);
+            });
+        }
+        document.getElementById('brand').addEventListener('change', e => fillModels(e.target.value));
+        fillModels(document.getElementById('brand').value);
+        document.getElementById('searchForm').addEventListener('submit', () => {
+            document.getElementById('loadingOverlay').classList.add('on');
+        });
+    </script>
+</body>
+</html>
