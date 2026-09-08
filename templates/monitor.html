@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг — DIMAS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+    <div class="wrap">
+        <header class="nav">
+            <a class="brand" href="/"><span class="brand-mark">D</span> DIMAS</a>
+            <a class="btn ghost" href="/searches">Назад</a>
+        </header>
+        {% if not report.ok %}
+        <div class="panel">{{ report.error }}</div>
+        {% else %}
+        <p class="kicker">сравнение цены</p>
+        <h1 style="font-size:40px">{{ report.brand }} {{ report.model }}</h1>
+        <p class="lead">Было {{ report.previous_min_price }} ₽ → сейчас {{ report.current_min_price }} ₽. Дешевле: {{ report.cheaper_count }}.</p>
+        {% for car in report.cheaper %}
+        <div class="panel" style="margin-bottom:8px"><a href="{{ car.url }}" target="_blank">{{ car.title }} — {{ car.price }} ₽</a></div>
+        {% endfor %}
+        {% endif %}
+    </div>
+</body>
+</html>
