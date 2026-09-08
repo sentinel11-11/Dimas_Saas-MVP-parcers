@@ -194,35 +194,47 @@ def parse_listing_html(html: str) -> List[Dict[str, Any]]:
 def attach_photos(html: str, cards: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     if not cards or not html:
         return cards
-    raw = PHOTO_RE.findall(html)
-    photos = []
-    seen_p = set()
-    for u in raw:
+
+    def _ok(u: str) -> str:
         u = unescape(u).split(",")[0].split(" ")[0]
         if u.startswith("//"):
             u = "https:" + u
         if "/32x32" in u or "/120x90" in u:
-            continue
+            return ""
         if any(x in u for x in ("marketing", "adfox", "get-verba", "banner")):
-            continue
+            return ""
         if u.rstrip("/") in ("https://avatars.avto.ru", "https://avatars.mds.yandex.net"):
-            continue
-        key = re.sub(r"/\d+x\d+(?:n)?/?$", "", u)
-        if key in seen_p:
-            continue
-        seen_p.add(key)
+            return ""
         if re.search(r"/\d+x\d+(?:n)?/?$", u):
             u = re.sub(r"/\d+x\d+(?:n)?/?$", "/456x342", u)
-        photos.append(u)
-    if not photos:
-        return cards
-    i = 0
+        return u
+
     for c in cards:
         if c.get("image"):
+            img = _ok(str(c["image"]))
+            if img:
+                c["image"] = img
+                continue
+            c["image"] = ""
+        url = (c.get("url") or "").split("?")[0]
+        offer = ""
+        om = re.search(r"/(\d{8,})-[a-z0-9]+/?", url, re.I)
+        if om:
+            offer = om.group(1)
+        pos = -1
+        if url:
+            pos = html.find(url.rstrip("/"))
+        if pos < 0 and offer:
+            pos = html.find(offer)
+        if pos < 0:
             continue
-        if i < len(photos):
-            c["image"] = photos[i]
-            i += 1
+        chunk = html[max(0, pos - 200) : min(len(html), pos + 2800)]
+        found = PHOTO_RE.findall(chunk)
+        for raw in found:
+            img = _ok(raw)
+            if img:
+                c["image"] = img
+                break
     filled = sum(1 for c in cards if c.get("image"))
-    logger.info(f"AUTO.RU photos attached {filled}/{len(cards)} pool={len(photos)}")
+    logger.info(f"AUTO.RU photos attached {filled}/{len(cards)} (per listing, no pool)")
     return cards
