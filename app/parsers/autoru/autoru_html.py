@@ -196,45 +196,54 @@ def attach_photos(html: str, cards: List[Dict[str, Any]]) -> List[Dict[str, Any]
         return cards
 
     def _ok(u: str) -> str:
-        u = unescape(u).split(",")[0].split(" ")[0]
+        u = unescape(u).split(",")[0].split(" ")[0].strip().strip("\"'")
         if u.startswith("//"):
             u = "https:" + u
-        if "/32x32" in u or "/120x90" in u:
+        if not u.startswith("http"):
             return ""
-        if any(x in u for x in ("marketing", "adfox", "get-verba", "banner")):
+        if any(x in u for x in ("marketing", "adfox", "get-verba", "banner", "placeholder")):
             return ""
         if u.rstrip("/") in ("https://avatars.avto.ru", "https://avatars.mds.yandex.net"):
             return ""
-        if re.search(r"/\d+x\d+(?:n)?/?$", u):
-            u = re.sub(r"/\d+x\d+(?:n)?/?$", "/456x342", u)
+        u = re.sub(r"/\d+x\d+(?:n)?/?$", "/456x342", u)
         return u
 
     for c in cards:
-        if c.get("image"):
-            img = _ok(str(c["image"]))
-            if img:
-                c["image"] = img
-                continue
-            c["image"] = ""
+        existing = _ok(str(c.get("image") or ""))
+        if existing:
+            c["image"] = existing
+            continue
         url = (c.get("url") or "").split("?")[0]
         offer = ""
         om = re.search(r"/(\d{8,})-[a-z0-9]+/?", url, re.I)
         if om:
             offer = om.group(1)
-        pos = -1
+        chunks = []
         if url:
             pos = html.find(url.rstrip("/"))
-        if pos < 0 and offer:
-            pos = html.find(offer)
-        if pos < 0:
-            continue
-        chunk = html[max(0, pos - 200) : min(len(html), pos + 2800)]
-        found = PHOTO_RE.findall(chunk)
-        for raw in found:
-            img = _ok(raw)
-            if img:
-                c["image"] = img
+            if pos >= 0:
+                chunks.append(html[max(0, pos - 800) : min(len(html), pos + 4000)])
+        if offer:
+            start = 0
+            while True:
+                pos = html.find(offer, start)
+                if pos < 0:
+                    break
+                chunks.append(html[max(0, pos - 600) : min(len(html), pos + 3500)])
+                start = pos + len(offer)
+                if len(chunks) > 8:
+                    break
+        found_img = ""
+        for chunk in chunks:
+            for raw in PHOTO_RE.findall(chunk):
+                img = _ok(raw)
+                if img:
+                    found_img = img
+                    break
+            if found_img:
                 break
+        if found_img:
+            c["image"] = found_img
     filled = sum(1 for c in cards if c.get("image"))
     logger.info(f"AUTO.RU photos attached {filled}/{len(cards)} (per listing, no pool)")
     return cards
