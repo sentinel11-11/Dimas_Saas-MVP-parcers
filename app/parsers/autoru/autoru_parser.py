@@ -283,15 +283,21 @@ class AutoRuParser(BaseParser):
                 try:
                     await self.page.evaluate(
                         """() => {
-                            document.querySelectorAll('img[data-src], img[data-original], source[data-srcset]').forEach(el => {
-                                const ds = el.getAttribute('data-src') || el.getAttribute('data-original');
-                                if (ds && el.tagName === 'IMG') el.src = ds;
-                                const ss = el.getAttribute('data-srcset');
-                                if (ss) el.setAttribute('srcset', ss);
+                            document.querySelectorAll('div[class*="ListingItem"], article[class*="Listing"]').forEach(box => {
+                                try { box.scrollIntoView({block: 'nearest'}); } catch (e) {}
+                            });
+                            document.querySelectorAll('img').forEach(img => {
+                                const ds = img.getAttribute('data-src') || img.getAttribute('data-original') || img.getAttribute('data-lazy');
+                                if (ds) img.src = ds;
+                                const ss = img.getAttribute('data-srcset') || img.getAttribute('srcset');
+                                if (ss && !img.src) {
+                                    const first = ss.split(',')[0].trim().split(' ')[0];
+                                    if (first) img.src = first;
+                                }
                             });
                         }"""
                     )
-                    await self.page.wait_for_timeout(400)
+                    await self.page.wait_for_timeout(800)
                 except Exception:
                     pass
             try:
@@ -676,14 +682,17 @@ class AutoRuParser(BaseParser):
                     continue
                 html = item.pop("html", "") or ""
                 img = (item.get("image") or "").strip()
-                if "autoru-vos" not in img and "yandex.net" not in img:
-                    found = re.findall(
-                        r"(?:https?:)?//[^\s\"'<>]+(?:autoru-vos|avatars\.mds\.yandex\.net)[^\s\"'<>]+",
-                        html,
-                        flags=re.I,
-                    )
-                    if found:
-                        img = found[0].split(",")[0].split(" ")[0]
+                found = re.findall(
+                    r"(?:https?:)?//[^\s\"'<>]+(?:autoru-vos|avatars\.(?:mds\.yandex\.net|avto\.ru)|photo\.auto\.ru)[^\s\"'<>]+",
+                    html,
+                    flags=re.I,
+                )
+                if found:
+                    cand = found[0].split(",")[0].split(" ")[0]
+                    if cand.startswith("//"):
+                        cand = "https:" + cand
+                    if "autoru-vos" in cand or "yandex.net" in cand or "avto.ru" in cand:
+                        img = cand
                 if img.startswith("//"):
                     img = "https:" + img
                 item["image"] = img
