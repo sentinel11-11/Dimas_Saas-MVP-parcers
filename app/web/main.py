@@ -300,7 +300,7 @@ async def search_cars(request: Request):
         return _login_redirect("/app")
     form = await request.form()
     data = {k: form.get(k) for k in form.keys()}
-    sources = ["drom"]
+    sources = ["drom", "autoru"]
     if user.is_admin:
         picked = form.getlist("sources")
         if picked:
@@ -327,9 +327,9 @@ async def create_search_job(request: Request):
     if not user:
         return JSONResponse({"error": "auth"}, status_code=401)
     form = await request.form()
-    sources = ["drom"]
+    sources = ["drom", "autoru"]
     if user.is_admin:
-        sources = form.getlist("sources") or ["drom"]
+        sources = form.getlist("sources") or ["drom", "autoru"]
     params = {
         "brand": form.get("brand"),
         "model": form.get("model"),
@@ -372,7 +372,7 @@ async def searches_save(request: Request):
     params = _form_params(
         brand=form.get("brand"),
         model=form.get("model"),
-        sources=["drom"],
+        sources=["drom", "autoru"],
         year_min=form.get("year_min") or 2018,
         year_max=form.get("year_max") or 2026,
         mileage_min=form.get("mileage_min") or 0,
