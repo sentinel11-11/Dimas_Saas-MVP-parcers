@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Кабинет — DIMAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/app.css?v=12">
+    <link rel="stylesheet" href="/static/css/app.css?v=13">
+    <script src="/static/js/combo.js"></script>
 </head>
 <body>
     <div class="wrap">
@@ -14,7 +15,7 @@
             <div>
                 <div class="kicker">личный кабинет</div>
                 <h1>Поиск</h1>
-                <p class="lead">Марка и модель — из полного списка, даже если поле уже заполнено.</p>
+                <p class="lead">Выберите марку и модель из списка. Остальные фильтры — по желанию.</p>
             </div>
             <div class="user-chip">{{ user.email }}{% if user.name %} · {{ user.name }}{% endif %}</div>
         </section>

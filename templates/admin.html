@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админка — DIMAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/app.css?v=12">
+    <link rel="stylesheet" href="/static/css/app.css?v=13">
+    <script src="/static/js/combo.js"></script>
 </head>
 <body>
     <div class="wrap">
@@ -49,24 +50,20 @@
     </div>
     <script>
         const popularModels = {{ models_json | safe }};
-        function fillModels(brand, keep) {
-            const sel = document.getElementById('model');
-            const cur = keep || sel.value || 'q3';
-            sel.innerHTML = '';
-            const models = popularModels[brand] || [];
-            models.forEach(m => {
-                const o = document.createElement('option');
-                o.value = m; o.textContent = m;
-                if (m.toLowerCase() === String(cur).toLowerCase()) o.selected = true;
-                sel.appendChild(o);
+        const brands = {{ brands_json | safe }};
+        function initCombos() {
+            const modelRoot = document.getElementById('modelCombo');
+            setupCombo(modelRoot, [], { placeholder: 'Выберите модель' });
+            setupCombo(document.getElementById('brandCombo'), brandOptions(brands), {
+                placeholder: 'Выберите марку',
+                onChange: (brand) => {
+                    document.getElementById('model').value = '';
+                    modelRoot._setOptions(modelOptions(popularModels[brand] || []));
+                }
             });
-            if (!sel.options.length) {
-                const o = document.createElement('option');
-                o.value = cur; o.textContent = cur; sel.appendChild(o);
-            }
         }
-        document.getElementById('brand').addEventListener('change', e => fillModels(e.target.value, ''));
-        fillModels(document.getElementById('brand').value, 'q3');
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCombos);
+        else initCombos();
         document.getElementById('searchForm').addEventListener('submit', () => {
             document.getElementById('loadingOverlay').classList.add('on');
         });

@@ -110,6 +110,44 @@ input, select {
   border-radius: 14px; padding: 12px 13px; outline: none;
 }
 input:focus, select:focus { border-color: rgba(124, 240, 195, 0.55); box-shadow: 0 0 0 3px rgba(124,240,195,.12); }
+select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+.combo { position: relative; }
+.combo-btn {
+  position: relative; width: 100%; text-align: left; cursor: pointer;
+  background: rgba(8, 10, 14, 0.7); border: 1px solid var(--line);
+  border-radius: 14px; padding: 12px 40px 12px 13px; color: var(--ink);
+}
+.combo-btn::after {
+  content: ""; position: absolute; right: 16px; top: 50%; margin-top: -2px;
+  border: 5px solid transparent; border-top-color: var(--muted);
+}
+.combo.open .combo-btn::after { transform: rotate(180deg); margin-top: -8px; }
+.combo.open .combo-btn { border-color: rgba(124, 240, 195, 0.55); }
+.combo-menu {
+  display: none; position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+  z-index: 30; max-height: 280px;
+  background: #161820; border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.45); overflow: hidden;
+}
+.combo.open .combo-menu { display: block; }
+.combo-filter {
+  border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+  background: rgba(255,255,255,.03);
+}
+.combo-list { max-height: 220px; overflow-y: auto; padding: 6px; }
+.combo-opt {
+  display: block; width: 100%; text-align: left; border: 0; background: transparent;
+  color: var(--ink); padding: 9px 12px; border-radius: 10px; cursor: pointer;
+}
+.combo-opt:hover, .combo-opt.on { background: rgba(124,240,195,.12); }
+.combo-empty { padding: 12px; color: var(--muted); font-size: 13px; }
 
 .grid { display: grid; gap: 12px; }
 .grid-2 { grid-template-columns: 1fr 1fr; }

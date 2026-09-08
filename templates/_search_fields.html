@@ -1,15 +1,21 @@
 <div class="grid grid-2">
-    <div>
-        <label for="brand">Марка</label>
-        <select id="brand" name="brand" required>
-            {% for brand in brands %}
-            <option value="{{ brand }}" {% if brand == 'audi' %}selected{% endif %}>{{ brand }}</option>
-            {% endfor %}
-        </select>
+    <div class="combo" id="brandCombo">
+        <label>Марка</label>
+        <input type="hidden" name="brand" id="brand" required>
+        <button type="button" class="combo-btn" aria-expanded="false">Выберите марку</button>
+        <div class="combo-menu">
+            <input class="combo-filter" type="search" placeholder="Найти марку" autocomplete="off">
+            <div class="combo-list"></div>
+        </div>
     </div>
-    <div>
-        <label for="model">Модель</label>
-        <select id="model" name="model" required></select>
+    <div class="combo" id="modelCombo">
+        <label>Модель</label>
+        <input type="hidden" name="model" id="model" required>
+        <button type="button" class="combo-btn" aria-expanded="false">Выберите модель</button>
+        <div class="combo-menu">
+            <input class="combo-filter" type="search" placeholder="Найти модель" autocomplete="off">
+            <div class="combo-list"></div>
+        </div>
     </div>
 </div>
 {% if show_sources %}
@@ -26,9 +32,10 @@
     <div>
         <label for="buyer_city">Вы в городе</label>
         <select id="buyer_city" name="buyer_city">
+            <option value="">Не выбран</option>
             {% for r in regions %}
             {% if r.value %}
-            <option value="{{ r.value }}" {% if r.value == 'moscow' %}selected{% endif %}>{{ r.label }}</option>
+            <option value="{{ r.value }}">{{ r.label }}</option>
             {% endif %}
             {% endfor %}
         </select>
@@ -43,24 +50,24 @@
     </div>
     <div>
         <label for="limit">Сколько лотов</label>
-        <input type="number" id="limit" name="limit" value="50" min="1" max="100">
+        <input type="number" id="limit" name="limit" min="1" max="100" placeholder="необязательно">
     </div>
     <div>
         <label for="fuel_price">Литр топлива, ₽</label>
-        <input type="number" id="fuel_price" name="fuel_price" value="62" min="30" max="250" step="1">
+        <input type="number" id="fuel_price" name="fuel_price" min="30" max="250" step="1" placeholder="необязательно">
     </div>
 </div>
 <details class="more">
     <summary>Год, пробег, цена и техника</summary>
     <div class="grid grid-4" style="margin-top:12px">
-        <div><label>Год от</label><input type="number" name="year_min" value="2018"></div>
-        <div><label>Год до</label><input type="number" name="year_max" value="2026"></div>
-        <div><label>Пробег от</label><input type="number" name="mileage_min" value="0"></div>
-        <div><label>Пробег до</label><input type="number" name="mileage_max" value="300000"></div>
-        <div><label>Владельцев от</label><input type="number" name="owners_min" value="1"></div>
-        <div><label>Владельцев до</label><input type="number" name="owners_max" value="3"></div>
-        <div><label>Цена от</label><input type="number" name="price_min" value="0"></div>
-        <div><label>Цена до</label><input type="number" name="price_max" value="100000000"></div>
+        <div><label>Год от</label><input type="number" name="year_min" placeholder="любой"></div>
+        <div><label>Год до</label><input type="number" name="year_max" placeholder="любой"></div>
+        <div><label>Пробег от</label><input type="number" name="mileage_min" placeholder="любой"></div>
+        <div><label>Пробег до</label><input type="number" name="mileage_max" placeholder="любой"></div>
+        <div><label>Владельцев от</label><input type="number" name="owners_min" placeholder="любое"></div>
+        <div><label>Владельцев до</label><input type="number" name="owners_max" placeholder="любое"></div>
+        <div><label>Цена от</label><input type="number" name="price_min" placeholder="любая"></div>
+        <div><label>Цена до</label><input type="number" name="price_max" placeholder="любая"></div>
         <div>
             <label>КПП</label>
             <select name="transmission">

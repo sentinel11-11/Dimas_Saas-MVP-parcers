@@ -197,6 +197,7 @@ async def cabinet(request: Request):
         _ctx(
             request,
             brands=ALL_BRANDS,
+            brands_json=json.dumps(ALL_BRANDS),
             regions=ALL_REGIONS,
             models_json=json.dumps(POPULAR_MODELS),
             saved=list_saved_searches(user_id=user.id, email=user.email),
@@ -217,6 +218,7 @@ async def admin_home(request: Request):
         _ctx(
             request,
             brands=ALL_BRANDS,
+            brands_json=json.dumps(ALL_BRANDS),
             regions=ALL_REGIONS,
             models_json=json.dumps(POPULAR_MODELS),
             users=list_users(),
@@ -232,20 +234,20 @@ def _search_payload(form: dict, sources: List[str]) -> dict:
         model=form.get("model"),
         sources=sources,
         limit=form.get("limit") or 50,
-        year_min=form.get("year_min") or 2018,
-        year_max=form.get("year_max") or 2026,
+        year_min=form.get("year_min") or 0,
+        year_max=form.get("year_max") or 0,
         mileage_min=form.get("mileage_min") or 0,
-        mileage_max=form.get("mileage_max") or 300000,
-        owners_min=form.get("owners_min") or 1,
-        owners_max=form.get("owners_max") or 3,
+        mileage_max=form.get("mileage_max") or 0,
+        owners_min=form.get("owners_min") or 0,
+        owners_max=form.get("owners_max") or 0,
         price_min=form.get("price_min") or 0,
-        price_max=form.get("price_max") or 100000000,
+        price_max=form.get("price_max") or 0,
         transmission=form.get("transmission") or "",
         fuel=form.get("fuel") or "",
         drive=form.get("drive") or "",
         body_type=form.get("body_type") or "",
         region=form.get("region") or "",
-        buyer_city=form.get("buyer_city") or "moscow",
+        buyer_city=form.get("buyer_city") or "",
         fuel_price=form.get("fuel_price") or 62,
     )
 
@@ -316,7 +318,7 @@ async def admin_search(request: Request):
         return _login_redirect("/admin")
     form = await request.form()
     data = {k: form.get(k) for k in form.keys()}
-    sources = form.getlist("sources") or ["drom"]
+    sources = form.getlist("sources") or ["drom", "autoru"]
     params = _search_payload(data, list(sources))
     return await _run_and_render(request, params, user)
 
