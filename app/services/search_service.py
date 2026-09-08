@@ -117,6 +117,18 @@ def _to_car(ad: dict, platform: str) -> Optional[CarListing]:
             return None
         if not normalized.get("price"):
             normalized["price"] = 0
+        if normalized.get("year") is None:
+            normalized["year"] = 0
+        if normalized.get("engine_volume") is None:
+            normalized["engine_volume"] = 0.0
+        if normalized.get("horsepower") is None:
+            normalized["horsepower"] = 0
+        if normalized.get("transmission") is None:
+            normalized["transmission"] = ""
+        if normalized.get("region") is None:
+            normalized["region"] = ""
+        if normalized.get("mileage") is None:
+            normalized["mileage"] = 0
         return CarListing(**normalized)
     except Exception as e:
         logger.error(f"NORMALIZE ERROR {platform}: {e}")
@@ -218,11 +230,23 @@ async def _search_autoru(filters: dict, limit: int, errors: list) -> List[CarLis
         from app.parsers.autoru.autoru_html import is_blocked, parse_listing_html
         from app.parsers.autoru.autoru_parser import AutoRuParser as _P
 
-        brand = (payload.get("brand") or "").strip().lower()
-        model = (payload.get("model") or "").strip().lower()
-        http_url = f"https://auto.ru/cars/{brand}/{model}/used/?year_from={payload.get('year_from') or ''}&year_to={payload.get('year_to') or ''}"
+        brand = _P._brand_slug(payload.get("brand") or "")
+        model = _P._model_slug(payload.get("model") or "")
+        yf = payload.get("year_from") or ""
+        yt = payload.get("year_to") or ""
+        pf = payload.get("price_from") or ""
+        pt = payload.get("price_to") or ""
+        http_url = f"https://auto.ru/cars/{brand}/{model}/used/?year_from={yf}&year_to={yt}"
+        if pf:
+            http_url += f"&price_from={pf}"
+        if pt and str(pt) not in ("100000000", ""):
+            http_url += f"&price_to={pt}"
         logger.info(f"AUTO.RU HTTP try {http_url}")
-        resp = HTTPClient(min_delay=0.2, max_delay=0.5).get(http_url)
+        try:
+            http = HTTPClient(min_delay=0.2, max_delay=0.5, use_proxy=True)
+        except TypeError:
+            http = HTTPClient()
+        resp = http.get(http_url)
         if resp and resp.text and not is_blocked(resp.text, resp.url or http_url):
             html_cards = parse_listing_html(resp.text)
             parser_tmp = _P(headless=True, use_proxy=False)

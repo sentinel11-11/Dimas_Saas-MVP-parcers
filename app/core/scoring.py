@@ -20,7 +20,7 @@ def _plat(p: Optional[str]) -> str:
 
 
 def _same_cross(a: CarListing, b: CarListing) -> bool:
-    va, vb = (a.vin or "").strip().upper(), (b.vin or "").strip().upper()
+    va, vb = (getattr(a, "vin", None) or "").strip().upper(), (getattr(b, "vin", None) or "").strip().upper()
     if len(va) == 17 and va == vb:
         return True
     if _plat(a.platform) == _plat(b.platform):
