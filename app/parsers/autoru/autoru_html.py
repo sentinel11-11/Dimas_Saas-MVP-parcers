@@ -191,6 +191,51 @@ def parse_listing_html(html: str) -> List[Dict[str, Any]]:
     return attach_photos(html, cards)
 
 
+def _photos_by_offer_id(html: str) -> Dict[str, str]:
+    """Карта id объявления → фото из JSON/разметки, без общей очереди."""
+    out: Dict[str, str] = {}
+    if not html:
+        return out
+
+    def put(oid: str, raw: str) -> None:
+        oid = (oid or "").strip()
+        if not oid or oid in out:
+            return
+        u = unescape(raw).split(",")[0].split(" ")[0].strip().strip("\"'")
+        if u.startswith("//"):
+            u = "https:" + u
+        if "autoru-vos" not in u and "avto.ru" not in u and "yandex.net" not in u:
+            return
+        if any(x in u for x in ("marketing", "adfox", "get-verba", "banner")):
+            return
+        u = re.sub(r"/\d+x\d+(?:n)?/?$", "/456x342", u)
+        out[oid] = u
+
+    for m in re.finditer(
+        r'"456x342"\s*:\s*"(//[^"]*(?:autoru-vos|avatars\.(?:mds\.yandex\.net|avto\.ru))[^"]*)"',
+        html,
+        re.I,
+    ):
+        back = html[max(0, m.start() - 5000) : m.start()]
+        ids = re.findall(r"(\d{8,})-[a-z0-9]{4,}", back, re.I)
+        if ids:
+            put(ids[-1], m.group(1))
+
+    for m in re.finditer(
+        r"/cars/used/sale/[^/\s\"']+/(\d{8,})-[a-z0-9]+",
+        html,
+        re.I,
+    ):
+        oid = m.group(1)
+        if oid in out:
+            continue
+        chunk = html[m.start() : min(len(html), m.start() + 2800)]
+        ph = PHOTO_RE.search(chunk)
+        if ph:
+            put(oid, ph.group(0))
+    return out
+
+
 def attach_photos(html: str, cards: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     if not cards or not html:
         return cards
@@ -208,6 +253,7 @@ def attach_photos(html: str, cards: List[Dict[str, Any]]) -> List[Dict[str, Any]
         u = re.sub(r"/\d+x\d+(?:n)?/?$", "/456x342", u)
         return u
 
+    by_id = _photos_by_offer_id(html)
     for c in cards:
         existing = _ok(str(c.get("image") or ""))
         if existing:
@@ -218,6 +264,10 @@ def attach_photos(html: str, cards: List[Dict[str, Any]]) -> List[Dict[str, Any]
         om = re.search(r"/(\d{8,})-[a-z0-9]+/?", url, re.I)
         if om:
             offer = om.group(1)
+            mapped = _ok(by_id.get(offer) or "")
+            if mapped:
+                c["image"] = mapped
+                continue
         chunks = []
         if url:
             pos = html.find(url.rstrip("/"))

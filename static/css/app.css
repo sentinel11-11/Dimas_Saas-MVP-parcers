@@ -258,6 +258,42 @@ details.more summary { cursor: pointer; color: var(--amber-2); }
 .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
 @media (max-width: 640px) { .calc-grid { grid-template-columns: 1fr; } }
 
+.page-head {
+  display: flex; justify-content: space-between; align-items: end; gap: 16px;
+  padding: 28px 0 8px; flex-wrap: wrap;
+}
+.page-head h1 { font-size: clamp(32px, 5vw, 48px); margin: 8px 0 6px; }
+.user-chip {
+  border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px;
+  color: var(--muted); font-size: 13px; background: rgba(255,255,255,.04);
+}
+.steps {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 8px 0 12px;
+}
+.step {
+  border: 1px solid var(--line); border-radius: 20px; padding: 18px 18px 16px;
+  background: rgba(255,255,255,.03);
+}
+.step span { color: var(--amber); font-family: var(--display); font-size: 13px; letter-spacing: .16em; }
+.step h3 { margin: 8px 0 6px; font-family: var(--display); }
+.step p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.preview-stack { display: grid; gap: 14px; }
+.preview-card {
+  display: grid; grid-template-columns: 140px 1fr; gap: 14px; align-items: center;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 14px;
+}
+.preview-photo {
+  height: 110px; border-radius: 16px;
+  background:
+    linear-gradient(135deg, rgba(124,240,195,.35), rgba(110,168,255,.2)),
+    repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(255,255,255,.04) 8px, rgba(255,255,255,.04) 16px);
+}
+.preview-title { font-family: var(--display); font-size: 18px; margin: 8px 0 4px; }
+.preview-note { color: var(--muted); font-size: 13px; margin: 8px 0 0; line-height: 1.45; }
+.photo-wrap { position: relative; }
+.photo-wrap .badge { position: absolute; left: 10px; top: 10px; backdrop-filter: blur(8px); }
+.hint-col { display: flex; flex-direction: column; gap: 12px; }
+
 @media (max-width: 900px) {
   .hero, .car-card, .features, .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
   .nav { flex-wrap: wrap; gap: 10px; }

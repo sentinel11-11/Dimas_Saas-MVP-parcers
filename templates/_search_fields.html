@@ -1,17 +1,15 @@
 <div class="grid grid-2">
     <div>
         <label for="brand">Марка</label>
-        <input id="brand" name="brand" list="brandList" value="audi" required placeholder="bmw, haval, zeekr">
-        <datalist id="brandList">
+        <select id="brand" name="brand" required>
             {% for brand in brands %}
-            <option value="{{ brand }}"></option>
+            <option value="{{ brand }}" {% if brand == 'audi' %}selected{% endif %}>{{ brand }}</option>
             {% endfor %}
-        </datalist>
+        </select>
     </div>
     <div>
         <label for="model">Модель</label>
-        <input id="model" name="model" list="modelList" value="q3" placeholder="m3, monjaro, vesta" required>
-        <datalist id="modelList"></datalist>
+        <select id="model" name="model" required></select>
     </div>
 </div>
 {% if show_sources %}

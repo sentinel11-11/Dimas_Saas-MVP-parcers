@@ -6,7 +6,7 @@
     <title>DIMAS — выгодный автомобиль за один проход</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/app.css?v=11">
+    <link rel="stylesheet" href="/static/css/app.css?v=12">
 </head>
 <body>
     <div class="wrap">
@@ -19,6 +19,7 @@
                 <div class="cta-row">
                     {% if user %}
                     <a class="btn" href="/app">Открыть кабинет</a>
+                    <a class="btn ghost" href="/how">Как считаем</a>
                     {% else %}
                     <a class="btn" href="/register">Создать аккаунт</a>
                     <a class="btn ghost" href="/login">Войти</a>
@@ -27,18 +28,34 @@
                 <div class="stats">
                     <div class="stat"><b>выгода</b><span>дешевле похожих</span></div>
                     <div class="stat"><b>доставка</b><span>топливо перегона</span></div>
-                    <div class="stat"><b>Drom + Auto.ru</b><span>источники поиска</span></div>
+                    <div class="stat"><b>кабинет</b><span>поиск после входа</span></div>
                 </div>
             </div>
-            <div class="panel">
-                <h2>Как это работает</h2>
-                <p class="lead" style="max-width:none">Регистрируетесь, задаёте марку и фильтры — собираем объявления с Drom и Auto.ru, сравниваем внутри выдачи, показываем экономию после дороги. Avito пока выключен: нужен мобильный прокси.</p>
+            <div class="preview-stack">
+                <div class="preview-card">
+                    <div class="preview-photo"></div>
+                    <div>
+                        <span class="badge drom">карточка</span>
+                        <div class="preview-title">Audi Q3 · 2021</div>
+                        <div class="price" style="font-size:22px">2 450 000 ₽</div>
+                        <p class="preview-note">Типичная цена похожих и топливо до вашего города — в выдаче после поиска.</p>
+                    </div>
+                </div>
+                <div class="panel">
+                    <h2>Как это работает</h2>
+                    <p class="lead" style="max-width:none">Регистрируетесь, задаёте марку и фильтры — собираем объявления, сравниваем внутри выдачи, показываем экономию после дороги.</p>
+                </div>
             </div>
+        </section>
+        <section class="steps">
+            <article class="step"><span>01</span><h3>Кабинет</h3><p>Вход, марка, модель, город. Список марок и моделей всегда можно открыть целиком.</p></article>
+            <article class="step"><span>02</span><h3>Сравнение</h3><p>Новые и б/у отдельно. Механика не мешается с автоматом.</p></article>
+            <article class="step"><span>03</span><h3>Цена у вас</h3><p>В сумму входит топливо перегона и паром ДВ. Водителя не считаем.</p></article>
         </section>
         <section class="features" id="features">
             <article class="feature">
                 <h3>Кабинет</h3>
-                <p>Поиск только после входа. Площадку выбирать не нужно — ищем на Drom и Auto.ru.</p>
+                <p>Поиск только после входа. Площадку выбирать не нужно.</p>
             </article>
             <article class="feature">
                 <h3>Сравнение внутри класса</h3>

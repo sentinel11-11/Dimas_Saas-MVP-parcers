@@ -5,16 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Кабинет — DIMAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/app.css?v=11">
+    <link rel="stylesheet" href="/static/css/app.css?v=12">
 </head>
 <body>
     <div class="wrap">
         {% include "_nav.html" %}
-        <section class="hero hero-cab">
+        <section class="page-head">
             <div>
                 <div class="kicker">личный кабинет</div>
                 <h1>Поиск</h1>
-                <p class="lead">{{ user.email }}{% if user.name %} · {{ user.name }}{% endif %}</p>
+                <p class="lead">Марка и модель — из полного списка, даже если поле уже заполнено.</p>
+            </div>
+            <div class="user-chip">{{ user.email }}{% if user.name %} · {{ user.name }}{% endif %}</div>
+        </section>
+        <section class="hero hero-cab">
+            <div class="hint-col">
+                <div class="panel">
+                    <h2>Что получите</h2>
+                    <p class="lead" style="max-width:none">Выдача с ценой в объявлении, типичной ценой похожих и топливом до вашего города.</p>
+                </div>
             </div>
             <div class="panel search-card" id="search">
                 <h2>Собрать выдачу</h2>
@@ -43,17 +52,26 @@
     </div>
     <script>
         const popularModels = {{ models_json | safe }};
-        function fillModels(brand) {
-            const list = document.getElementById('modelList');
-            list.innerHTML = '';
-            (popularModels[brand] || []).forEach(m => {
+        function fillModels(brand, keep) {
+            const sel = document.getElementById('model');
+            const cur = keep || sel.value || 'q3';
+            sel.innerHTML = '';
+            const models = popularModels[brand] || [];
+            if (!models.length) {
                 const o = document.createElement('option');
-                o.value = m;
-                list.appendChild(o);
+                o.value = cur; o.textContent = cur; sel.appendChild(o);
+                return;
+            }
+            models.forEach(m => {
+                const o = document.createElement('option');
+                o.value = m; o.textContent = m;
+                if (m.toLowerCase() === String(cur).toLowerCase()) o.selected = true;
+                sel.appendChild(o);
             });
+            if (![...sel.options].some(x => x.selected) && sel.options.length) sel.options[0].selected = true;
         }
-        document.getElementById('brand').addEventListener('change', e => fillModels(e.target.value));
-        fillModels(document.getElementById('brand').value);
+        document.getElementById('brand').addEventListener('change', e => fillModels(e.target.value, ''));
+        fillModels(document.getElementById('brand').value, 'q3');
         document.getElementById('searchForm').addEventListener('submit', () => {
             document.getElementById('loadingOverlay').classList.add('on');
         });

@@ -305,6 +305,17 @@ class AutoRuParser(BaseParser):
             except Exception:
                 pass
             cards_data = await self._extract_cards()
+            state_cards = await self._extract_state_cards()
+            if state_cards:
+                by_url = {(c.get("url") or "").rstrip("/"): c for c in state_cards}
+                if not cards_data:
+                    cards_data = state_cards
+                else:
+                    for c in cards_data:
+                        key = (c.get("url") or "").rstrip("/")
+                        st = by_url.get(key) or {}
+                        if not c.get("image") and st.get("image"):
+                            c["image"] = st["image"]
             html_cards = parse_listing_html(page_html)
             if not cards_data:
                 cards_data = html_cards
@@ -599,6 +610,56 @@ class AutoRuParser(BaseParser):
             except Exception as e:
                 logger.warning(f"Scroll error: {e}")
                 break
+
+    async def _extract_state_cards(self) -> List[Dict[str, Any]]:
+        script = """() => {
+            const roots = [window.__INITIAL_STATE__, window.INITIAL_STATE, window.__PRELOADED_STATE__];
+            const items = [];
+            const seen = new Set();
+            const walk = (o, depth) => {
+                if (!o || depth > 14) return;
+                if (Array.isArray(o)) { o.forEach(x => walk(x, depth + 1)); return; }
+                if (typeof o !== 'object') return;
+                let url = o.url || o.saleUrl || o.publicUrl || '';
+                if (typeof url === 'string' && url.indexOf('/cars/used/sale/') >= 0) {
+                    if (url.indexOf('//') === 0) url = 'https:' + url;
+                    if (url.startsWith('/')) url = 'https://auto.ru' + url;
+                    url = url.split('?')[0];
+                    if (!seen.has(url)) {
+                        seen.add(url);
+                        let image = '';
+                        const imgs = (o.state && o.state.image_urls) || o.images || o.photos || [];
+                        const first = Array.isArray(imgs) ? imgs[0] : null;
+                        if (first && typeof first === 'object') {
+                            const sz = first.sizes || first;
+                            image = sz['456x342'] || sz['320x240'] || sz['1200x900n'] || sz['120x90'] || '';
+                            if (!image) {
+                                for (const v of Object.values(sz)) {
+                                    if (typeof v === 'string' && v.indexOf('autoru') >= 0) { image = v; break; }
+                                }
+                            }
+                        } else if (typeof first === 'string') image = first;
+                        if (image && image.indexOf('//') === 0) image = 'https:' + image;
+                        items.push({ url, image, title: '', price: '', tech: '', place: '', text: '' });
+                    }
+                }
+                for (const k of Object.keys(o)) walk(o[k], depth + 1);
+            };
+            roots.forEach(r => walk(r, 0));
+            return items;
+        }"""
+        try:
+            raw = await self.page.evaluate(script)
+            out = []
+            for item in raw or []:
+                if item.get("url"):
+                    out.append(item)
+            if out:
+                logger.info(f"AUTO.RU STATE offers: {len(out)} with photo: {sum(1 for x in out if x.get('image'))}")
+            return out
+        except Exception as e:
+            logger.debug(f"AUTO.RU STATE extract skip: {e}")
+            return []
 
     async def _extract_cards(self) -> List[Dict[str, str]]:
         """Извлечение ссылок на карточки товаров со страницы"""

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Админка — DIMAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/app.css?v=11">
+    <link rel="stylesheet" href="/static/css/app.css?v=12">
 </head>
 <body>
     <div class="wrap">
@@ -49,17 +49,24 @@
     </div>
     <script>
         const popularModels = {{ models_json | safe }};
-        function fillModels(brand) {
-            const list = document.getElementById('modelList');
-            list.innerHTML = '';
-            (popularModels[brand] || []).forEach(m => {
+        function fillModels(brand, keep) {
+            const sel = document.getElementById('model');
+            const cur = keep || sel.value || 'q3';
+            sel.innerHTML = '';
+            const models = popularModels[brand] || [];
+            models.forEach(m => {
                 const o = document.createElement('option');
-                o.value = m;
-                list.appendChild(o);
+                o.value = m; o.textContent = m;
+                if (m.toLowerCase() === String(cur).toLowerCase()) o.selected = true;
+                sel.appendChild(o);
             });
+            if (!sel.options.length) {
+                const o = document.createElement('option');
+                o.value = cur; o.textContent = cur; sel.appendChild(o);
+            }
         }
-        document.getElementById('brand').addEventListener('change', e => fillModels(e.target.value));
-        fillModels(document.getElementById('brand').value);
+        document.getElementById('brand').addEventListener('change', e => fillModels(e.target.value, ''));
+        fillModels(document.getElementById('brand').value, 'q3');
         document.getElementById('searchForm').addEventListener('submit', () => {
             document.getElementById('loadingOverlay').classList.add('on');
         });
