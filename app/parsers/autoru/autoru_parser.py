@@ -280,6 +280,20 @@ class AutoRuParser(BaseParser):
 
             if found_selector:
                 await self._scroll_page()
+                try:
+                    await self.page.evaluate(
+                        """() => {
+                            document.querySelectorAll('img[data-src], img[data-original], source[data-srcset]').forEach(el => {
+                                const ds = el.getAttribute('data-src') || el.getAttribute('data-original');
+                                if (ds && el.tagName === 'IMG') el.src = ds;
+                                const ss = el.getAttribute('data-srcset');
+                                if (ss) el.setAttribute('srcset', ss);
+                            });
+                        }"""
+                    )
+                    await self.page.wait_for_timeout(400)
+                except Exception:
+                    pass
             try:
                 page_html = await self.page.content()
             except Exception:
