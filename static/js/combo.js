@@ -27,7 +27,7 @@ function setupCombo(root, options, opts) {
     if (!shown.length) {
       const empty = document.createElement("div");
       empty.className = "combo-empty";
-      empty.textContent = qq ? "Нет совпадений" : "Сначала выберите марку";
+      empty.textContent = qq && opts.allowCustom ? "Enter — использовать «" + q.trim() + "»" : (qq ? "Нет совпадений" : "Сначала выберите марку");
       list.appendChild(empty);
     }
   }
@@ -51,6 +51,14 @@ function setupCombo(root, options, opts) {
   }
   btn.addEventListener("click", () => root.classList.contains("open") ? close() : open());
   filter.addEventListener("input", () => render(filter.value));
+  filter.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const first = list.querySelector(".combo-opt");
+      if (first) first.click();
+      else if (opts.allowCustom && filter.value.trim()) pick(filter.value.trim());
+    }
+  });
   document.addEventListener("click", (e) => { if (!root.contains(e.target)) close(); });
   btn.textContent = hidden.value ? labelOf(hidden.value) : placeholder;
   root._setOptions = (next) => {

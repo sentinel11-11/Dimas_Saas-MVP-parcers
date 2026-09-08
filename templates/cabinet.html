@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Кабинет — DIMAS</title>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Syne:wght@700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/app.css?v=13">
-    <script src="/static/js/combo.js"></script>
+    <link rel="stylesheet" href="/static/css/app.css?v=14">
 </head>
 <body>
     <div class="wrap">
@@ -51,28 +50,19 @@
             <div id="loadingText">Ищем объявления. Обычно около минуты</div>
         </div>
     </div>
+    <script src="/static/js/combo.js"></script>
     <script>
         const popularModels = {{ models_json | safe }};
-        function fillModels(brand, keep) {
-            const sel = document.getElementById('model');
-            const cur = keep || sel.value || 'q3';
-            sel.innerHTML = '';
-            const models = popularModels[brand] || [];
-            if (!models.length) {
-                const o = document.createElement('option');
-                o.value = cur; o.textContent = cur; sel.appendChild(o);
-                return;
+        const brands = {{ brands_json | safe }};
+        const modelRoot = document.getElementById('modelCombo');
+        setupCombo(modelRoot, [], { placeholder: 'Выберите модель', allowCustom: true });
+        setupCombo(document.getElementById('brandCombo'), brandOptions(brands), {
+            placeholder: 'Выберите марку',
+            onChange: (brand) => {
+                document.getElementById('model').value = '';
+                modelRoot._setOptions(modelOptions(popularModels[brand] || []));
             }
-            models.forEach(m => {
-                const o = document.createElement('option');
-                o.value = m; o.textContent = m;
-                if (m.toLowerCase() === String(cur).toLowerCase()) o.selected = true;
-                sel.appendChild(o);
-            });
-            if (![...sel.options].some(x => x.selected) && sel.options.length) sel.options[0].selected = true;
-        }
-        document.getElementById('brand').addEventListener('change', e => fillModels(e.target.value, ''));
-        fillModels(document.getElementById('brand').value, 'q3');
+        });
         document.getElementById('searchForm').addEventListener('submit', () => {
             document.getElementById('loadingOverlay').classList.add('on');
         });
