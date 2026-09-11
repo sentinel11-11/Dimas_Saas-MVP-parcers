@@ -33,7 +33,9 @@ def _image_src(url: Optional[str], platform: str = "") -> str:
     if not raw or raw.startswith("/static/"):
         return raw or "/static/images/no-car-image.png"
     plat = (platform or "").lower()
-    if plat in ("auto_ru", "autoru", "auto.ru") or "autoru-vos" in raw or "avatars.mds.yandex" in raw:
+    if plat in ("auto_ru", "autoru", "auto.ru", "drom") or any(
+        x in raw for x in ("autoru-vos", "avatars.mds.yandex", "drom.ru", "avito.st")
+    ):
         from urllib.parse import quote
         return "/img?u=" + quote(raw, safe="")
     return raw
@@ -161,7 +163,12 @@ def _search_drom(filters: dict, limit: int, errors: list) -> List[CarListing]:
         try:
             extra = detail.parse(car.url)
             if extra:
+                img = extra.get("image_url") or ""
+                if img and any(x in img.lower() for x in ("logo", "icon", "sprite", ".svg", "placeholder")):
+                    extra = {k: v for k, v in extra.items() if k != "image_url"}
                 merged = {**car.model_dump(), **{k: v for k, v in extra.items() if v not in (None, "")}}
+                if not merged.get("image_url"):
+                    merged["image_url"] = car.image_url
                 rebuilt = _to_car(merged, "drom")
                 return rebuilt or car
         except Exception as e:
@@ -232,15 +239,25 @@ async def _search_autoru(filters: dict, limit: int, errors: list) -> List[CarLis
 
         brand = _P._brand_slug(payload.get("brand") or "")
         model = _P._model_slug(payload.get("model") or "")
+        if not brand or not model:
+            logger.warning("AUTO.RU skip: no brand/model")
+            return []
         yf = payload.get("year_from") or ""
         yt = payload.get("year_to") or ""
         pf = payload.get("price_from") or ""
         pt = payload.get("price_to") or ""
-        http_url = f"https://auto.ru/cars/{brand}/{model}/used/?year_from={yf}&year_to={yt}"
-        if pf:
-            http_url += f"&price_from={pf}"
-        if pt and str(pt) not in ("100000000", ""):
-            http_url += f"&price_to={pt}"
+        http_url = f"https://auto.ru/cars/{brand}/{model}/used/"
+        q = []
+        if yf and str(yf) not in ("0", ""):
+            q.append(f"year_from={int(yf)}")
+        if yt and str(yt) not in ("0", ""):
+            q.append(f"year_to={int(yt)}")
+        if pf and str(pf) not in ("0", ""):
+            q.append(f"price_from={pf}")
+        if pt and str(pt) not in ("0", "100000000", ""):
+            q.append(f"price_to={pt}")
+        if q:
+            http_url += "?" + "&".join(q)
         logger.info(f"AUTO.RU HTTP try {http_url}")
         try:
             http = HTTPClient(min_delay=0.2, max_delay=0.5, use_proxy=True)
@@ -298,17 +315,30 @@ def run_search(params: dict) -> dict:
     if isinstance(sources, str):
         sources = [sources]
     limit = max(1, min(int(params.get("limit") or 50), 100))
+    brand = (params.get("brand") or "").strip().lower()
+    model = (params.get("model") or "").strip().lower()
+    if not brand or not model:
+        return {
+            "results": [],
+            "errors": ["Укажите марку и модель"],
+            "sources_used": sources,
+            "filters_applied": params,
+            "brand": brand,
+            "model": model,
+            "total": 0,
+            "sample_size": 0,
+        }
     filters = {
-        "brand": (params.get("brand") or "").strip().lower(),
-        "model": (params.get("model") or "").strip().lower(),
-        "year_min": int(params.get("year_min") or 2018),
-        "year_max": int(params.get("year_max") or 2026),
+        "brand": brand,
+        "model": model,
+        "year_min": int(params.get("year_min") or 0),
+        "year_max": int(params.get("year_max") or 0),
         "mileage_min": int(params.get("mileage_min") or 0),
-        "mileage_max": int(params.get("mileage_max") or 300000),
-        "owners_min": int(params.get("owners_min") or 1),
-        "owners_max": int(params.get("owners_max") or 3),
+        "mileage_max": int(params.get("mileage_max") or 0),
+        "owners_min": int(params.get("owners_min") or 0),
+        "owners_max": int(params.get("owners_max") or 0),
         "price_min": int(params.get("price_min") or 0),
-        "price_max": int(params.get("price_max") or 100000000),
+        "price_max": int(params.get("price_max") or 0),
         "transmission": params.get("transmission") or "",
         "fuel": params.get("fuel") or "",
         "drive": params.get("drive") or "",

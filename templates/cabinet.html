@@ -63,7 +63,14 @@
                 modelRoot._setOptions(modelOptions(popularModels[brand] || []));
             }
         });
-        document.getElementById('searchForm').addEventListener('submit', () => {
+        document.getElementById('searchForm').addEventListener('submit', (e) => {
+            const brand = document.getElementById('brand').value.trim();
+            const model = document.getElementById('model').value.trim();
+            if (!brand || !model) {
+                e.preventDefault();
+                alert('Выберите марку и модель');
+                return;
+            }
             document.getElementById('loadingOverlay').classList.add('on');
         });
     </script>
